@@ -11,11 +11,25 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Network.hpp>
 
+#if defined(SFML_SYSTEM_WINDOWS)
+# define GL_GLEXT_PROTOTYPES 1
+# include <GL/glext.h>
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void drawVBO(GLuint vbo) {
-    glBindVertexBuffer(GL_VERTEX_ARRAY_BUFFER, vbo);
-    glVertexAttrPointer(0);
+    glBindVertexArray(vbo);
+    /*
+     * 3*float      vertex
+     * 3*float      normal
+     * 2*uint16     texcoord
+     * 4*uint8      color
+     */
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,          32, reinterpret_cast<GLvoid*>( 0));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,          32, reinterpret_cast<GLvoid*>(12));
+    glVertexAttribPointer(2, 2, GL_UNSIGNED_SHORT, GL_FALSE, 32, reinterpret_cast<GLvoid*>(24));
+    glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE,   32, reinterpret_cast<GLvoid*>(28));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
