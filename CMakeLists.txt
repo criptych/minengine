@@ -2,9 +2,9 @@
 ##
 ################################################################################
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 
-PROJECT(minengine CXX)
+PROJECT(minengine VERSION 0.1 LANGUAGES CXX)
 
 SET(CMAKE_BUILD_TYPE Debug)
 
@@ -24,9 +24,11 @@ INCLUDE_DIRECTORIES(${SFML_INCLUDE_DIR})
 ADD_LIBRARY(engine src/engine.cpp)
 
 ADD_EXECUTABLE(client src/client.cpp)
+SET_TARGET_PROPERTIES(client PROPERTIES VERSION ${PROJECT_VERSION})
 TARGET_LINK_LIBRARIES(client engine ${SFML_LIBRARIES} ${OPENGL_gl_LIBRARY})
 
 ADD_EXECUTABLE(server src/server.cpp)
+SET_TARGET_PROPERTIES(server PROPERTIES VERSION ${PROJECT_VERSION})
 TARGET_LINK_LIBRARIES(server engine ${SFML_LIBRARIES})
 
 ADD_EXECUTABLE(testmain test/testmain.cpp)

@@ -18,6 +18,8 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
+extern PFNGLVERTEXATTRIBPOINTERPROC glewVertexAttribPointer;
+
 void drawVBO(GLuint vbo) {
     glBindVertexArray(vbo);
     /*
@@ -26,10 +28,10 @@ void drawVBO(GLuint vbo) {
      * 2*uint16     texcoord
      * 4*uint8      color
      */
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,          32, reinterpret_cast<GLvoid*>( 0));
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,          32, reinterpret_cast<GLvoid*>(12));
-    glVertexAttribPointer(2, 2, GL_UNSIGNED_SHORT, GL_FALSE, 32, reinterpret_cast<GLvoid*>(24));
-    glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE,   32, reinterpret_cast<GLvoid*>(28));
+    glewVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,          32, reinterpret_cast<GLvoid*>( 0));
+    glewVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,          32, reinterpret_cast<GLvoid*>(12));
+    glewVertexAttribPointer(2, 2, GL_UNSIGNED_SHORT, GL_FALSE, 32, reinterpret_cast<GLvoid*>(24));
+    glewVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE,   32, reinterpret_cast<GLvoid*>(28));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
