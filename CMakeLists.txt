@@ -15,9 +15,9 @@ ENDIF()
 ################################################################################
 
 FIND_PACKAGE(SFML 2.2 REQUIRED COMPONENTS system window graphics audio network)
-FIND_PACKAGE(OpenGL REQUIRED)
+FIND_PACKAGE(GLEW 1.7 REQUIRED)
 
-INCLUDE_DIRECTORIES(${SFML_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${SFML_INCLUDE_DIR} ${GLEW_INCLUDE_DIR})
 
 ################################################################################
 
@@ -25,7 +25,7 @@ ADD_LIBRARY(engine src/engine.cpp)
 
 ADD_EXECUTABLE(client src/client.cpp)
 SET_TARGET_PROPERTIES(client PROPERTIES VERSION ${PROJECT_VERSION})
-TARGET_LINK_LIBRARIES(client engine ${SFML_LIBRARIES} ${OPENGL_gl_LIBRARY})
+TARGET_LINK_LIBRARIES(client engine ${SFML_LIBRARIES} ${GLEW_LIBRARY} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY})
 
 ADD_EXECUTABLE(server src/server.cpp)
 SET_TARGET_PROPERTIES(server PROPERTIES VERSION ${PROJECT_VERSION})

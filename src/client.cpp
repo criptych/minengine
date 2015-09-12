@@ -4,6 +4,10 @@
 
 #include "engine.hpp"
 
+#define GLEW_STATIC
+#include <GL/glew.h>
+#include <GL/glu.h>
+
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
@@ -11,27 +15,70 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Network.hpp>
 
-#if defined(SFML_SYSTEM_WINDOWS)
-# define GL_GLEXT_PROTOTYPES 1
-# include <GL/glext.h>
-#endif
+#include <cstdio>
+#include <cmath>
 
 ////////////////////////////////////////////////////////////////////////////////
 
-extern PFNGLVERTEXATTRIBPOINTERPROC glewVertexAttribPointer;
+static const double PI = 3.14159265358;
 
-void drawVBO(GLuint vbo) {
-    glBindVertexArray(vbo);
-    /*
-     * 3*float      vertex
-     * 3*float      normal
-     * 2*uint16     texcoord
-     * 4*uint8      color
-     */
-    glewVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,          32, reinterpret_cast<GLvoid*>( 0));
-    glewVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,          32, reinterpret_cast<GLvoid*>(12));
-    glewVertexAttribPointer(2, 2, GL_UNSIGNED_SHORT, GL_FALSE, 32, reinterpret_cast<GLvoid*>(24));
-    glewVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE,   32, reinterpret_cast<GLvoid*>(28));
+static inline void _GLCheck(const char *file, int line) {
+    GLenum errcode;
+
+    while ( (errcode = glGetError()) ) {
+        std::fprintf(stderr, "GL Error: %s(%d): %s\n", file, line,
+            gluErrorString(errcode)
+        );
+    }
+}
+
+#define GLChecked(f) do{f;_GLCheck(__FILE__, __LINE__);}while(0)
+//~ #define GLChecked(f) f
+
+struct Vertex {
+    uint8_t r, g, b, a; // color
+    uint16_t s, t;      // texcoord
+    float u, v, w;      // normal
+    float x, y, z;      // vertex
+};
+
+GLuint makeVBO(const Vertex *verts, size_t count) {
+    GLuint vbo = 0;
+    GLChecked(glGenBuffers(1, &vbo));
+
+    if (vbo) {
+        GLChecked(glBindBuffer(GL_ARRAY_BUFFER, vbo));
+        GLChecked(glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * count, verts, GL_STATIC_DRAW));
+    }
+    return vbo;
+}
+
+void freeVBO(GLuint vbo) {
+    GLChecked(glDeleteBuffers(1, &vbo));
+}
+
+void drawVBO(GLuint vbo, GLenum mode, GLint first, GLsizei count) {
+    GLChecked(glBindBuffer(GL_ARRAY_BUFFER, vbo));
+
+    GLChecked(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,          sizeof(Vertex), reinterpret_cast<GLvoid*>(offsetof(Vertex, x))));
+    GLChecked(glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE,           sizeof(Vertex), reinterpret_cast<GLvoid*>(offsetof(Vertex, u))));
+    GLChecked(glVertexAttribPointer(2, 2, GL_UNSIGNED_SHORT, GL_FALSE, sizeof(Vertex), reinterpret_cast<GLvoid*>(offsetof(Vertex, s))));
+    GLChecked(glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE,   sizeof(Vertex), reinterpret_cast<GLvoid*>(offsetof(Vertex, r))));
+
+    GLChecked(glEnableVertexAttribArray(0));
+    GLChecked(glEnableVertexAttribArray(1));
+    GLChecked(glEnableVertexAttribArray(2));
+    GLChecked(glEnableVertexAttribArray(3));
+
+    GLChecked(glDrawArrays(mode, first, count));
+
+    GLChecked(glBindBuffer(GL_ARRAY_BUFFER, 0));
+}
+
+void perspectiveView(double fov, double aspect, double znear, double zfar) {
+    double fh = std::tan(fov*PI/360.0)*znear;
+    double fw = fh * aspect;
+    glFrustum(-fw, fw, -fh, fh, znear, zfar);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -52,12 +99,70 @@ int main(int argc, char **argv) {
 
     printf("chunk == %p, chunk->getData() == %p\n", chunk, chunk->getData());
 
-    sf::RenderWindow window;
+    sf::VideoMode videoMode(960, 540);
+    sf::String windowTitle(L"MinEngine Client");
+    sf::Uint32 windowStyle(sf::Style::Default);
+    sf::ContextSettings contextSettings;
 
-    window.create(sf::VideoMode(960, 540), L"MinEngine Client");
+    sf::RenderWindow window(videoMode, L"MinEngine Client", windowStyle, contextSettings);
+
+    glewInit();
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    perspectiveView(90.0, 16.0/9.0, 0.1, 100.0);
+    glTranslated(0.0, 0.0, -5.0);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    //~ uint8_t r, g, b, a; // color
+    //~ uint16_t s, t;      // texcoord
+    //~ float u, v, w;      // normal
+    //~ float x, y, z;      // vertex
+    Vertex cubedata[24] = {
+        { 0xff,0xff,0xff,0xff, 0xffff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,-1.0 },
+        { 0xff,0xff,0xff,0xff, 0xffff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,+1.0 },
+        { 0xff,0xff,0xff,0xff, 0x0000,0x0000, +1.0, 0.0, 0.0, +1.0,-1.0,+1.0 },
+        { 0xff,0xff,0xff,0xff, 0x0000,0x0000, +1.0, 0.0, 0.0, +1.0,-1.0,-1.0 },
+        { 0xff,0x00,0xff,0xff, 0x0000,0x0000, -1.0, 0.0, 0.0, -1.0,-1.0,-1.0 },
+        { 0xff,0x00,0xff,0xff, 0x0000,0x0000, -1.0, 0.0, 0.0, -1.0,-1.0,+1.0 },
+        { 0xff,0x00,0xff,0xff, 0xffff,0x0000, -1.0, 0.0, 0.0, -1.0,+1.0,+1.0 },
+        { 0xff,0x00,0xff,0xff, 0xffff,0x0000, -1.0, 0.0, 0.0, -1.0,+1.0,-1.0 },
+        { 0xff,0xff,0x00,0xff, 0x0000,0x0000,  0.0,+1.0, 0.0, -1.0,+1.0,-1.0 },
+        { 0xff,0xff,0x00,0xff, 0x0000,0x0000,  0.0,+1.0, 0.0, -1.0,+1.0,+1.0 },
+        { 0xff,0xff,0x00,0xff, 0xffff,0x0000,  0.0,+1.0, 0.0, +1.0,+1.0,+1.0 },
+        { 0xff,0xff,0x00,0xff, 0xffff,0x0000,  0.0,+1.0, 0.0, +1.0,+1.0,-1.0 },
+        { 0x00,0xff,0xff,0xff, 0xffff,0x0000,  0.0,-1.0, 0.0, +1.0,-1.0,-1.0 },
+        { 0x00,0xff,0xff,0xff, 0xffff,0x0000,  0.0,-1.0, 0.0, +1.0,-1.0,+1.0 },
+        { 0x00,0xff,0xff,0xff, 0x0000,0x0000,  0.0,-1.0, 0.0, -1.0,-1.0,+1.0 },
+        { 0x00,0xff,0xff,0xff, 0x0000,0x0000,  0.0,-1.0, 0.0, -1.0,-1.0,-1.0 },
+        { 0xff,0x00,0x00,0xff, 0xffff,0x0000,  0.0, 0.0,+1.0, +1.0,-1.0,+1.0 },
+        { 0xff,0x00,0x00,0xff, 0xffff,0x0000,  0.0, 0.0,+1.0, +1.0,+1.0,+1.0 },
+        { 0xff,0x00,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,+1.0, -1.0,+1.0,+1.0 },
+        { 0xff,0x00,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,+1.0, -1.0,-1.0,+1.0 },
+        { 0x00,0xff,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,-1.0, -1.0,-1.0,-1.0 },
+        { 0x00,0xff,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,-1.0, -1.0,+1.0,-1.0 },
+        { 0x00,0xff,0x00,0xff, 0xffff,0x0000,  0.0, 0.0,-1.0, +1.0,+1.0,-1.0 },
+        { 0x00,0xff,0x00,0xff, 0xffff,0x0000,  0.0, 0.0,-1.0, +1.0,-1.0,-1.0 },
+    };
+
+    GLuint cube = makeVBO(cubedata, 24);
+
+    fprintf(stderr, "cube == %#x\n", cube);
+
+    double spin = 0.0, spinSpeed = 60.0; // degrees/second
+
+    GLChecked(glEnable(GL_DEPTH_TEST));
+    GLChecked(glDepthMask(GL_TRUE));
+    GLChecked(glDepthFunc(GL_LESS));
+
+    GLChecked(glEnable(GL_CULL_FACE));
+
+
 
     sf::Clock clock;
-    const sf::Time tickLength(sf::microseconds(50000));
+    const sf::Time tickLength(sf::microseconds(5000));
     sf::Time tickCount;
 
     while (window.isOpen()) {
@@ -150,6 +255,8 @@ int main(int argc, char **argv) {
             /*
              * update blocks, entities, etc.
              */
+
+            spin += tickLength.asSeconds() * spinSpeed;
         }
 
         //~ render(engine)
@@ -161,8 +268,18 @@ int main(int argc, char **argv) {
          *      render vbo
          */
 
+
+        glClear(GL_COLOR_BUFFER_BIT);
+        glPushMatrix();
+        glRotated(std::sin(spin*PI/180.0)*30.0, 1.0,0.0,0.0);
+        glRotated(spin, 0.0,1.0,0.0);
+        drawVBO(cube, GL_QUADS, 0, 24);
+        glPopMatrix();
+
         window.display();
     }
+
+    freeVBO(cube);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
