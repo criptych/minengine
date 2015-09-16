@@ -30,6 +30,85 @@ typedef sf::Vector3<Coord> Position;
 typedef sf::Vector3<Delta> Velocity;
 typedef sf::Vector2<Angle> Orientation;
 
+////////////////////////////////////////////////////////////////////////////////
+
+struct Vertex {
+    uint8_t r, g, b, a; // color
+    uint16_t s, t;      // texcoord
+    float u, v, w;      // normal
+    float x, y, z;      // vertex
+
+    Vertex(
+        float x, float y, float z
+    ): x(x), y(y), z(z) {
+	}
+
+    Vertex(
+        float u, float v, float w,
+        float x, float y, float z
+    ): u(u), v(v), w(w), x(x), y(y), z(z) {
+	}
+
+    Vertex(
+        uint16_t s, uint16_t t,
+        float u, float v, float w,
+        float x, float y, float z
+    ): s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
+	}
+
+    Vertex(
+        uint8_t r, uint8_t g, uint8_t b, uint8_t a,
+        uint16_t s, uint16_t t,
+        float u, float v, float w,
+        float x, float y, float z
+    ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
+	}
+
+};
+
+class Model {
+    uint32_t mPrimitive;
+    std::vector<Vertex> mVertices;
+
+public:
+    Model(
+        uint32_t primitive
+    ): mPrimitive(primitive) {
+    }
+
+    template <typename I>
+    Model(
+        uint32_t primitive,
+        const I &start,
+        const I &end
+    ): mPrimitive(primitive), mVertices(start, end) {
+    }
+
+    uint32_t getPrimitive() const {
+        return mPrimitive;
+    }
+
+    const std::vector<Vertex> &getVertices() const {
+        return mVertices;
+    }
+
+    void setPrimitive(uint32_t primitive) {
+        mPrimitive = primitive;
+    }
+
+    void clearVertices() {
+        mVertices.clear();
+    }
+
+    void addVertex(const Vertex &vertex) {
+        mVertices.push_back(vertex);
+    }
+
+    void calcNormals(bool smooth = false);
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
 class Entity {
     EntityID mID;
     Position mPosition;
@@ -56,29 +135,31 @@ class Block {
     LightData *mLight;
 
     Block(
-        BlockType *type, BlockData *data, LightData *light
+        BlockType *type,
+        BlockData *data,
+        LightData *light
     ): mType(type), mData(data), mLight(light) {
     }
 
     friend class ChunkData;
 
 public:
-    BlockType getType() { return *mType; }
-    void getType(BlockType type) { *mType = type; }
+    BlockType getType() const { return *mType; }
+    void setType(BlockType type) { *mType = type; }
 
-    BlockData getData() { return *mData; }
-    void getData(BlockData data) { *mData = data; }
+    BlockData getData() const { return *mData; }
+    void setData(BlockData data) { *mData = data; }
 
-    LightData getLight() { return *mLight; }
-    void getLight(LightData light) { *mLight = light; }
+    LightData getLight() const { return *mLight; }
+    void setLight(LightData light) { *mLight = light; }
 };
 
 class ChunkData {
-    static const unsigned int DIM = 16;
+    static const unsigned int Size = 16;
 
-    BlockType mBlockType[DIM*DIM*DIM];
-    BlockData mBlockData[DIM*DIM*DIM];
-    LightData mLightData[DIM*DIM*DIM];
+    BlockType mBlockType[Size * Size * Size];
+    BlockData mBlockData[Size * Size * Size];
+    LightData mLightData[Size * Size * Size];
 
 public:
     ChunkData();
@@ -86,7 +167,7 @@ public:
     //~ ~ChunkData() {}
 
     Block getBlock(const Position &pos) {
-        uint16_t i = (pos.x % DIM) + DIM*(pos.y % DIM) + DIM*DIM*(pos.z % DIM);
+        uint16_t i = (pos.z % Size) * Size * Size + (pos.y % Size) * Size + (pos.x % Size);
         return Block(&mBlockType[i], &mBlockData[i], &mLightData[i]);
     }
 

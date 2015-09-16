@@ -73,6 +73,55 @@ namespace std {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void Model::calcNormals(bool smooth) {
+    switch (mPrimitive)
+    {
+        /*
+        case GL_TRIANGLES:
+        {
+            break;
+        }
+
+        case GL_TRIANGLE_FAN:
+        {
+            break;
+        }
+
+        case GL_TRIANGLE_STRIP:
+        {
+            break;
+        }
+
+        case GL_QUADS:
+        {
+            for (size_t i = 0; i < mVertices.size(); i += 4) {
+                sf::Vector3f p[4] = {
+                    { mVertices[i+0].x, mVertices[i+0].y, mVertices[i+0].z },
+                    { mVertices[i+1].x, mVertices[i+1].y, mVertices[i+1].z },
+                    { mVertices[i+2].x, mVertices[i+2].y, mVertices[i+2].z },
+                    { mVertices[i+3].x, mVertices[i+3].y, mVertices[i+3].z },
+                };
+
+                sf::Vector3f n[4] = {
+                    norm(cross(p[1]-p[0], p[3]-p[0])),
+                    norm(cross(p[2]-p[1], p[0]-p[1])),
+                    norm(cross(p[3]-p[2], p[1]-p[2])),
+                    norm(cross(p[0]-p[3], p[2]-p[3])),
+                };
+            }
+            break;
+        }
+
+        case GL_QUAD_STRIP:
+        {
+            break;
+        }
+        */
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 ChunkData::ChunkData() {
     std::fill(mBlockType, std::end(mBlockType), 0);
     std::fill(mBlockData, std::end(mBlockData), 0);
