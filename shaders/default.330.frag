@@ -11,7 +11,8 @@ out vec4 fColor;
 
 void main () {
     vec4 texColor = texture2D(uTexture, vTexCoord);
-    //~ gl_FragCoord = vScreenVertex;
-    //~ oColor = /*vColor * texColor*/ vec4(0.5 * (vNormal + 1), 1);
-    fColor = vColor;
+    //~ fColor = vColor * max(0.1, dot(vNormal, vec3(0,0,1)));
+    //~ fColor = vColor * texColor;
+    //~ fColor = vec4(0.5 * (vNormal + 1), 1);
+    fColor = vColor * max(vec4(1.0), texColor) * max(0.1, dot(vNormal, vec3(0,0,1)));
 }

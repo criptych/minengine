@@ -10,7 +10,8 @@
 
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
-#include <SFML/Graphics.hpp>
+//~ #include <SFML/Graphics.hpp>
+#include <SFML/Graphics/Shader.hpp>
 #include <SFML/OpenGL.hpp>
 #include <SFML/Audio.hpp>
 #include <SFML/Network.hpp>
@@ -104,6 +105,27 @@ public:
 
         return combine(translation);
     }
+
+    Transform3D &rotate(float angle, const sf::Vector3f &axis) {
+        float s = std::sin(angle*PI/180.0f), c = std::cos(angle*PI/180.0f);
+        float xx = axis.x * axis.x;
+        float xy = axis.x * axis.y;
+        float xz = axis.x * axis.z;
+        float yy = axis.y * axis.y;
+        float yz = axis.y * axis.z;
+        float zz = axis.z * axis.z;
+        float xs = axis.x * s;
+        float ys = axis.y * s;
+        float zs = axis.z * s;
+        float mc = 1.0f - c;
+
+        Transform3D rotation(xx*mc+ c, xy*mc-zs, xz*mc+ys, 0,
+                             xy*mc+zs, yy*mc+ c, yz*mc-xs, 0,
+                             xz*mc-ys, yz*mc+xs, zz*mc+ c, 0,
+                             0,        0,        0,        1);
+
+        return combine(rotation);
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -191,11 +213,17 @@ class ModelRenderer {
     const sf::Shader *mShader;
     mutable GLuint mVBO;
 
+    mutable GLint mPositionAttrib;
+    mutable GLint mNormalAttrib;
+    mutable GLint mTexCoordAttrib;
+    mutable GLint mColorAttrib;
+
 public:
     ModelRenderer(
         const Model *model = nullptr,
         const sf::Shader *shader = nullptr
-    ): mModel(model), mShader(shader), mVBO() {
+    ): mModel(model), mShader(shader), mVBO(), mPositionAttrib(-1),
+    mNormalAttrib(-1), mTexCoordAttrib(-1), mColorAttrib(-1) {
     }
 
     ~ModelRenderer() {
@@ -222,21 +250,38 @@ public:
 
             if (mShader) {
                 sf::Shader::bind(mShader);
+
+                if (mPositionAttrib < 0) {
+                    mPositionAttrib = glGetAttribLocation(mShader->getNativeHandle(), "aVertex");
+                    sf::err() << "mPositionAttrib = " << mPositionAttrib << "\n";
+                }
+                if (mNormalAttrib < 0) {
+                    mNormalAttrib = glGetAttribLocation(mShader->getNativeHandle(), "aNormal");
+                    sf::err() << "mNormalAttrib = " << mNormalAttrib << "\n";
+                }
+                if (mTexCoordAttrib < 0) {
+                    mTexCoordAttrib = glGetAttribLocation(mShader->getNativeHandle(), "aTexCoord");
+                    sf::err() << "mTexCoordAttrib = " << mTexCoordAttrib << "\n";
+                }
+                if (mColorAttrib < 0) {
+                    mColorAttrib = glGetAttribLocation(mShader->getNativeHandle(), "aColor");
+                    sf::err() << "mColorAttrib = " << mColorAttrib << "\n";
+                }
             }
 
             GLChecked(glBindBuffer(GL_ARRAY_BUFFER, mVBO));
 
 #define SizeAndOffset(T, F) sizeof(T), reinterpret_cast<void*>(offsetof(T, F))
 
-            GLChecked(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, SizeAndOffset(Vertex, x)));
-            GLChecked(glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE, SizeAndOffset(Vertex, u)));
-            GLChecked(glVertexAttribPointer(2, 2, GL_SHORT, GL_FALSE, SizeAndOffset(Vertex, s)));
-            GLChecked(glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, SizeAndOffset(Vertex, r)));
+            GLChecked(glVertexAttribPointer(mPositionAttrib, 3, GL_FLOAT, GL_FALSE, SizeAndOffset(Vertex, x)));
+            GLChecked(glVertexAttribPointer(mNormalAttrib, 3, GL_FLOAT, GL_TRUE,  SizeAndOffset(Vertex, u)));
+            GLChecked(glVertexAttribPointer(mTexCoordAttrib, 2, GL_SHORT, GL_FALSE, SizeAndOffset(Vertex, s)));
+            GLChecked(glVertexAttribPointer(mColorAttrib, 4, GL_UNSIGNED_BYTE, GL_TRUE, SizeAndOffset(Vertex, r)));
 
-            GLChecked(glEnableVertexAttribArray(0));
-            GLChecked(glEnableVertexAttribArray(1));
-            GLChecked(glEnableVertexAttribArray(2));
-            GLChecked(glEnableVertexAttribArray(3));
+            GLChecked(glEnableVertexAttribArray(mPositionAttrib));
+            GLChecked(glEnableVertexAttribArray(mNormalAttrib));
+            GLChecked(glEnableVertexAttribArray(mTexCoordAttrib));
+            GLChecked(glEnableVertexAttribArray(mColorAttrib));
 
             GLChecked(glVertexPointer(3, GL_FLOAT, SizeAndOffset(Vertex, x)));
             GLChecked(glNormalPointer(GL_FLOAT, SizeAndOffset(Vertex, u)));
@@ -284,6 +329,132 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
+class Shader {
+    GLuint mProgram;
+
+    std::string mFragSource;
+    std::string mGeomSource;
+    std::string mVertSource;
+
+    std::map<std::string, GLint> mUniformLocations;
+    std::map<std::string, GLint> mAttribLocations;
+
+public:
+    enum class Type {
+        Fragment = 1,
+        Geometry = 2,
+        Vertex   = 4,
+    };
+
+    Shader(): mProgram() {
+    }
+
+    void setFragmentShaderSource(const std::string &source) {
+    }
+
+    void setGeometryShaderSource(const std::string &source) {
+    }
+
+    void setVertexShaderSource(const std::string &source) {
+    }
+
+    GLint getUniformLocation(const std::string &name) {
+        GLint location = -1;
+        auto i = mUniformLocations.find(name);
+        if (i == mUniformLocations.end()) {
+            location = glGetUniformLocation(mProgram, name.c_str());
+            mUniformLocations[name] = location;
+        }
+        return location;
+    }
+
+    GLint getAttribLocation(const std::string &name) {
+        return mAttribLocations[name];
+    }
+
+    void setUniform(const std::string &name, int value) {
+    }
+
+    void setUniform(const std::string &name, sf::Vector2i value) {
+    }
+
+    void setUniform(const std::string &name, sf::Vector3i value) {
+    }
+
+    void setUniform(const std::string &name, float value) {
+    }
+
+    void setUniform(const std::string &name, sf::Vector2f value) {
+    }
+
+    void setUniform(const std::string &name, sf::Vector3f value) {
+    }
+
+    void setUniform(const std::string &name, sf::Transform value) {
+    }
+
+    GLuint getProgramID() const {
+        return mProgram;
+    }
+
+protected:
+    GLuint compile(GLenum shaderType, const std::string &source) {
+        GLuint shader = glCreateShader(shaderType);
+        const GLchar *sources[] = { source.data() };
+        GLint lengths[] = { static_cast<GLint>(source.size()) };
+        glShaderSource(shader, 1, sources, lengths);
+        glCompileShader(shader);
+        return shader;
+    }
+
+    GLuint compile() {
+        if (mProgram) {
+            glDeleteProgram(mProgram);
+        }
+        mProgram = glCreateProgram();
+        if (!mVertSource.empty()) {
+            GLuint shader = compile(GL_VERTEX_SHADER, mVertSource);
+            glAttachShader(mProgram, shader);
+        }
+        if (!mGeomSource.empty()) {
+            GLuint shader = compile(GL_GEOMETRY_SHADER, mGeomSource);
+            glAttachShader(mProgram, shader);
+        }
+        if (!mFragSource.empty()) {
+            GLuint shader = compile(GL_FRAGMENT_SHADER, mFragSource);
+            glAttachShader(mProgram, shader);
+        }
+        glLinkProgram(mProgram);
+        return mProgram;
+    }
+
+public:
+    static void bind(Shader *shader) {
+        glUseProgram(shader ? shader->getProgramID() : 0);
+        mBound = shader;
+    }
+
+private:
+    static Shader *mBound;
+
+    class TempBinder {
+        Shader *mOldShader;
+
+    public:
+        TempBinder(Shader *shader = nullptr): mOldShader(mBound) {
+            if (shader) {
+                Shader::bind(shader);
+            }
+        }
+
+        ~TempBinder() {
+            Shader::bind(mOldShader);
+        }
+    };
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
 extern "C"
 int main(int argc, char **argv) {
 
@@ -311,13 +482,27 @@ int main(int argc, char **argv) {
 
     CameraRenderer camera(90.0f, 16.0f/9.0f, 0.1f, 100.0f);
     camera.setPosition(0.0, 0.0, 5.0);
-    camera.render();
+    //~ camera.render();
 
     glLoadIdentity();
 
+    Transform3D modelViewTransform;
+
     sf::Shader shader;
-    shader.loadFromFile("shaders/default.330.vert", "shaders/default.330.frag");
-    shader.setParameter("uViewMatrix", sf::Transform::Identity);
+
+    if (!
+        shader.loadFromFile("shaders/default.330.vert", "shaders/default.330.frag")
+        //~ shader.loadFromFile("shaders/default.120.vert", "shaders/default.120.frag")
+    ) {
+        return -1;
+    }
+
+    GLChecked(glBindAttribLocation(shader.getNativeHandle(), 0, "aVertex"));
+    GLChecked(glBindAttribLocation(shader.getNativeHandle(), 1, "aNormal"));
+    GLChecked(glBindAttribLocation(shader.getNativeHandle(), 2, "aTexCoord"));
+    GLChecked(glBindAttribLocation(shader.getNativeHandle(), 3, "aColor"));
+
+    shader.setParameter("uViewMatrix", modelViewTransform);
     shader.setParameter("uProjMatrix", camera.getTransform());
 
     Vertex cubeVerts[] = {
@@ -354,9 +539,7 @@ int main(int argc, char **argv) {
     //~ ModelRenderer cube(&cubeModel);
     ModelRenderer cube(&cubeModel, &shader);
 
-    Transform3D modelViewTransform;
-
-    int spin = 0, spinSpeed = 32; // degrees/second
+    int spin = 0, spinSpeed = 45; // degrees/second
 
     GLChecked(glEnable(GL_DEPTH_TEST));
     GLChecked(glDepthMask(GL_TRUE));
@@ -387,10 +570,9 @@ int main(int argc, char **argv) {
                 }
 
                 case sf::Event::Resized: {
-                    //~ window.setView(view);
-                    camera.setAspect(static_cast<float>(event.size.width)/
+                    GLChecked(glViewport(0, 0, event.size.width, event.size.height));
+                    camera.setAspect(static_cast<float>(event.size.width) /
                                      static_cast<float>(event.size.height));
-                    camera.render();
                     break;
                 }
 
@@ -507,7 +689,9 @@ int main(int argc, char **argv) {
          *      render vbo
          */
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        GLChecked(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+        ////////////////////////////////////////////////////////////
 
         // 3D setup
 
@@ -519,19 +703,24 @@ int main(int argc, char **argv) {
 
         // draw 3D scene
 
-        shader.setParameter("uProjMatrix", camera.getTransform());
-        //~ shader.setParameter("uViewMatrix", modelViewTransform);
-
         camera.render();
 
-        glPushMatrix();
-        glRotated(std::sin(spin*PI/128.0)*30.0, 1.0,0.0,0.0);
-        glRotated(spin*180.0/128.0, 0.0,1.0,0.0);
-        glGetFloatv(GL_MODELVIEW_MATRIX,
-            const_cast<float*>(modelViewTransform.getMatrix()));
+        modelViewTransform = Transform3D();
+        modelViewTransform.rotate(std::sin(spin*PI/180.0f)*30.0f,
+                                  sf::Vector3f(1.0f,0.0f,0.0f));
+        modelViewTransform.rotate(spin, sf::Vector3f(0.0f,1.0f,0.0f));
+
+        shader.setParameter("uProjMatrix", camera.getTransform());
         shader.setParameter("uViewMatrix", modelViewTransform);
+
+        GLChecked(glPushMatrix());
+        GLChecked(glLoadMatrixf(modelViewTransform.getMatrix()));
         cube.render();
-        glPopMatrix();
+        GLChecked(glPopMatrix());
+
+        // end 3D
+
+        ////////////////////////////////////////////////////////////
 
         // 2D setup
 
@@ -541,8 +730,15 @@ int main(int argc, char **argv) {
 
         // draw 2D overlay
 
+
+        // end 2D
+
+        ////////////////////////////////////////////////////////////
+
         window.display();
     }
+
+    return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
