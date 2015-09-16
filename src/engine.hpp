@@ -41,20 +41,20 @@ struct Vertex {
     Vertex(
         float x, float y, float z
     ): x(x), y(y), z(z) {
-	}
+    }
 
     Vertex(
         float u, float v, float w,
         float x, float y, float z
     ): u(u), v(v), w(w), x(x), y(y), z(z) {
-	}
+    }
 
     Vertex(
         uint16_t s, uint16_t t,
         float u, float v, float w,
         float x, float y, float z
     ): s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
-	}
+    }
 
     Vertex(
         uint8_t r, uint8_t g, uint8_t b, uint8_t a,
@@ -62,7 +62,7 @@ struct Vertex {
         float u, float v, float w,
         float x, float y, float z
     ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
-	}
+    }
 
 };
 
@@ -82,6 +82,13 @@ public:
         const I &start,
         const I &end
     ): mPrimitive(primitive), mVertices(start, end) {
+    }
+
+    template <typename A>
+    Model(
+        uint32_t primitive,
+        const A &array
+    ): mPrimitive(primitive), mVertices(std::begin(array), std::end(array)) {
     }
 
     uint32_t getPrimitive() const {

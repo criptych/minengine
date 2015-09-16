@@ -73,10 +73,38 @@ namespace std {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef GL_VERSION_1_1
+# define GL_POINTS 0x0000
+# define GL_LINES 0x0001
+# define GL_LINE_LOOP 0x0002
+# define GL_LINE_STRIP 0x0003
+# define GL_TRIANGLES 0x0004
+# define GL_TRIANGLE_STRIP 0x0005
+# define GL_TRIANGLE_FAN 0x0006
+# define GL_QUADS 0x0007
+# define GL_QUAD_STRIP 0x0008
+# define GL_POLYGON 0x0009
+#endif
+
+sf::Vector3f normalize(const sf::Vector3f &v) {
+    float length = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+
+    if (length == 0) {
+        return v;
+    } else {
+        return v * (1.0f / length);
+    }
+}
+
+sf::Vector3f cross(const sf::Vector3f &a, const sf::Vector3f &b) {
+    return sf::Vector3f(a.y * b.z - a.z * b.y,
+                        a.z * b.x - a.x * b.z,
+                        a.x * b.y - a.y * b.x);
+}
+
 void Model::calcNormals(bool smooth) {
     switch (mPrimitive)
     {
-        /*
         case GL_TRIANGLES:
         {
             break;
@@ -95,19 +123,24 @@ void Model::calcNormals(bool smooth) {
         case GL_QUADS:
         {
             for (size_t i = 0; i < mVertices.size(); i += 4) {
-                sf::Vector3f p[4] = {
-                    { mVertices[i+0].x, mVertices[i+0].y, mVertices[i+0].z },
-                    { mVertices[i+1].x, mVertices[i+1].y, mVertices[i+1].z },
-                    { mVertices[i+2].x, mVertices[i+2].y, mVertices[i+2].z },
-                    { mVertices[i+3].x, mVertices[i+3].y, mVertices[i+3].z },
-                };
+                sf::Vector3f p[4], n[4];
 
-                sf::Vector3f n[4] = {
-                    norm(cross(p[1]-p[0], p[3]-p[0])),
-                    norm(cross(p[2]-p[1], p[0]-p[1])),
-                    norm(cross(p[3]-p[2], p[1]-p[2])),
-                    norm(cross(p[0]-p[3], p[2]-p[3])),
-                };
+                for (size_t j = 0; j < 4; j++) {
+                    p[j] = sf::Vector3f(mVertices[i+j].x,
+                                        mVertices[i+j].y,
+                                        mVertices[i+j].z);
+                }
+
+                for (size_t j = 0; j < 4; j++) {
+                    n[j] = normalize(cross(p[(j+1)&3]-p[(j+0)&3],
+                                           p[(j-1)&3]-p[(j-0)&3]));
+                }
+
+                for (size_t j = 0; j < 4; j++) {
+                    mVertices[i+j].u = n[j].x;
+                    mVertices[i+j].v = n[j].y;
+                    mVertices[i+j].w = n[j].z;
+                }
             }
             break;
         }
@@ -116,7 +149,6 @@ void Model::calcNormals(bool smooth) {
         {
             break;
         }
-        */
     }
 }
 

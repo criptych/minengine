@@ -15,7 +15,7 @@ ENDIF()
 ################################################################################
 
 FIND_PACKAGE(SFML 2.2 REQUIRED COMPONENTS system window graphics audio network)
-FIND_PACKAGE(GLEW 1.7 REQUIRED)
+FIND_PACKAGE(GLEW 1.13 REQUIRED)
 
 INCLUDE_DIRECTORIES(${SFML_INCLUDE_DIR} ${GLEW_INCLUDE_DIR})
 

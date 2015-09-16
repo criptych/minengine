@@ -55,15 +55,39 @@ public:
         m[ 3] = a30; m[ 7] = a31; m[11] = a32; m[15] = a33;
     }
 
+    Transform3D& combine(const sf::Transform& transform)
+    {
+        const float *a = getMatrix();
+        const float *b = transform.getMatrix();
+
+        *this = Transform3D(a[ 0] * b[ 0] + a[ 4] * b[ 1] + a[ 8] * b[ 2] + a[12] * b[ 3],
+                            a[ 0] * b[ 4] + a[ 4] * b[ 5] + a[ 8] * b[ 6] + a[12] * b[ 7],
+                            a[ 0] * b[ 8] + a[ 4] * b[ 9] + a[ 8] * b[10] + a[12] * b[11],
+                            a[ 0] * b[12] + a[ 4] * b[13] + a[ 8] * b[14] + a[12] * b[15],
+                            a[ 1] * b[ 0] + a[ 5] * b[ 1] + a[ 9] * b[ 2] + a[13] * b[ 3],
+                            a[ 1] * b[ 4] + a[ 5] * b[ 5] + a[ 9] * b[ 6] + a[13] * b[ 7],
+                            a[ 1] * b[ 8] + a[ 5] * b[ 9] + a[ 9] * b[10] + a[13] * b[11],
+                            a[ 1] * b[12] + a[ 5] * b[13] + a[ 9] * b[14] + a[13] * b[15],
+                            a[ 2] * b[ 0] + a[ 6] * b[ 1] + a[10] * b[ 2] + a[14] * b[ 3],
+                            a[ 2] * b[ 4] + a[ 6] * b[ 5] + a[10] * b[ 6] + a[14] * b[ 7],
+                            a[ 2] * b[ 8] + a[ 6] * b[ 9] + a[10] * b[10] + a[14] * b[11],
+                            a[ 2] * b[12] + a[ 6] * b[13] + a[10] * b[14] + a[14] * b[15],
+                            a[ 3] * b[ 0] + a[ 7] * b[ 1] + a[11] * b[ 2] + a[15] * b[ 3],
+                            a[ 3] * b[ 4] + a[ 7] * b[ 5] + a[11] * b[ 6] + a[15] * b[ 7],
+                            a[ 3] * b[ 8] + a[ 7] * b[ 9] + a[11] * b[10] + a[15] * b[11],
+                            a[ 3] * b[12] + a[ 7] * b[13] + a[11] * b[14] + a[15] * b[15]);
+
+        return *this;
+    }
+
     Transform3D &frustum(float left, float right, float bottom, float top, float near, float far) {
-        Transform3D t(
+        Transform3D transform(
             (2 * near) / (right - left), 0.0f, (right + left) / (right - left), 0.0f,
             0.0f, (2 * near) / (top - bottom), (top + bottom) / (top - bottom), 0.0f,
             0.0f, 0.0f, (near + far) / (near - far), (2 * near * far) / (near - far),
-            0.0f, 0.0f, -1.0f, 0.0f
-        );
-        combine(t);
-        return *this;
+            0.0f, 0.0f, -1.0f, 0.0f);
+
+        return combine(transform);
     }
 
     Transform3D &perspective(float fov, float aspect, float near, float far) {
@@ -78,8 +102,7 @@ public:
                                 0, 0, 1, offset.z,
                                 0, 0, 0, 1);
 
-        combine(translation);
-        return *this;
+        return combine(translation);
     }
 };
 
@@ -131,6 +154,12 @@ public:
         mNeedsUpdate = true;
     }
 
+    void setZRange(float zNear, float zFar) {
+        mZNear = zNear;
+        mZFar = zFar;
+        mNeedsUpdate = true;
+    }
+
     void setPosition(const sf::Vector3f &position) {
         mPosition = position;
         mNeedsUpdate = true;
@@ -140,23 +169,19 @@ public:
         setPosition(sf::Vector3f(x, y, z));
     }
 
-    void update() const {
+    const Transform3D &getTransform() const {
         if (mNeedsUpdate) {
             mTransform = Transform3D();
             mTransform.perspective(mFOV, mAspect, mZNear, mZFar);
             mTransform.translate(-sf::Vector3f(mPosition));
             mNeedsUpdate = false;
         }
-    }
-
-    const Transform3D &getProjectionMatrix() const {
-        update();
         return mTransform;
     }
 
     void render() const {
         glMatrixMode(GL_PROJECTION);
-        glLoadMatrixf(getProjectionMatrix().getMatrix());
+        glLoadMatrixf(getTransform().getMatrix());
         glMatrixMode(GL_MODELVIEW);
     }
 };
@@ -280,15 +305,11 @@ int main(int argc, char **argv) {
     sf::Uint32 windowStyle(sf::Style::Default);
     sf::ContextSettings contextSettings;
 
-    sf::RenderWindow window(videoMode, L"MinEngine Client", windowStyle, contextSettings);
+    sf::Window window(videoMode, L"MinEngine Client", windowStyle, contextSettings);
 
     glewInit();
 
-    CameraRenderer camera; //(90.0, 16.0/9.0, 0.1, 100.0);
-    camera.setFOV(90.0);
-    camera.setAspect(16.0/9.0);
-    camera.setZNear(0.1);
-    camera.setZFar(100.0);
+    CameraRenderer camera(90.0f, 16.0f/9.0f, 0.1f, 100.0f);
     camera.setPosition(0.0, 0.0, 5.0);
     camera.render();
 
@@ -297,34 +318,40 @@ int main(int argc, char **argv) {
     sf::Shader shader;
     shader.loadFromFile("shaders/default.330.vert", "shaders/default.330.frag");
     shader.setParameter("uViewMatrix", sf::Transform::Identity);
-    shader.setParameter("uProjMatrix", camera.getProjectionMatrix());
+    shader.setParameter("uProjMatrix", camera.getTransform());
 
-    Model cubeModel(GL_QUADS);
-    cubeModel.addVertex(Vertex(0xff,0xff,0xff,0xff, 0xffff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,-1.0));
-    cubeModel.addVertex(Vertex(0xff,0xff,0xff,0xff, 0xffff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,+1.0));
-    cubeModel.addVertex(Vertex(0xff,0xff,0xff,0xff, 0x0000,0x0000, +1.0, 0.0, 0.0, +1.0,-1.0,+1.0));
-    cubeModel.addVertex(Vertex(0xff,0xff,0xff,0xff, 0x0000,0x0000, +1.0, 0.0, 0.0, +1.0,-1.0,-1.0));
-    cubeModel.addVertex(Vertex(0xff,0x00,0xff,0xff, 0x0000,0x0000, -1.0, 0.0, 0.0, -1.0,-1.0,-1.0));
-    cubeModel.addVertex(Vertex(0xff,0x00,0xff,0xff, 0x0000,0x0000, -1.0, 0.0, 0.0, -1.0,-1.0,+1.0));
-    cubeModel.addVertex(Vertex(0xff,0x00,0xff,0xff, 0xffff,0x0000, -1.0, 0.0, 0.0, -1.0,+1.0,+1.0));
-    cubeModel.addVertex(Vertex(0xff,0x00,0xff,0xff, 0xffff,0x0000, -1.0, 0.0, 0.0, -1.0,+1.0,-1.0));
-    cubeModel.addVertex(Vertex(0xff,0xff,0x00,0xff, 0x0000,0x0000,  0.0,+1.0, 0.0, -1.0,+1.0,-1.0));
-    cubeModel.addVertex(Vertex(0xff,0xff,0x00,0xff, 0x0000,0x0000,  0.0,+1.0, 0.0, -1.0,+1.0,+1.0));
-    cubeModel.addVertex(Vertex(0xff,0xff,0x00,0xff, 0xffff,0x0000,  0.0,+1.0, 0.0, +1.0,+1.0,+1.0));
-    cubeModel.addVertex(Vertex(0xff,0xff,0x00,0xff, 0xffff,0x0000,  0.0,+1.0, 0.0, +1.0,+1.0,-1.0));
-    cubeModel.addVertex(Vertex(0x00,0xff,0xff,0xff, 0xffff,0x0000,  0.0,-1.0, 0.0, +1.0,-1.0,-1.0));
-    cubeModel.addVertex(Vertex(0x00,0xff,0xff,0xff, 0xffff,0x0000,  0.0,-1.0, 0.0, +1.0,-1.0,+1.0));
-    cubeModel.addVertex(Vertex(0x00,0xff,0xff,0xff, 0x0000,0x0000,  0.0,-1.0, 0.0, -1.0,-1.0,+1.0));
-    cubeModel.addVertex(Vertex(0x00,0xff,0xff,0xff, 0x0000,0x0000,  0.0,-1.0, 0.0, -1.0,-1.0,-1.0));
-    cubeModel.addVertex(Vertex(0xff,0x00,0x00,0xff, 0xffff,0x0000,  0.0, 0.0,+1.0, +1.0,-1.0,+1.0));
-    cubeModel.addVertex(Vertex(0xff,0x00,0x00,0xff, 0xffff,0x0000,  0.0, 0.0,+1.0, +1.0,+1.0,+1.0));
-    cubeModel.addVertex(Vertex(0xff,0x00,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,+1.0, -1.0,+1.0,+1.0));
-    cubeModel.addVertex(Vertex(0xff,0x00,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,+1.0, -1.0,-1.0,+1.0));
-    cubeModel.addVertex(Vertex(0x00,0xff,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,-1.0, -1.0,-1.0,-1.0));
-    cubeModel.addVertex(Vertex(0x00,0xff,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,-1.0, -1.0,+1.0,-1.0));
-    cubeModel.addVertex(Vertex(0x00,0xff,0x00,0xff, 0xffff,0x0000,  0.0, 0.0,-1.0, +1.0,+1.0,-1.0));
-    cubeModel.addVertex(Vertex(0x00,0xff,0x00,0xff, 0xffff,0x0000,  0.0, 0.0,-1.0, +1.0,-1.0,-1.0));
+    Vertex cubeVerts[] = {
+        Vertex(0xff,0xff,0xff,0xff, 0xffff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,-1.0),
+        Vertex(0xff,0xff,0xff,0xff, 0xffff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,+1.0),
+        Vertex(0xff,0xff,0xff,0xff, 0x0000,0x0000, +1.0, 0.0, 0.0, +1.0,-1.0,+1.0),
+        Vertex(0xff,0xff,0xff,0xff, 0x0000,0x0000, +1.0, 0.0, 0.0, +1.0,-1.0,-1.0),
+        Vertex(0xff,0x00,0xff,0xff, 0x0000,0x0000, -1.0, 0.0, 0.0, -1.0,-1.0,-1.0),
+        Vertex(0xff,0x00,0xff,0xff, 0x0000,0x0000, -1.0, 0.0, 0.0, -1.0,-1.0,+1.0),
+        Vertex(0xff,0x00,0xff,0xff, 0xffff,0x0000, -1.0, 0.0, 0.0, -1.0,+1.0,+1.0),
+        Vertex(0xff,0x00,0xff,0xff, 0xffff,0x0000, -1.0, 0.0, 0.0, -1.0,+1.0,-1.0),
+        Vertex(0xff,0xff,0x00,0xff, 0x0000,0x0000,  0.0,+1.0, 0.0, -1.0,+1.0,-1.0),
+        Vertex(0xff,0xff,0x00,0xff, 0x0000,0x0000,  0.0,+1.0, 0.0, -1.0,+1.0,+1.0),
+        Vertex(0xff,0xff,0x00,0xff, 0xffff,0x0000,  0.0,+1.0, 0.0, +1.0,+1.0,+1.0),
+        Vertex(0xff,0xff,0x00,0xff, 0xffff,0x0000,  0.0,+1.0, 0.0, +1.0,+1.0,-1.0),
+        Vertex(0x00,0xff,0xff,0xff, 0xffff,0x0000,  0.0,-1.0, 0.0, +1.0,-1.0,-1.0),
+        Vertex(0x00,0xff,0xff,0xff, 0xffff,0x0000,  0.0,-1.0, 0.0, +1.0,-1.0,+1.0),
+        Vertex(0x00,0xff,0xff,0xff, 0x0000,0x0000,  0.0,-1.0, 0.0, -1.0,-1.0,+1.0),
+        Vertex(0x00,0xff,0xff,0xff, 0x0000,0x0000,  0.0,-1.0, 0.0, -1.0,-1.0,-1.0),
+        Vertex(0xff,0x00,0x00,0xff, 0xffff,0x0000,  0.0, 0.0,+1.0, +1.0,-1.0,+1.0),
+        Vertex(0xff,0x00,0x00,0xff, 0xffff,0x0000,  0.0, 0.0,+1.0, +1.0,+1.0,+1.0),
+        Vertex(0xff,0x00,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,+1.0, -1.0,+1.0,+1.0),
+        Vertex(0xff,0x00,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,+1.0, -1.0,-1.0,+1.0),
+        Vertex(0x00,0xff,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,-1.0, -1.0,-1.0,-1.0),
+        Vertex(0x00,0xff,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,-1.0, -1.0,+1.0,-1.0),
+        Vertex(0x00,0xff,0x00,0xff, 0xffff,0x0000,  0.0, 0.0,-1.0, +1.0,+1.0,-1.0),
+        Vertex(0x00,0xff,0x00,0xff, 0xffff,0x0000,  0.0, 0.0,-1.0, +1.0,-1.0,-1.0),
+    };
 
+    Model cubeModel(GL_QUADS, cubeVerts);
+
+    cubeModel.calcNormals();
+
+    //~ ModelRenderer cube(&cubeModel);
     ModelRenderer cube(&cubeModel, &shader);
 
     int spin = 0, spinSpeed = 32; // degrees/second
@@ -333,7 +360,8 @@ int main(int argc, char **argv) {
     GLChecked(glDepthMask(GL_TRUE));
     GLChecked(glDepthFunc(GL_LESS));
 
-    //~ GLChecked(glEnable(GL_CULL_FACE));
+    GLChecked(glEnable(GL_CULL_FACE));
+    //~ GLChecked(glCullFace(GL_FRONT_AND_BACK));
 
     GLChecked(glEnable(GL_COLOR_MATERIAL));
     GLChecked(glEnable(GL_LIGHTING));
@@ -345,6 +373,8 @@ int main(int argc, char **argv) {
     sf::Clock clock;
     sf::Time tickCount;
 
+    bool paused = false;
+
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -355,6 +385,10 @@ int main(int argc, char **argv) {
                 }
 
                 case sf::Event::Resized: {
+                    //~ window.setView(view);
+                    camera.setAspect(static_cast<float>(event.size.width)/
+                                     static_cast<float>(event.size.height));
+                    camera.render();
                     break;
                 }
 
@@ -367,12 +401,27 @@ int main(int argc, char **argv) {
                     break;
                 }
 
-                case sf::Event::KeyPressed:
+                case sf::Event::KeyPressed: {
+                    break;
+                }
+
                 case sf::Event::KeyReleased: {
 
                     /// @note for debugging
-                    if (event.key.code == sf::Keyboard::Escape) {
-                        window.close();
+                    switch (event.key.code) {
+                        case sf::Keyboard::Escape: {
+                            window.close();
+                            break;
+                        }
+
+                        case sf::Keyboard::Space: {
+                            paused = not paused;
+                            break;
+                        }
+
+                        default: {
+                            break;
+                        }
                     }
 
                     break;
@@ -439,7 +488,10 @@ int main(int argc, char **argv) {
                  * update blocks, entities, etc.
                  */
 
-                spin += tickLength.asSeconds() * spinSpeed;
+                if (not paused) {
+                    spin += tickLength.asSeconds() * spinSpeed;
+                }
+
                 frameTicks -= 1;
             }
         }
@@ -453,13 +505,34 @@ int main(int argc, char **argv) {
          *      render vbo
          */
 
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glClear(GL_COLOR_BUFFER_BIT);
+        // 3D setup
+
+        GLChecked(glEnable(GL_DEPTH_TEST));
+        GLChecked(glEnable(GL_CULL_FACE));
+        GLChecked(glEnable(GL_LIGHTING));
+        GLChecked(glEnable(GL_LIGHT0));
+        GLChecked(glEnable(GL_COLOR_MATERIAL));
+
+        // draw 3D scene
+
+        shader.setParameter("uProjMatrix", camera.getTransform());
+        camera.render();
+
         glPushMatrix();
         glRotated(std::sin(spin*PI/128.0)*30.0, 1.0,0.0,0.0);
         glRotated(spin*180.0/128.0, 0.0,1.0,0.0);
         cube.render();
         glPopMatrix();
+
+        // 2D setup
+
+        GLChecked(glDisable(GL_DEPTH_TEST));
+        GLChecked(glDisable(GL_CULL_FACE));
+        GLChecked(glDisable(GL_LIGHTING));
+
+        // draw 2D overlay
 
         window.display();
     }
