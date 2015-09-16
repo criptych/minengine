@@ -17,7 +17,7 @@ out vec4 vColor;
 void main() {
     vec4 vertex = uViewMatrix * vec4(aVertex,1);
     vec4 normal = uViewMatrix * vec4(aNormal,0);
-    gl_Position = cProjMatrix * vertex;
+    gl_Position = uProjMatrix * vertex;
     vVertex = vertex.xyz;
     vNormal = normalize(normal.xyz);
     vTexCoord = aTexCoord;

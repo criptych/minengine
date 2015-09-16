@@ -321,10 +321,10 @@ int main(int argc, char **argv) {
     shader.setParameter("uProjMatrix", camera.getTransform());
 
     Vertex cubeVerts[] = {
-        Vertex(0xff,0xff,0xff,0xff, 0xffff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,-1.0),
-        Vertex(0xff,0xff,0xff,0xff, 0xffff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,+1.0),
-        Vertex(0xff,0xff,0xff,0xff, 0x0000,0x0000, +1.0, 0.0, 0.0, +1.0,-1.0,+1.0),
-        Vertex(0xff,0xff,0xff,0xff, 0x0000,0x0000, +1.0, 0.0, 0.0, +1.0,-1.0,-1.0),
+        Vertex(0x00,0x00,0xff,0xff, 0xffff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,-1.0),
+        Vertex(0x00,0x00,0xff,0xff, 0xffff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,+1.0),
+        Vertex(0x00,0x00,0xff,0xff, 0x0000,0x0000, +1.0, 0.0, 0.0, +1.0,-1.0,+1.0),
+        Vertex(0x00,0x00,0xff,0xff, 0x0000,0x0000, +1.0, 0.0, 0.0, +1.0,-1.0,-1.0),
         Vertex(0xff,0x00,0xff,0xff, 0x0000,0x0000, -1.0, 0.0, 0.0, -1.0,-1.0,-1.0),
         Vertex(0xff,0x00,0xff,0xff, 0x0000,0x0000, -1.0, 0.0, 0.0, -1.0,-1.0,+1.0),
         Vertex(0xff,0x00,0xff,0xff, 0xffff,0x0000, -1.0, 0.0, 0.0, -1.0,+1.0,+1.0),
@@ -353,6 +353,8 @@ int main(int argc, char **argv) {
 
     //~ ModelRenderer cube(&cubeModel);
     ModelRenderer cube(&cubeModel, &shader);
+
+    Transform3D modelViewTransform;
 
     int spin = 0, spinSpeed = 32; // degrees/second
 
@@ -518,11 +520,16 @@ int main(int argc, char **argv) {
         // draw 3D scene
 
         shader.setParameter("uProjMatrix", camera.getTransform());
+        //~ shader.setParameter("uViewMatrix", modelViewTransform);
+
         camera.render();
 
         glPushMatrix();
         glRotated(std::sin(spin*PI/128.0)*30.0, 1.0,0.0,0.0);
         glRotated(spin*180.0/128.0, 0.0,1.0,0.0);
+        glGetFloatv(GL_MODELVIEW_MATRIX,
+            const_cast<float*>(modelViewTransform.getMatrix()));
+        shader.setParameter("uViewMatrix", modelViewTransform);
         cube.render();
         glPopMatrix();
 
