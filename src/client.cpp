@@ -33,7 +33,9 @@ static inline void _GLCheck(const char *file, int line) {
     }
 }
 
-#define GLChecked(f) do{f;_GLCheck(__FILE__, __LINE__);}while(0)
+#define GLCheck() _GLCheck(__FILE__, __LINE__)
+
+#define GLChecked(f) (f,GLCheck())
 //~ #define GLChecked(f) f
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -151,6 +153,13 @@ public:
     Shader(): mProgram(), mNeedsUpdate() {
     }
 
+    ~Shader() {
+        if (mProgram) {
+            GLChecked(glDeleteProgram(mProgram));
+            mProgram = 0;
+        }
+    }
+
     bool loadFromFile(const std::string &vertSource, const std::string &fragSource) {
         sf::FileInputStream file;
 
@@ -160,7 +169,7 @@ public:
             file.read(source.data(), source.size());
             setVertexShaderSource(std::string(source.begin(), source.end()));
         } else {
-            sf::err() << "error opening \"" << vertSource << "\"\n";
+            std::fprintf(stderr, "error opening \"%s\"\n", vertSource.c_str());
             return false;
         }
 
@@ -170,7 +179,7 @@ public:
             file.read(source.data(), source.size());
             setFragmentShaderSource(std::string(source.begin(), source.end()));
         } else {
-            sf::err() << "error opening \"" << fragSource << "\"\n";
+            std::fprintf(stderr, "error opening \"%s\"\n", fragSource.c_str());
             return false;
         }
 
@@ -195,7 +204,9 @@ public:
     GLint getUniformLocation(const std::string &name) {
         GLint location = -1;
         auto i = mUniformLocations.find(name);
-        if (i == mUniformLocations.end()) {
+        if (i != mUniformLocations.end()) {
+            location = i->second;
+        } else {
             TempBinder binder(this);
             GLChecked(location = glGetUniformLocation(mProgram, name.c_str()));
             mUniformLocations[name] = location;
@@ -206,7 +217,9 @@ public:
     GLint getAttribLocation(const std::string &name) {
         GLint location = -1;
         auto i = mAttribLocations.find(name);
-        if (i == mAttribLocations.end()) {
+        if (i != mAttribLocations.end()) {
+            location = i->second;
+        } else {
             TempBinder binder(this);
             GLChecked(location = glGetAttribLocation(mProgram, name.c_str()));
             mAttribLocations[name] = location;
@@ -221,37 +234,44 @@ public:
 
     void setUniform(GLint location, int value) {
         TempBinder binder(this);
-        glUniform1i(location, value);
+        //~ std::fprintf(stderr, "setUniform(%d,int)\n", location);
+        GLChecked(glUniform1i(location, value));
     }
 
-    void setUniform(GLint location, sf::Vector2i value) {
+    void setUniform(GLint location, const sf::Vector2i &value) {
         TempBinder binder(this);
-        glUniform2i(location, value.x, value.y);
+        //~ std::fprintf(stderr, "setUniform(%d,vec2i)\n", location);
+        GLChecked(glUniform2i(location, value.x, value.y));
     }
 
-    void setUniform(GLint location, sf::Vector3i value) {
+    void setUniform(GLint location, const sf::Vector3i &value) {
         TempBinder binder(this);
-        glUniform3i(location, value.x, value.y, value.z);
+        //~ std::fprintf(stderr, "setUniform(%d,vec3i)\n", location);
+        GLChecked(glUniform3i(location, value.x, value.y, value.z));
     }
 
     void setUniform(GLint location, float value) {
         TempBinder binder(this);
-        glUniform1f(location, value);
+        //~ std::fprintf(stderr, "setUniform(%d,float)\n", location);
+        GLChecked(glUniform1f(location, value));
     }
 
-    void setUniform(GLint location, sf::Vector2f value) {
+    void setUniform(GLint location, const sf::Vector2f &value) {
         TempBinder binder(this);
-        glUniform2f(location, value.x, value.y);
+        //~ std::fprintf(stderr, "setUniform(%d,vec2)\n", location);
+        GLChecked(glUniform2f(location, value.x, value.y));
     }
 
-    void setUniform(GLint location, sf::Vector3f value) {
+    void setUniform(GLint location, const sf::Vector3f &value) {
         TempBinder binder(this);
-        glUniform3f(location, value.x, value.y, value.z);
+        //~ std::fprintf(stderr, "setUniform(%d,vec3)\n", location);
+        GLChecked(glUniform3f(location, value.x, value.y, value.z));
     }
 
-    void setUniform(GLint location, sf::Transform value) {
+    void setUniform(GLint location, const sf::Transform &value) {
         TempBinder binder(this);
-        glUniformMatrix4fv(location, 1, GL_FALSE, value.getMatrix());
+        //~ std::fprintf(stderr, "setUniform(%d,mat4)\n", location);
+        GLChecked(glUniformMatrix4fv(location, 1, GL_FALSE, value.getMatrix()));
     }
 
     void setUniform(const std::string &name, int value) {
@@ -287,14 +307,38 @@ public:
     }
 
 protected:
-    GLuint compile(GLenum shaderType, const std::string &source) const {
+    class ShaderCompileException {
+    public:
+        ShaderCompileException() {}
+        ShaderCompileException(const std::string &msg) {}
+    };
+
+    bool compile(GLenum shaderType, const std::string &source) const {
         GLuint shader;
         GLChecked(shader = glCreateShader(shaderType));
         const GLchar *sources[] = { source.data() };
         GLint lengths[] = { static_cast<GLint>(source.size()) };
         GLChecked(glShaderSource(shader, 1, sources, lengths));
         GLChecked(glCompileShader(shader));
-        return shader;
+
+        GLint logLength = 0;
+
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+        std::vector<char> log(logLength);
+        glGetShaderInfoLog(shader, log.size(), nullptr, log.data());
+        std::fprintf(stderr, "Shader compile log:\n%s\n", &log[0]);
+
+        GLint status = GL_FALSE;
+
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+
+        if (status) {
+            GLChecked(glAttachShader(mProgram, shader));
+        }
+
+        GLChecked(glDeleteShader(shader));
+
+        return status;
     }
 
     GLuint compile() const {
@@ -302,48 +346,75 @@ protected:
             GLChecked(glDeleteProgram(mProgram));
         }
 
-        GLChecked(mProgram = glCreateProgram());
-
-        if (!mVertSource.empty()) {
-            GLuint shader = compile(GL_VERTEX_SHADER, mVertSource);
-            GLChecked(glAttachShader(mProgram, shader));
-        }
-
-        if (!mGeomSource.empty()) {
-            GLuint shader = compile(GL_GEOMETRY_SHADER, mGeomSource);
-            GLChecked(glAttachShader(mProgram, shader));
-        }
-
-        if (!mFragSource.empty()) {
-            GLuint shader = compile(GL_FRAGMENT_SHADER, mFragSource);
-            GLChecked(glAttachShader(mProgram, shader));
-        }
-
-        for (auto i : mAttribLocations) {
-            GLChecked(glBindAttribLocation(mProgram, i.second, i.first.c_str()));
-        }
-
-        GLChecked(glLinkProgram(mProgram));
-
         mNeedsUpdate = false;
+
+        try {
+            GLChecked(mProgram = glCreateProgram());
+
+            if (!mVertSource.empty()) {
+                if (!compile(GL_VERTEX_SHADER, mVertSource)) {
+                    throw ShaderCompileException("vertex shader");
+                }
+            }
+
+            if (!mGeomSource.empty()) {
+                if (!compile(GL_GEOMETRY_SHADER, mGeomSource)) {
+                    throw ShaderCompileException("geometry shader");
+                }
+            }
+
+            if (!mFragSource.empty()) {
+                if (!compile(GL_FRAGMENT_SHADER, mFragSource)) {
+                    throw ShaderCompileException("fragment shader");
+                }
+            }
+
+            for (auto i : mAttribLocations) {
+                GLChecked(glBindAttribLocation(mProgram, i.second, i.first.c_str()));
+            }
+
+            GLChecked(glLinkProgram(mProgram));
+
+            GLint logLength = 0;
+
+            glGetProgramiv(mProgram, GL_INFO_LOG_LENGTH, &logLength);
+            std::vector<char> log(logLength);
+            glGetProgramInfoLog(mProgram, log.size(), nullptr, log.data());
+            std::fprintf(stderr, "Program link log:\n%s\n", &log[0]);
+
+            GLint status = GL_FALSE;
+
+            glGetProgramiv(mProgram, GL_LINK_STATUS, &status);
+
+            if (!status) {
+                throw ShaderCompileException("link program");
+            }
+        }
+
+        catch (ShaderCompileException&) {
+            GLChecked(glDeleteProgram(mProgram));
+            mProgram = 0;
+        }
 
         return mProgram;
     }
 
 public:
     static void bind(const Shader *shader) {
-        if (shader) {
-            if (shader->mNeedsUpdate) {
-                shader->compile();
+        if (shader != mBound) {
+            if (shader) {
+                if (shader->mNeedsUpdate) {
+                    shader->compile();
+                }
+
+                GLChecked(glUseProgram(shader->getProgramID()));
+
+            } else {
+                GLChecked(glUseProgram(0));
             }
 
-            GLChecked(glUseProgram(shader->getProgramID()));
-
-        } else {
-            GLChecked(glUseProgram(0));
+            mBound = shader;
         }
-
-        mBound = shader;
     }
 
 private:
@@ -441,9 +512,9 @@ public:
     }
 
     void render() const {
-        glMatrixMode(GL_PROJECTION);
-        glLoadMatrixf(getTransform().getMatrix());
-        glMatrixMode(GL_MODELVIEW);
+        GLChecked(glMatrixMode(GL_PROJECTION));
+        GLChecked(glLoadMatrixf(getTransform().getMatrix()));
+        GLChecked(glMatrixMode(GL_MODELVIEW));
     }
 };
 
@@ -454,17 +525,11 @@ class ModelRenderer {
     const Shader *mShader;
     mutable GLuint mVBO;
 
-    mutable GLint mPositionAttrib;
-    mutable GLint mNormalAttrib;
-    mutable GLint mTexCoordAttrib;
-    mutable GLint mColorAttrib;
-
 public:
     ModelRenderer(
         const Model *model = nullptr,
         const Shader *shader = nullptr
-    ): mModel(model), mShader(shader), mVBO(), mPositionAttrib(-1),
-    mNormalAttrib(-1), mTexCoordAttrib(-1), mColorAttrib(-1) {
+    ): mModel(model), mShader(shader), mVBO() {
     }
 
     ~ModelRenderer() {
@@ -491,38 +556,21 @@ public:
 
             if (mShader) {
                 Shader::bind(mShader);
-
-                if (mPositionAttrib < 0) {
-                    mPositionAttrib = glGetAttribLocation(mShader->getProgramID(), "aVertex");
-                    sf::err() << "mPositionAttrib = " << mPositionAttrib << "\n";
-                }
-                if (mNormalAttrib < 0) {
-                    mNormalAttrib = glGetAttribLocation(mShader->getProgramID(), "aNormal");
-                    sf::err() << "mNormalAttrib = " << mNormalAttrib << "\n";
-                }
-                if (mTexCoordAttrib < 0) {
-                    mTexCoordAttrib = glGetAttribLocation(mShader->getProgramID(), "aTexCoord");
-                    sf::err() << "mTexCoordAttrib = " << mTexCoordAttrib << "\n";
-                }
-                if (mColorAttrib < 0) {
-                    mColorAttrib = glGetAttribLocation(mShader->getProgramID(), "aColor");
-                    sf::err() << "mColorAttrib = " << mColorAttrib << "\n";
-                }
             }
 
             GLChecked(glBindBuffer(GL_ARRAY_BUFFER, mVBO));
 
 #define SizeAndOffset(T, F) sizeof(T), reinterpret_cast<void*>(offsetof(T, F))
 
-            GLChecked(glVertexAttribPointer(mPositionAttrib, 3, GL_FLOAT, GL_FALSE, SizeAndOffset(Vertex, x)));
-            GLChecked(glVertexAttribPointer(mNormalAttrib, 3, GL_FLOAT, GL_TRUE,  SizeAndOffset(Vertex, u)));
-            GLChecked(glVertexAttribPointer(mTexCoordAttrib, 2, GL_SHORT, GL_FALSE, SizeAndOffset(Vertex, s)));
-            GLChecked(glVertexAttribPointer(mColorAttrib, 4, GL_UNSIGNED_BYTE, GL_TRUE, SizeAndOffset(Vertex, r)));
+            GLChecked(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, SizeAndOffset(Vertex, x)));
+            GLChecked(glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE,  SizeAndOffset(Vertex, u)));
+            GLChecked(glVertexAttribPointer(2, 2, GL_SHORT, GL_TRUE,  SizeAndOffset(Vertex, s)));
+            GLChecked(glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, SizeAndOffset(Vertex, r)));
 
-            GLChecked(glEnableVertexAttribArray(mPositionAttrib));
-            GLChecked(glEnableVertexAttribArray(mNormalAttrib));
-            GLChecked(glEnableVertexAttribArray(mTexCoordAttrib));
-            GLChecked(glEnableVertexAttribArray(mColorAttrib));
+            GLChecked(glEnableVertexAttribArray(0));
+            GLChecked(glEnableVertexAttribArray(1));
+            GLChecked(glEnableVertexAttribArray(2));
+            GLChecked(glEnableVertexAttribArray(3));
 
             GLChecked(glVertexPointer(3, GL_FLOAT, SizeAndOffset(Vertex, x)));
             GLChecked(glNormalPointer(GL_FLOAT, SizeAndOffset(Vertex, u)));
@@ -599,7 +647,7 @@ int main(int argc, char **argv) {
     camera.setPosition(0.0, 0.0, 5.0);
     //~ camera.render();
 
-    glLoadIdentity();
+    GLChecked(glLoadIdentity());
 
     Transform3D modelViewTransform;
 
@@ -607,9 +655,12 @@ int main(int argc, char **argv) {
 
     if (!
         shader.loadFromFile("shaders/default.330.vert", "shaders/default.330.frag")
-        //~ shader.loadFromFile("shaders/default.120.vert", "shaders/default.120.frag")
     ) {
-        return -1;
+        if (!
+            shader.loadFromFile("shaders/default.120.vert", "shaders/default.120.frag")
+        ) {
+            return -1;
+        }
     }
 
     shader.bindAttribLocation("aVertex",   0);
@@ -626,30 +677,30 @@ int main(int argc, char **argv) {
     shader.setUniform("uProjMatrix", camera.getTransform());
 
     Vertex cubeVerts[] = {
-        Vertex(0x00,0x00,0xff,0xff, 0xffff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,-1.0),
-        Vertex(0x00,0x00,0xff,0xff, 0xffff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,+1.0),
-        Vertex(0x00,0x00,0xff,0xff, 0x0000,0x0000, +1.0, 0.0, 0.0, +1.0,-1.0,+1.0),
+        Vertex(0x00,0x00,0xff,0xff, 0x7fff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,-1.0),
+        Vertex(0x00,0x00,0xff,0xff, 0x7fff,0x7fff, +1.0, 0.0, 0.0, +1.0,+1.0,+1.0),
+        Vertex(0x00,0x00,0xff,0xff, 0x0000,0x7fff, +1.0, 0.0, 0.0, +1.0,-1.0,+1.0),
         Vertex(0x00,0x00,0xff,0xff, 0x0000,0x0000, +1.0, 0.0, 0.0, +1.0,-1.0,-1.0),
         Vertex(0xff,0x00,0xff,0xff, 0x0000,0x0000, -1.0, 0.0, 0.0, -1.0,-1.0,-1.0),
-        Vertex(0xff,0x00,0xff,0xff, 0x0000,0x0000, -1.0, 0.0, 0.0, -1.0,-1.0,+1.0),
-        Vertex(0xff,0x00,0xff,0xff, 0xffff,0x0000, -1.0, 0.0, 0.0, -1.0,+1.0,+1.0),
-        Vertex(0xff,0x00,0xff,0xff, 0xffff,0x0000, -1.0, 0.0, 0.0, -1.0,+1.0,-1.0),
+        Vertex(0xff,0x00,0xff,0xff, 0x0000,0x7fff, -1.0, 0.0, 0.0, -1.0,-1.0,+1.0),
+        Vertex(0xff,0x00,0xff,0xff, 0x7fff,0x7fff, -1.0, 0.0, 0.0, -1.0,+1.0,+1.0),
+        Vertex(0xff,0x00,0xff,0xff, 0x7fff,0x0000, -1.0, 0.0, 0.0, -1.0,+1.0,-1.0),
         Vertex(0xff,0xff,0x00,0xff, 0x0000,0x0000,  0.0,+1.0, 0.0, -1.0,+1.0,-1.0),
-        Vertex(0xff,0xff,0x00,0xff, 0x0000,0x0000,  0.0,+1.0, 0.0, -1.0,+1.0,+1.0),
-        Vertex(0xff,0xff,0x00,0xff, 0xffff,0x0000,  0.0,+1.0, 0.0, +1.0,+1.0,+1.0),
-        Vertex(0xff,0xff,0x00,0xff, 0xffff,0x0000,  0.0,+1.0, 0.0, +1.0,+1.0,-1.0),
-        Vertex(0x00,0xff,0xff,0xff, 0xffff,0x0000,  0.0,-1.0, 0.0, +1.0,-1.0,-1.0),
-        Vertex(0x00,0xff,0xff,0xff, 0xffff,0x0000,  0.0,-1.0, 0.0, +1.0,-1.0,+1.0),
-        Vertex(0x00,0xff,0xff,0xff, 0x0000,0x0000,  0.0,-1.0, 0.0, -1.0,-1.0,+1.0),
+        Vertex(0xff,0xff,0x00,0xff, 0x0000,0x7fff,  0.0,+1.0, 0.0, -1.0,+1.0,+1.0),
+        Vertex(0xff,0xff,0x00,0xff, 0x7fff,0x7fff,  0.0,+1.0, 0.0, +1.0,+1.0,+1.0),
+        Vertex(0xff,0xff,0x00,0xff, 0x7fff,0x0000,  0.0,+1.0, 0.0, +1.0,+1.0,-1.0),
+        Vertex(0x00,0xff,0xff,0xff, 0x7fff,0x0000,  0.0,-1.0, 0.0, +1.0,-1.0,-1.0),
+        Vertex(0x00,0xff,0xff,0xff, 0x7fff,0x7fff,  0.0,-1.0, 0.0, +1.0,-1.0,+1.0),
+        Vertex(0x00,0xff,0xff,0xff, 0x0000,0x7fff,  0.0,-1.0, 0.0, -1.0,-1.0,+1.0),
         Vertex(0x00,0xff,0xff,0xff, 0x0000,0x0000,  0.0,-1.0, 0.0, -1.0,-1.0,-1.0),
-        Vertex(0xff,0x00,0x00,0xff, 0xffff,0x0000,  0.0, 0.0,+1.0, +1.0,-1.0,+1.0),
-        Vertex(0xff,0x00,0x00,0xff, 0xffff,0x0000,  0.0, 0.0,+1.0, +1.0,+1.0,+1.0),
-        Vertex(0xff,0x00,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,+1.0, -1.0,+1.0,+1.0),
+        Vertex(0xff,0x00,0x00,0xff, 0x7fff,0x0000,  0.0, 0.0,+1.0, +1.0,-1.0,+1.0),
+        Vertex(0xff,0x00,0x00,0xff, 0x7fff,0x7fff,  0.0, 0.0,+1.0, +1.0,+1.0,+1.0),
+        Vertex(0xff,0x00,0x00,0xff, 0x0000,0x7fff,  0.0, 0.0,+1.0, -1.0,+1.0,+1.0),
         Vertex(0xff,0x00,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,+1.0, -1.0,-1.0,+1.0),
         Vertex(0x00,0xff,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,-1.0, -1.0,-1.0,-1.0),
-        Vertex(0x00,0xff,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,-1.0, -1.0,+1.0,-1.0),
-        Vertex(0x00,0xff,0x00,0xff, 0xffff,0x0000,  0.0, 0.0,-1.0, +1.0,+1.0,-1.0),
-        Vertex(0x00,0xff,0x00,0xff, 0xffff,0x0000,  0.0, 0.0,-1.0, +1.0,-1.0,-1.0),
+        Vertex(0x00,0xff,0x00,0xff, 0x0000,0x7fff,  0.0, 0.0,-1.0, -1.0,+1.0,-1.0),
+        Vertex(0x00,0xff,0x00,0xff, 0x7fff,0x7fff,  0.0, 0.0,-1.0, +1.0,+1.0,-1.0),
+        Vertex(0x00,0xff,0x00,0xff, 0x7fff,0x0000,  0.0, 0.0,-1.0, +1.0,-1.0,-1.0),
     };
 
     Model cubeModel(GL_QUADS, cubeVerts);
@@ -659,7 +710,7 @@ int main(int argc, char **argv) {
     //~ ModelRenderer cube(&cubeModel);
     ModelRenderer cube(&cubeModel, &shader);
 
-    int spin = 0, spinSpeed = 45; // degrees/second
+    float spin = 0, spinSpeed = 45; // degrees/second
 
     GLChecked(glEnable(GL_DEPTH_TEST));
     GLChecked(glDepthMask(GL_TRUE));
@@ -672,11 +723,13 @@ int main(int argc, char **argv) {
     GLChecked(glEnable(GL_LIGHTING));
     GLChecked(glEnable(GL_LIGHT0));
 
-    const sf::Time tickLength(sf::microseconds(50000));
+    const sf::Time tickLength(sf::microseconds(20000)); // 50000
     const unsigned int maxFrameTicks = 5;
 
     sf::Clock clock;
     sf::Time tickCount;
+
+    sf::Time playTime;
 
     bool paused = false;
 
@@ -779,18 +832,20 @@ int main(int argc, char **argv) {
             }
         }
 
-        tickCount += clock.restart();
+        sf::Time delta = clock.restart();
+        playTime += delta;
+        tickCount += delta;
 
         unsigned int frameTicks = maxFrameTicks;
 
         while (tickCount >= tickLength) {
             tickCount -= tickLength;
             if (frameTicks > 0) {
-                //~ engine.tick();
-
                 /*
                  * update blocks, entities, etc.
                  */
+
+                //~ engine.tick();
 
                 if (not paused) {
                     spin += tickLength.asSeconds() * spinSpeed;
@@ -800,14 +855,14 @@ int main(int argc, char **argv) {
             }
         }
 
-        //~ render(engine)
-
         /*
          * for each visible chunk:
          *      create vbo
          *      convert blocks to polys
          *      render vbo
          */
+
+        //~ render(engine)
 
         GLChecked(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
@@ -823,20 +878,21 @@ int main(int argc, char **argv) {
 
         // draw 3D scene
 
-        camera.render();
+        //~ camera.render();
 
         modelViewTransform = Transform3D();
         modelViewTransform.rotate(std::sin(spin*PI/180.0f)*30.0f,
                                   sf::Vector3f(1.0f,0.0f,0.0f));
         modelViewTransform.rotate(spin, sf::Vector3f(0.0f,1.0f,0.0f));
 
+        shader.setUniform("uTime", playTime.asSeconds());
         shader.setUniform("uProjMatrix", camera.getTransform());
         shader.setUniform("uViewMatrix", modelViewTransform);
 
-        GLChecked(glPushMatrix());
-        GLChecked(glLoadMatrixf(modelViewTransform.getMatrix()));
+        //~ GLChecked(glPushMatrix());
+        //~ GLChecked(glLoadMatrixf(modelViewTransform.getMatrix()));
         cube.render();
-        GLChecked(glPopMatrix());
+        //~ GLChecked(glPopMatrix());
 
         // end 3D
 

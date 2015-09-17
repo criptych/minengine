@@ -5,10 +5,10 @@
 uniform mat4 uProjMatrix;
 uniform mat4 uViewMatrix;
 
-attribute vec3 aVertex;
-attribute vec3 aNormal;
-attribute vec2 aTexCoord;
-attribute vec4 aColor;
+in vec3 aVertex;
+in vec3 aNormal;
+in vec2 aTexCoord;
+in vec4 aColor;
 
 out vec3 vVertex;
 out vec3 vNormal;
