@@ -130,6 +130,245 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 
+class Shader {
+    mutable GLuint mProgram;
+    mutable bool mNeedsUpdate;
+
+    std::string mFragSource;
+    std::string mGeomSource;
+    std::string mVertSource;
+
+    std::map<std::string, GLint> mUniformLocations;
+    std::map<std::string, GLint> mAttribLocations;
+
+public:
+    enum class Type {
+        Fragment = 1,
+        Geometry = 2,
+        Vertex   = 4,
+    };
+
+    Shader(): mProgram(), mNeedsUpdate() {
+    }
+
+    bool loadFromFile(const std::string &vertSource, const std::string &fragSource) {
+        sf::FileInputStream file;
+
+        if (file.open(vertSource)) {
+            sf::Int64 size = file.getSize();
+            std::vector<char> source(size);
+            file.read(source.data(), source.size());
+            setVertexShaderSource(std::string(source.begin(), source.end()));
+        } else {
+            sf::err() << "error opening \"" << vertSource << "\"\n";
+            return false;
+        }
+
+        if (file.open(fragSource)) {
+            sf::Int64 size = file.getSize();
+            std::vector<char> source(size);
+            file.read(source.data(), source.size());
+            setFragmentShaderSource(std::string(source.begin(), source.end()));
+        } else {
+            sf::err() << "error opening \"" << fragSource << "\"\n";
+            return false;
+        }
+
+        return true;
+    }
+
+    void setFragmentShaderSource(const std::string &source) {
+        mFragSource = source;
+        mNeedsUpdate = true;
+    }
+
+    void setGeometryShaderSource(const std::string &source) {
+        mGeomSource = source;
+        mNeedsUpdate = true;
+    }
+
+    void setVertexShaderSource(const std::string &source) {
+        mVertSource = source;
+        mNeedsUpdate = true;
+    }
+
+    GLint getUniformLocation(const std::string &name) {
+        GLint location = -1;
+        auto i = mUniformLocations.find(name);
+        if (i == mUniformLocations.end()) {
+            TempBinder binder(this);
+            GLChecked(location = glGetUniformLocation(mProgram, name.c_str()));
+            mUniformLocations[name] = location;
+        }
+        return location;
+    }
+
+    GLint getAttribLocation(const std::string &name) {
+        GLint location = -1;
+        auto i = mAttribLocations.find(name);
+        if (i == mAttribLocations.end()) {
+            TempBinder binder(this);
+            GLChecked(location = glGetAttribLocation(mProgram, name.c_str()));
+            mAttribLocations[name] = location;
+        }
+        return location;
+    }
+
+    void bindAttribLocation(const std::string &name, GLint location) {
+        mAttribLocations[name] = location;
+        mNeedsUpdate = true;
+    }
+
+    void setUniform(GLint location, int value) {
+        TempBinder binder(this);
+        glUniform1i(location, value);
+    }
+
+    void setUniform(GLint location, sf::Vector2i value) {
+        TempBinder binder(this);
+        glUniform2i(location, value.x, value.y);
+    }
+
+    void setUniform(GLint location, sf::Vector3i value) {
+        TempBinder binder(this);
+        glUniform3i(location, value.x, value.y, value.z);
+    }
+
+    void setUniform(GLint location, float value) {
+        TempBinder binder(this);
+        glUniform1f(location, value);
+    }
+
+    void setUniform(GLint location, sf::Vector2f value) {
+        TempBinder binder(this);
+        glUniform2f(location, value.x, value.y);
+    }
+
+    void setUniform(GLint location, sf::Vector3f value) {
+        TempBinder binder(this);
+        glUniform3f(location, value.x, value.y, value.z);
+    }
+
+    void setUniform(GLint location, sf::Transform value) {
+        TempBinder binder(this);
+        glUniformMatrix4fv(location, 1, GL_FALSE, value.getMatrix());
+    }
+
+    void setUniform(const std::string &name, int value) {
+        return setUniform(getUniformLocation(name), value);
+    }
+
+    void setUniform(const std::string &name, const sf::Vector2i &value) {
+        return setUniform(getUniformLocation(name), value);
+    }
+
+    void setUniform(const std::string &name, const sf::Vector3i &value) {
+        return setUniform(getUniformLocation(name), value);
+    }
+
+    void setUniform(const std::string &name, float value) {
+        return setUniform(getUniformLocation(name), value);
+    }
+
+    void setUniform(const std::string &name, const sf::Vector2f &value) {
+        return setUniform(getUniformLocation(name), value);
+    }
+
+    void setUniform(const std::string &name, const sf::Vector3f &value) {
+        return setUniform(getUniformLocation(name), value);
+    }
+
+    void setUniform(const std::string &name, const sf::Transform &value) {
+        return setUniform(getUniformLocation(name), value);
+    }
+
+    GLuint getProgramID() const {
+        return mProgram;
+    }
+
+protected:
+    GLuint compile(GLenum shaderType, const std::string &source) const {
+        GLuint shader;
+        GLChecked(shader = glCreateShader(shaderType));
+        const GLchar *sources[] = { source.data() };
+        GLint lengths[] = { static_cast<GLint>(source.size()) };
+        GLChecked(glShaderSource(shader, 1, sources, lengths));
+        GLChecked(glCompileShader(shader));
+        return shader;
+    }
+
+    GLuint compile() const {
+        if (mProgram) {
+            GLChecked(glDeleteProgram(mProgram));
+        }
+
+        GLChecked(mProgram = glCreateProgram());
+
+        if (!mVertSource.empty()) {
+            GLuint shader = compile(GL_VERTEX_SHADER, mVertSource);
+            GLChecked(glAttachShader(mProgram, shader));
+        }
+
+        if (!mGeomSource.empty()) {
+            GLuint shader = compile(GL_GEOMETRY_SHADER, mGeomSource);
+            GLChecked(glAttachShader(mProgram, shader));
+        }
+
+        if (!mFragSource.empty()) {
+            GLuint shader = compile(GL_FRAGMENT_SHADER, mFragSource);
+            GLChecked(glAttachShader(mProgram, shader));
+        }
+
+        for (auto i : mAttribLocations) {
+            GLChecked(glBindAttribLocation(mProgram, i.second, i.first.c_str()));
+        }
+
+        GLChecked(glLinkProgram(mProgram));
+
+        mNeedsUpdate = false;
+
+        return mProgram;
+    }
+
+public:
+    static void bind(const Shader *shader) {
+        if (shader) {
+            if (shader->mNeedsUpdate) {
+                shader->compile();
+            }
+
+            GLChecked(glUseProgram(shader->getProgramID()));
+
+        } else {
+            GLChecked(glUseProgram(0));
+        }
+
+        mBound = shader;
+    }
+
+private:
+    static const Shader *mBound;
+
+    class TempBinder {
+        const Shader *mOldShader;
+
+    public:
+        TempBinder(Shader *shader = nullptr): mOldShader(mBound) {
+            if (shader) {
+                Shader::bind(shader);
+            }
+        }
+
+        ~TempBinder() {
+            Shader::bind(mOldShader);
+        }
+    };
+};
+
+const Shader *Shader::mBound = nullptr;
+
+////////////////////////////////////////////////////////////////////////////////
+
 class CameraRenderer {
     float mFOV;
     float mAspect;
@@ -208,9 +447,11 @@ public:
     }
 };
 
+////////////////////////////////////////////////////////////////////////////////
+
 class ModelRenderer {
     const Model *mModel;
-    const sf::Shader *mShader;
+    const Shader *mShader;
     mutable GLuint mVBO;
 
     mutable GLint mPositionAttrib;
@@ -221,7 +462,7 @@ class ModelRenderer {
 public:
     ModelRenderer(
         const Model *model = nullptr,
-        const sf::Shader *shader = nullptr
+        const Shader *shader = nullptr
     ): mModel(model), mShader(shader), mVBO(), mPositionAttrib(-1),
     mNormalAttrib(-1), mTexCoordAttrib(-1), mColorAttrib(-1) {
     }
@@ -235,7 +476,7 @@ public:
         mModel = model;
     }
 
-    void setShader(const sf::Shader *shader) {
+    void setShader(const Shader *shader) {
         mShader = shader;
     }
 
@@ -249,22 +490,22 @@ public:
             }
 
             if (mShader) {
-                sf::Shader::bind(mShader);
+                Shader::bind(mShader);
 
                 if (mPositionAttrib < 0) {
-                    mPositionAttrib = glGetAttribLocation(mShader->getNativeHandle(), "aVertex");
+                    mPositionAttrib = glGetAttribLocation(mShader->getProgramID(), "aVertex");
                     sf::err() << "mPositionAttrib = " << mPositionAttrib << "\n";
                 }
                 if (mNormalAttrib < 0) {
-                    mNormalAttrib = glGetAttribLocation(mShader->getNativeHandle(), "aNormal");
+                    mNormalAttrib = glGetAttribLocation(mShader->getProgramID(), "aNormal");
                     sf::err() << "mNormalAttrib = " << mNormalAttrib << "\n";
                 }
                 if (mTexCoordAttrib < 0) {
-                    mTexCoordAttrib = glGetAttribLocation(mShader->getNativeHandle(), "aTexCoord");
+                    mTexCoordAttrib = glGetAttribLocation(mShader->getProgramID(), "aTexCoord");
                     sf::err() << "mTexCoordAttrib = " << mTexCoordAttrib << "\n";
                 }
                 if (mColorAttrib < 0) {
-                    mColorAttrib = glGetAttribLocation(mShader->getNativeHandle(), "aColor");
+                    mColorAttrib = glGetAttribLocation(mShader->getProgramID(), "aColor");
                     sf::err() << "mColorAttrib = " << mColorAttrib << "\n";
                 }
             }
@@ -299,7 +540,7 @@ public:
             GLChecked(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
             if (mShader) {
-                sf::Shader::bind(nullptr);
+                Shader::bind(nullptr);
             }
         }
     }
@@ -325,132 +566,6 @@ private:
             mVBO = 0;
         }
     }
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-class Shader {
-    GLuint mProgram;
-
-    std::string mFragSource;
-    std::string mGeomSource;
-    std::string mVertSource;
-
-    std::map<std::string, GLint> mUniformLocations;
-    std::map<std::string, GLint> mAttribLocations;
-
-public:
-    enum class Type {
-        Fragment = 1,
-        Geometry = 2,
-        Vertex   = 4,
-    };
-
-    Shader(): mProgram() {
-    }
-
-    void setFragmentShaderSource(const std::string &source) {
-    }
-
-    void setGeometryShaderSource(const std::string &source) {
-    }
-
-    void setVertexShaderSource(const std::string &source) {
-    }
-
-    GLint getUniformLocation(const std::string &name) {
-        GLint location = -1;
-        auto i = mUniformLocations.find(name);
-        if (i == mUniformLocations.end()) {
-            location = glGetUniformLocation(mProgram, name.c_str());
-            mUniformLocations[name] = location;
-        }
-        return location;
-    }
-
-    GLint getAttribLocation(const std::string &name) {
-        return mAttribLocations[name];
-    }
-
-    void setUniform(const std::string &name, int value) {
-    }
-
-    void setUniform(const std::string &name, sf::Vector2i value) {
-    }
-
-    void setUniform(const std::string &name, sf::Vector3i value) {
-    }
-
-    void setUniform(const std::string &name, float value) {
-    }
-
-    void setUniform(const std::string &name, sf::Vector2f value) {
-    }
-
-    void setUniform(const std::string &name, sf::Vector3f value) {
-    }
-
-    void setUniform(const std::string &name, sf::Transform value) {
-    }
-
-    GLuint getProgramID() const {
-        return mProgram;
-    }
-
-protected:
-    GLuint compile(GLenum shaderType, const std::string &source) {
-        GLuint shader = glCreateShader(shaderType);
-        const GLchar *sources[] = { source.data() };
-        GLint lengths[] = { static_cast<GLint>(source.size()) };
-        glShaderSource(shader, 1, sources, lengths);
-        glCompileShader(shader);
-        return shader;
-    }
-
-    GLuint compile() {
-        if (mProgram) {
-            glDeleteProgram(mProgram);
-        }
-        mProgram = glCreateProgram();
-        if (!mVertSource.empty()) {
-            GLuint shader = compile(GL_VERTEX_SHADER, mVertSource);
-            glAttachShader(mProgram, shader);
-        }
-        if (!mGeomSource.empty()) {
-            GLuint shader = compile(GL_GEOMETRY_SHADER, mGeomSource);
-            glAttachShader(mProgram, shader);
-        }
-        if (!mFragSource.empty()) {
-            GLuint shader = compile(GL_FRAGMENT_SHADER, mFragSource);
-            glAttachShader(mProgram, shader);
-        }
-        glLinkProgram(mProgram);
-        return mProgram;
-    }
-
-public:
-    static void bind(Shader *shader) {
-        glUseProgram(shader ? shader->getProgramID() : 0);
-        mBound = shader;
-    }
-
-private:
-    static Shader *mBound;
-
-    class TempBinder {
-        Shader *mOldShader;
-
-    public:
-        TempBinder(Shader *shader = nullptr): mOldShader(mBound) {
-            if (shader) {
-                Shader::bind(shader);
-            }
-        }
-
-        ~TempBinder() {
-            Shader::bind(mOldShader);
-        }
-    };
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -488,7 +603,7 @@ int main(int argc, char **argv) {
 
     Transform3D modelViewTransform;
 
-    sf::Shader shader;
+    Shader shader;
 
     if (!
         shader.loadFromFile("shaders/default.330.vert", "shaders/default.330.frag")
@@ -497,13 +612,18 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    GLChecked(glBindAttribLocation(shader.getNativeHandle(), 0, "aVertex"));
-    GLChecked(glBindAttribLocation(shader.getNativeHandle(), 1, "aNormal"));
-    GLChecked(glBindAttribLocation(shader.getNativeHandle(), 2, "aTexCoord"));
-    GLChecked(glBindAttribLocation(shader.getNativeHandle(), 3, "aColor"));
+    shader.bindAttribLocation("aVertex",   0);
+    shader.bindAttribLocation("aNormal",   1);
+    shader.bindAttribLocation("aTexCoord", 2);
+    shader.bindAttribLocation("aColor",    3);
 
-    shader.setParameter("uViewMatrix", modelViewTransform);
-    shader.setParameter("uProjMatrix", camera.getTransform());
+    //~ GLChecked(glBindAttribLocation(shader.getProgramID(), 0, "aVertex"));
+    //~ GLChecked(glBindAttribLocation(shader.getProgramID(), 1, "aNormal"));
+    //~ GLChecked(glBindAttribLocation(shader.getProgramID(), 2, "aTexCoord"));
+    //~ GLChecked(glBindAttribLocation(shader.getProgramID(), 3, "aColor"));
+
+    shader.setUniform("uViewMatrix", modelViewTransform);
+    shader.setUniform("uProjMatrix", camera.getTransform());
 
     Vertex cubeVerts[] = {
         Vertex(0x00,0x00,0xff,0xff, 0xffff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,-1.0),
@@ -710,8 +830,8 @@ int main(int argc, char **argv) {
                                   sf::Vector3f(1.0f,0.0f,0.0f));
         modelViewTransform.rotate(spin, sf::Vector3f(0.0f,1.0f,0.0f));
 
-        shader.setParameter("uProjMatrix", camera.getTransform());
-        shader.setParameter("uViewMatrix", modelViewTransform);
+        shader.setUniform("uProjMatrix", camera.getTransform());
+        shader.setUniform("uViewMatrix", modelViewTransform);
 
         GLChecked(glPushMatrix());
         GLChecked(glLoadMatrixf(modelViewTransform.getMatrix()));
