@@ -26,14 +26,14 @@ void main () {
     float diffFactor = max(0, dot(vNormal, normalize(lightDir)));
     float specFactor = max(0, dot(vNormal, normalize(eyeDir+lightDir)));
 
-    vec4 diffTexCol = max(vec4(1.0,1.0,1.0,1.0), texture2D(uDiffMap, vTexCoord));
-    vec4 specTexCol = max(vec4(1.0,1.0,1.0,0.5), texture2D(uSpecMap, vTexCoord));
-    vec4 glowTexCol = max(vec4(0.0,0.0,0.0,1.0), texture2D(uGlowMap, vTexCoord));
+    vec4 diffTexCol = vec4(1.0,1.0,1.0,1.0); //texture2D(uDiffMap, vTexCoord);
+    vec4 specTexCol = vec4(1.0,1.0,1.0,0.2); //texture2D(uSpecMap, vTexCoord);
+    vec4 glowTexCol = vec4(0.0,0.0,0.0,1.0); //texture2D(uGlowMap, vTexCoord);
 
     vec4 ambtColor = uLightAmbt * diffTexCol * vColor;
     vec4 diffColor = uLightDiff * diffTexCol * vColor;
     vec4 specColor = uLightSpec * specTexCol;
-    float specPower = pow(2.0, 16.0*specTexCol.a);
+    float specPower = pow(10.0, 10.0*specTexCol.a);
     vec4 glowColor = glowTexCol * glowTexCol.a;
 
     fColor  = ambtColor;

@@ -642,6 +642,7 @@ int main(int argc, char **argv) {
 
     printf("chunk == %p, chunk->getData() == %p\n", chunk, chunk->getData());
 
+    bool fullscreen = false;
     sf::VideoMode videoMode(960, 540);
     sf::String windowTitle(L"MinEngine Client");
     sf::Uint32 windowStyle(sf::Style::Default);
@@ -649,40 +650,29 @@ int main(int argc, char **argv) {
 
     sf::Window window(videoMode, L"MinEngine Client", windowStyle, contextSettings);
 
+    sf::VideoMode desktopMode(sf::VideoMode::getDesktopMode());
+
+    std::fprintf(stderr, "Desktop mode: %dx%d %dbpp\n",
+                 desktopMode.width, desktopMode.height, desktopMode.bitsPerPixel);
+
     glewInit();
 
     CameraRenderer camera(90.0f, 16.0f/9.0f, 0.1f, 100.0f);
-    camera.setPosition(0.0, 0.0, 5.0);
+    camera.setPosition(0.0, 0.0, 3.0);
     //~ camera.render();
-
-    GLChecked(glLoadIdentity());
-
-    //~ Transform3D modelViewTransform;
 
     Shader shader;
 
     if (!
         shader.loadFromFile("shaders/default.330.vert", "shaders/default.330.frag")
     ) {
-        if (!
-            shader.loadFromFile("shaders/default.120.vert", "shaders/default.120.frag")
-        ) {
-            return -1;
-        }
+        return -1;
     }
 
     shader.bindAttribLocation("aVertex",   0);
     shader.bindAttribLocation("aNormal",   1);
     shader.bindAttribLocation("aTexCoord", 2);
     shader.bindAttribLocation("aColor",    3);
-
-    //~ GLChecked(glBindAttribLocation(shader.getProgramID(), 0, "aVertex"));
-    //~ GLChecked(glBindAttribLocation(shader.getProgramID(), 1, "aNormal"));
-    //~ GLChecked(glBindAttribLocation(shader.getProgramID(), 2, "aTexCoord"));
-    //~ GLChecked(glBindAttribLocation(shader.getProgramID(), 3, "aColor"));
-
-    //~ shader.setUniform("uViewMatrix", modelViewTransform);
-    //~ shader.setUniform("uProjMatrix", camera.getTransform());
 
     Vertex cubeVerts[] = {
         Vertex(0x00,0x00,0xff,0xff, 0x7fff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,-1.0),
@@ -728,13 +718,11 @@ int main(int argc, char **argv) {
     GLChecked(glDepthFunc(GL_LESS));
 
     GLChecked(glEnable(GL_CULL_FACE));
-    //~ GLChecked(glCullFace(GL_FRONT_AND_BACK));
-
     GLChecked(glEnable(GL_COLOR_MATERIAL));
     GLChecked(glEnable(GL_LIGHTING));
     GLChecked(glEnable(GL_LIGHT0));
 
-    const sf::Time tickLength(sf::microseconds(20000)); // 50000
+    const sf::Time tickLength(sf::microseconds(50000)); // 20000
     const unsigned int maxFrameTicks = 5;
 
     sf::Clock clock;
@@ -770,11 +758,6 @@ int main(int argc, char **argv) {
                 }
 
                 case sf::Event::KeyPressed: {
-                    break;
-                }
-
-                case sf::Event::KeyReleased: {
-
                     /// @note for debugging
                     switch (event.key.code) {
                         case sf::Keyboard::Escape: {
@@ -787,11 +770,27 @@ int main(int argc, char **argv) {
                             break;
                         }
 
+                        case sf::Keyboard::F11: {
+                            if (fullscreen) {
+                                window.create(videoMode, windowTitle, windowStyle, contextSettings);
+                            } else {
+                                window.create(desktopMode, windowTitle, windowStyle | sf::Style::Fullscreen, contextSettings);
+                            }
+
+                            fullscreen = !fullscreen;
+
+                            break;
+                        }
+
                         default: {
                             break;
                         }
                     }
 
+                    break;
+                }
+
+                case sf::Event::KeyReleased: {
                     break;
                 }
 
@@ -904,7 +903,8 @@ int main(int argc, char **argv) {
         Transform3D modelViewTransform;
         modelViewTransform.rotate(std::sin(spin*PI/180.0f)*30.0f,
                                   sf::Vector3f(1.0f,0.0f,0.0f));
-        modelViewTransform.rotate(spin, sf::Vector3f(0.0f,1.0f,0.0f));
+        modelViewTransform.rotate(spin,
+                                  sf::Vector3f(0.0f,1.0f,0.0f));
 
         shader.setUniform("uTime", playTime.asSeconds());
         shader.setUniform("uProjMatrix", projectionTransform);
