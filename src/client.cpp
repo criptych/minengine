@@ -446,13 +446,14 @@ class CameraRenderer {
     float mZNear;
     float mZFar;
     sf::Vector3f mPosition;
+    sf::Vector2f mLook;
 
     mutable Transform3D mTransform;
     mutable bool mNeedsUpdate;
 
 public:
     CameraRenderer(
-    ): mFOV(75.0), mAspect(1.0), mZNear(0.1), mZFar(100.0), mPosition(), mNeedsUpdate(true) {
+    ): mFOV(75.0), mAspect(1.0), mZNear(0.1), mZFar(100.0), mNeedsUpdate(true) {
     }
 
     CameraRenderer(
@@ -460,7 +461,7 @@ public:
         float aspect,
         float zNear,
         float zFar
-    ): mFOV(fov), mAspect(aspect), mZNear(zNear), mZFar(zFar), mPosition(), mNeedsUpdate(true) {
+    ): mFOV(fov), mAspect(aspect), mZNear(zNear), mZFar(zFar), mNeedsUpdate(true) {
     }
 
     ~CameraRenderer() {
@@ -501,10 +502,17 @@ public:
         setPosition(sf::Vector3f(x, y, z));
     }
 
+    void setLook(const sf::Vector2f &look) {
+        mLook = look;
+        mNeedsUpdate = true;
+    }
+
     const Transform3D &getTransform() const {
         if (mNeedsUpdate) {
             mTransform = Transform3D();
             mTransform.perspective(mFOV, mAspect, mZNear, mZFar);
+            mTransform.rotate(mLook.y, sf::Vector3f(1.0f, 0.0f, 0.0f));
+            mTransform.rotate(mLook.x, sf::Vector3f(0.0f, 1.0f, 0.0f));
             mTransform.translate(-sf::Vector3f(mPosition));
             mNeedsUpdate = false;
         }
@@ -649,7 +657,7 @@ int main(int argc, char **argv) {
 
     GLChecked(glLoadIdentity());
 
-    Transform3D modelViewTransform;
+    //~ Transform3D modelViewTransform;
 
     Shader shader;
 
@@ -673,8 +681,8 @@ int main(int argc, char **argv) {
     //~ GLChecked(glBindAttribLocation(shader.getProgramID(), 2, "aTexCoord"));
     //~ GLChecked(glBindAttribLocation(shader.getProgramID(), 3, "aColor"));
 
-    shader.setUniform("uViewMatrix", modelViewTransform);
-    shader.setUniform("uProjMatrix", camera.getTransform());
+    //~ shader.setUniform("uViewMatrix", modelViewTransform);
+    //~ shader.setUniform("uProjMatrix", camera.getTransform());
 
     Vertex cubeVerts[] = {
         Vertex(0x00,0x00,0xff,0xff, 0x7fff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,-1.0),
@@ -711,6 +719,9 @@ int main(int argc, char **argv) {
     ModelRenderer cube(&cubeModel, &shader);
 
     float spin = 0, spinSpeed = 45; // degrees/second
+
+    sf::Vector2i lastMousePos = sf::Mouse::getPosition(window);
+    sf::Vector2f look;
 
     GLChecked(glEnable(GL_DEPTH_TEST));
     GLChecked(glDepthMask(GL_TRUE));
@@ -795,6 +806,11 @@ int main(int argc, char **argv) {
                 }
 
                 case sf::Event::MouseMoved: {
+                    sf::Vector2i mousePos(event.mouseMove.x, event.mouseMove.y);
+                    sf::Vector2i mouseDelta = mousePos - lastMousePos;
+                    look.x += mouseDelta.x;
+                    look.y += mouseDelta.y;
+                    lastMousePos = mousePos;
                     break;
                 }
 
@@ -880,13 +896,18 @@ int main(int argc, char **argv) {
 
         //~ camera.render();
 
-        modelViewTransform = Transform3D();
+        camera.setLook(look);
+        Transform3D projectionTransform(camera.getTransform());
+        //~ projectionTransform.rotate(look.y, sf::Vector3f(1.0f, 0.0f, 0.0f));
+        //~ projectionTransform.rotate(look.x, sf::Vector3f(0.0f, 1.0f, 0.0f));
+
+        Transform3D modelViewTransform;
         modelViewTransform.rotate(std::sin(spin*PI/180.0f)*30.0f,
                                   sf::Vector3f(1.0f,0.0f,0.0f));
         modelViewTransform.rotate(spin, sf::Vector3f(0.0f,1.0f,0.0f));
 
         shader.setUniform("uTime", playTime.asSeconds());
-        shader.setUniform("uProjMatrix", camera.getTransform());
+        shader.setUniform("uProjMatrix", projectionTransform);
         shader.setUniform("uViewMatrix", modelViewTransform);
 
         //~ GLChecked(glPushMatrix());
