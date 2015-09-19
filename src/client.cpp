@@ -131,6 +131,25 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 
+class Transformable3D {
+    Transform3D mTransform;
+    sf::Vector3f mPosition;
+    sf::Vector3f mRotation;
+
+public:
+    Transformable3D() {
+    }
+
+    const Transform3D &getTransform() const {
+        if (mNeedsUpdate) {
+            mTransform = Transform3D();
+        }
+        return mTransform;
+    }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
 class Shader {
     mutable GLuint mProgram;
     mutable bool mNeedsUpdate;
@@ -721,6 +740,8 @@ int main(int argc, char **argv) {
     GLChecked(glEnable(GL_LIGHTING));
     GLChecked(glEnable(GL_LIGHT0));
 
+    GLChecked(glClearColor(0.200,0.267,0.333,0.0));
+
     const sf::Time tickLength(sf::microseconds(50000)); // 20000
     const unsigned int maxFrameTicks = 5;
 
@@ -900,7 +921,7 @@ int main(int argc, char **argv) {
         //~ projectionTransform.rotate(look.x, sf::Vector3f(0.0f, 1.0f, 0.0f));
 
         Transform3D modelViewTransform;
-        modelViewTransform.rotate(std::sin(spin*PI/180.0f)*30.0f,
+        modelViewTransform.rotate(std::sin(spin*PI/360.0f)*30.0f,
                                   sf::Vector3f(1.0f,0.0f,0.0f));
         modelViewTransform.rotate(spin,
                                   sf::Vector3f(0.0f,1.0f,0.0f));
