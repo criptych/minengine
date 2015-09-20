@@ -57,8 +57,17 @@ public:
         m[ 3] = a30; m[ 7] = a31; m[11] = a32; m[15] = a33;
     }
 
-    Transform3D& combine(const sf::Transform& transform)
-    {
+    Transform3D(const sf::Transform &transform) {
+        const float *a = transform.getMatrix();
+        float *b = const_cast<float*>(getMatrix());
+
+        b[ 0] = a[ 0]; b[ 4] = a[ 4]; b[ 8] = a[ 8]; b[12] = a[12];
+        b[ 1] = a[ 1]; b[ 5] = a[ 5]; b[ 9] = a[ 9]; b[13] = a[13];
+        b[ 2] = a[ 2]; b[ 6] = a[ 6]; b[10] = a[10]; b[14] = a[14];
+        b[ 3] = a[ 3]; b[ 7] = a[ 7]; b[11] = a[11]; b[15] = a[15];
+    }
+
+    Transform3D& combine(const sf::Transform& transform) {
         const float *a = getMatrix();
         const float *b = transform.getMatrix();
 
@@ -127,24 +136,43 @@ public:
 
         return combine(rotation);
     }
+
+    Transform3D getInverse() const {
+        //! @todo
+        return Transform3D();
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
 class Transformable3D {
-    Transform3D mTransform;
     sf::Vector3f mPosition;
     sf::Vector3f mRotation;
+    mutable Transform3D mTransform;
+    mutable Transform3D mInverseTransform;
+    mutable bool mNeedsUpdate;
+    mutable bool mInverseNeedsUpdate;
 
 public:
-    Transformable3D() {
+    Transformable3D(): mNeedsUpdate(true) {
     }
 
     const Transform3D &getTransform() const {
         if (mNeedsUpdate) {
             mTransform = Transform3D();
+
+            mNeedsUpdate = false;
         }
         return mTransform;
+    }
+
+    const Transform3D &getInverseTransform() const {
+        if (mInverseNeedsUpdate) {
+            mInverseTransform = mTransform.getInverse();
+
+            mInverseNeedsUpdate = false;
+        }
+        return mInverseTransform;
     }
 };
 
@@ -914,6 +942,15 @@ int main(int argc, char **argv) {
         // draw 3D scene
 
         //~ camera.render();
+
+        look.x = std::fmod(look.x + 180.0f, 360.0f) - 180.0f;
+
+        if (look.y > 89.9f) {
+            look.y = 89.9f;
+        }
+        if (look.y < -89.9f) {
+            look.y = -89.9f;
+        }
 
         camera.setLook(look);
         Transform3D projectionTransform(camera.getTransform());
