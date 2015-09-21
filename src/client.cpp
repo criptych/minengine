@@ -548,6 +548,16 @@ public:
         setPosition(sf::Vector3f(x, y, z));
     }
 
+    void move(const sf::Vector3f &offset) {
+        setPosition(mPosition.x + offset.x,
+                    mPosition.y + offset.y,
+                    mPosition.z + offset.z);
+    }
+
+    void move(float dx, float dy, float dz) {
+        move(sf::Vector3f(dx, dy, dz));
+    }
+
     void setLook(const sf::Vector2f &look) {
         mLook = look;
         mNeedsUpdate = true;
@@ -704,7 +714,7 @@ int main(int argc, char **argv) {
     glewInit();
 
     CameraRenderer camera(90.0f, 16.0f/9.0f, 0.1f, 100.0f);
-    camera.setPosition(0.0, 0.0, 3.0);
+    camera.setPosition(0.0, 0.0, 5.0);
     //~ camera.render();
 
     Shader shader;
@@ -872,16 +882,62 @@ int main(int argc, char **argv) {
                 }
 
                 case sf::Event::JoystickMoved: {
+                    if (std::fabs(event.joystickMove.position) >= 10.0f) {
+                        fprintf(stderr, "%d:%d: %.2f\n",
+                                event.joystickMove.joystickId,
+                                event.joystickMove.axis,
+                                event.joystickMove.position);
+                        switch (event.joystickMove.axis) {
+                            case sf::Joystick::X: {
+                                camera.move(event.joystickMove.position*0.01,0,0);
+                                break;
+                            }
+                            case sf::Joystick::Y: {
+                                camera.move(0,0,event.joystickMove.position*0.01);
+                                break;
+                            }
+                            //~ case sf::Joystick::Z: {
+                                //~ break;
+                            //~ }
+                            //~ case sf::Joystick::R: {
+                                //~ break;
+                            //~ }
+                            case sf::Joystick::U: {
+                                break;
+                            }
+                            case sf::Joystick::V: {
+                                break;
+                            }
+                            //~ case sf::Joystick::PovX: {
+                                //~ break;
+                            //~ }
+                            //~ case sf::Joystick::PovY: {
+                                //~ break;
+                            //~ }
+                            default: {
+                                break;
+                            }
+                        }
+                    }
                     break;
                 }
 
-                case sf::Event::JoystickConnected:
+                case sf::Event::JoystickConnected: {
+                    break;
+                }
+
                 case sf::Event::JoystickDisconnected: {
                     break;
                 }
 
-                case sf::Event::TouchBegan:
-                case sf::Event::TouchMoved:
+                case sf::Event::TouchBegan: {
+                    break;
+                }
+
+                case sf::Event::TouchMoved: {
+                    break;
+                }
+
                 case sf::Event::TouchEnded: {
                     break;
                 }

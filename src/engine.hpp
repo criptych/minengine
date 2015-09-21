@@ -329,6 +329,25 @@ typedef uint16_t PacketSize;
  * Packet types 0-127 (0x00-0x7f) are reserved for internal use.
  * Packet types 128-255 (0x80-0xff) are available for custom implementations,
  * and are ignored by the default/internal handler.
+ *
+ * Parameters
+ * -----
+ *
+ *  All multi-byte values are in network/big-endian order
+ *
+ *  Types:
+ *      "int8" - signed 8-bit integer
+ *      "uint8" - unsigned 8-bit integer
+ *      "int16" - signed 16-bit integer
+ *      "uint16" - unsigned 16-bit integer
+ *      "int32" - signed 32-bit integer
+ *      "uint32" - unsigned 32-bit integer
+ *      "int64" - signed 64-bit integer
+ *      "uint64" - unsigned 64-bit integer
+ *      "string" - NUL-terminated UTF-8 string with uint16 prefix
+ *              (length in bytes, including NUL)
+ *      "type[]" - array of 'type' with varying length, usually prefixed
+ *              (so 'string' may be represented: uint16, uint8[])
  */
 enum class PacketType : uint8_t {
     /* string (message) */
@@ -340,7 +359,8 @@ enum class PacketType : uint8_t {
     /* (no payload) */
     ServerInformationRequest,
 
-    /* uint32 (num players), uint32 (max players), string (info message) */
+    /* uint32 (num players), uint32 (max players), uint32 (reserved flags),
+     * string (info message) */
     ServerInformationResponse,
 
     /* string (player name) */
@@ -369,8 +389,14 @@ enum class PacketType : uint8_t {
     /* (no payload) */
     PlayerSpawn,
 
+    /* uint16 (width), uint16 (height), uint32 (size), uint8[] (data)
+     *      if size != width * height, data is deflate-compressed
+     *      (uncompressed) data is in RGBA format, starting at 0,0
+     *      skin image layout is described elsewhere */
+    PlayerSkin,
+
     /* int64 (x), int64 (y), int64 (z), int8 (pitch), int8 (yaw) */
-    PlayerLocationRotation,
+    PlayerMoveTo,
 
     /* int16 (dx), int16 (dy), int16 (dz) */
     PlayerMove,
@@ -382,7 +408,7 @@ enum class PacketType : uint8_t {
     EntitySpawn,
 
     /* uint64 (id), int64 (x), int64 (y), int64 (z), int8 (pitch), int8 (yaw) */
-    EntityLocationRotation,
+    EntityMoveTo,
 
     /* uint64 (id), int16 (dx), int16 (dy), int16 (dz) */
     EntityMove,
