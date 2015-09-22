@@ -1,4 +1,5 @@
 #version 330
+#extension all : warn
 
 //~ #error
 

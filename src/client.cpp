@@ -278,67 +278,67 @@ public:
         mNeedsUpdate = true;
     }
 
-    void setUniform(GLint location, int value) {
+    void setParameter(GLint location, int value) {
         TempBinder binder(this);
         GLChecked(glUniform1i(location, value));
     }
 
-    void setUniform(GLint location, const sf::Vector2i &value) {
+    void setParameter(GLint location, const sf::Vector2i &value) {
         TempBinder binder(this);
         GLChecked(glUniform2i(location, value.x, value.y));
     }
 
-    void setUniform(GLint location, const sf::Vector3i &value) {
+    void setParameter(GLint location, const sf::Vector3i &value) {
         TempBinder binder(this);
         GLChecked(glUniform3i(location, value.x, value.y, value.z));
     }
 
-    void setUniform(GLint location, float value) {
+    void setParameter(GLint location, float value) {
         TempBinder binder(this);
         GLChecked(glUniform1f(location, value));
     }
 
-    void setUniform(GLint location, const sf::Vector2f &value) {
+    void setParameter(GLint location, const sf::Vector2f &value) {
         TempBinder binder(this);
         GLChecked(glUniform2f(location, value.x, value.y));
     }
 
-    void setUniform(GLint location, const sf::Vector3f &value) {
+    void setParameter(GLint location, const sf::Vector3f &value) {
         TempBinder binder(this);
         GLChecked(glUniform3f(location, value.x, value.y, value.z));
     }
 
-    void setUniform(GLint location, const sf::Transform &value) {
+    void setParameter(GLint location, const sf::Transform &value) {
         TempBinder binder(this);
         GLChecked(glUniformMatrix4fv(location, 1, GL_FALSE, value.getMatrix()));
     }
 
-    void setUniform(const std::string &name, int value) {
-        return setUniform(getUniformLocation(name), value);
+    void setParameter(const std::string &name, int value) {
+        return setParameter(getUniformLocation(name), value);
     }
 
-    void setUniform(const std::string &name, const sf::Vector2i &value) {
-        return setUniform(getUniformLocation(name), value);
+    void setParameter(const std::string &name, const sf::Vector2i &value) {
+        return setParameter(getUniformLocation(name), value);
     }
 
-    void setUniform(const std::string &name, const sf::Vector3i &value) {
-        return setUniform(getUniformLocation(name), value);
+    void setParameter(const std::string &name, const sf::Vector3i &value) {
+        return setParameter(getUniformLocation(name), value);
     }
 
-    void setUniform(const std::string &name, float value) {
-        return setUniform(getUniformLocation(name), value);
+    void setParameter(const std::string &name, float value) {
+        return setParameter(getUniformLocation(name), value);
     }
 
-    void setUniform(const std::string &name, const sf::Vector2f &value) {
-        return setUniform(getUniformLocation(name), value);
+    void setParameter(const std::string &name, const sf::Vector2f &value) {
+        return setParameter(getUniformLocation(name), value);
     }
 
-    void setUniform(const std::string &name, const sf::Vector3f &value) {
-        return setUniform(getUniformLocation(name), value);
+    void setParameter(const std::string &name, const sf::Vector3f &value) {
+        return setParameter(getUniformLocation(name), value);
     }
 
-    void setUniform(const std::string &name, const sf::Transform &value) {
-        return setUniform(getUniformLocation(name), value);
+    void setParameter(const std::string &name, const sf::Transform &value) {
+        return setParameter(getUniformLocation(name), value);
     }
 
     GLuint getProgramID() const {
@@ -759,6 +759,8 @@ int main(int argc, char **argv) {
     shader.bindAttribLocation("aTexCoord", 2);
     shader.bindAttribLocation("aColor",    3);
 
+    shader.setParameter("uResolution", sf::Vector2f(window.getSize()));
+
     Vertex cubeVerts[24];
     makeBox(cubeVerts, sf::Vector3f(0,0,0), sf::Vector3f(0.5,0.5,0.5));
 
@@ -808,9 +810,10 @@ int main(int argc, char **argv) {
                 }
 
                 case sf::Event::Resized: {
-                    GLChecked(glViewport(0, 0, event.size.width, event.size.height));
-                    camera.setAspect(static_cast<float>(event.size.width) /
-                                     static_cast<float>(event.size.height));
+                    sf::Vector2f size(window.getSize());
+                    shader.setParameter("uResolution", size);
+                    GLChecked(glViewport(0, 0, size.x, size.y));
+                    camera.setAspect(size.x / size.y);
                     break;
                 }
 
@@ -845,6 +848,8 @@ int main(int argc, char **argv) {
                             } else {
                                 window.create(desktopMode, windowTitle, windowStyle | sf::Style::Fullscreen, contextSettings);
                             }
+
+                            GLChecked(glClearColor(0.200,0.267,0.333,0.0));
 
                             fullscreen = !fullscreen;
 
@@ -1060,8 +1065,8 @@ int main(int argc, char **argv) {
         //~ projectionTransform.rotate(look.y, sf::Vector3f(1.0f, 0.0f, 0.0f));
         //~ projectionTransform.rotate(look.x, sf::Vector3f(0.0f, 1.0f, 0.0f));
 
-        shader.setUniform("uTime", playTime.asSeconds());
-        shader.setUniform("uProjMatrix", projectionTransform);
+        shader.setParameter("uTime", playTime.asSeconds());
+        shader.setParameter("uProjMatrix", projectionTransform);
 
         Transform3D modelViewTransform;
         modelViewTransform.rotate(std::sin(spin*PI/360.0f)*30.0f,
@@ -1069,7 +1074,7 @@ int main(int argc, char **argv) {
         modelViewTransform.rotate(spin,
                                   sf::Vector3f(0.0f,1.0f,0.0f));
 
-        shader.setUniform("uViewMatrix", modelViewTransform);
+        shader.setParameter("uViewMatrix", modelViewTransform);
 
         //~ GLChecked(glPushMatrix());
         //~ GLChecked(glLoadMatrixf(modelViewTransform.getMatrix()));
@@ -1077,7 +1082,7 @@ int main(int argc, char **argv) {
         //~ GLChecked(glPopMatrix());
 
         modelViewTransform.translate(sf::Vector3f(1.0f,0.0f,0.0f));
-        shader.setUniform("uViewMatrix", modelViewTransform);
+        shader.setParameter("uViewMatrix", modelViewTransform);
         cube.render();
 
         // end 3D
