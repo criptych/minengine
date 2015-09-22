@@ -30,6 +30,25 @@ void main () {
     vec4 specTexCol = vec4(1.0,1.0,1.0,0.2); //texture2D(uSpecMap, vTexCoord);
     vec4 glowTexCol = vec4(0.0,0.0,0.0,1.0); //texture2D(uGlowMap, vTexCoord);
 
+
+
+    //~ float plasma = sin(vTexCoord.s*10+uTime);
+    //~ plasma += sin(10*(vTexCoord.s*cos(uTime/2)+vTexCoord.t*sin(uTime/3))+uTime);
+    //~ vec2 v = vec2(vTexCoord.s+0.5*cos(uTime/5),vTexCoord.t+0.5*sin(uTime/3));
+    //~ plasma += sin(sqrt(100*dot(v,v)+1+uTime+gl_FragCoord.z));
+    //~ plasma = sin(plasma)*0.5+0.5;
+
+    //~ fColor.rgb = sin(plasma*vec3(0.3,0.5,0.2))*0.5+0.5;
+    //~ fColor.rgb = vec3(sin(plasma)*0.5+0.5);
+
+    //~ fColor.rgb = vec3(dot(fColor.rgb, vec3(0.3,0.5,0.2)));
+
+    //~ fColor.rgb = fColor.rgb * 0.8 + plasma * 0.2;
+
+    //~ glowTexCol.g = plasma;
+
+
+
     vec4 ambtColor = uLightAmbt * diffTexCol * vColor;
     vec4 diffColor = uLightDiff * diffTexCol * vColor;
     vec4 specColor = uLightSpec * specTexCol;
@@ -47,17 +66,4 @@ void main () {
 
     //~ fColor.rgb = fColor.rgb * 0.8 + 0.2 * mod(gl_FragCoord.x*gl_FragCoord.y,2);
 
-    //~ float plasma = sin(vTexCoord.s*10+uTime);
-    //~ plasma += sin(10*(vTexCoord.s*cos(uTime/2)+vTexCoord.t*sin(uTime/3))+uTime);
-    //~ vec2 v = vec2(vTexCoord.s+0.5*cos(uTime/5),vTexCoord.t+0.5*sin(uTime/3));
-    //~ plasma += sin(sqrt(100*dot(v,v)+1+uTime+gl_FragCoord.z));
-
-    //~ plasma = sin(plasma)*0.5+0.5;
-
-    //~ fColor.rgb = sin(plasma*vec3(0.3,0.5,0.2))*0.5+0.5;
-    //~ fColor.rgb = vec3(sin(plasma)*0.5+0.5);
-
-    //~ fColor.rgb = vec3(dot(fColor.rgb, vec3(0.3,0.5,0.2)));
-
-    //~ fColor.rgb = fColor.rgb * 0.8 + plasma * 0.2;
 }
