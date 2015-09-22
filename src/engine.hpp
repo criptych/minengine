@@ -52,21 +52,25 @@ struct Vertex {
     float x, y, z;      // vertex
 
     Vertex(
+    ): r(255), g(255), b(255), a(255), s(), t(), u(), v(), w(), x(), y(), z() {
+    }
+
+    Vertex(
         float x, float y, float z
-    ): x(x), y(y), z(z) {
+    ): r(255), g(255), b(255), a(255), s(), t(), u(), v(), w(), x(x), y(y), z(z) {
     }
 
     Vertex(
         float u, float v, float w,
         float x, float y, float z
-    ): u(u), v(v), w(w), x(x), y(y), z(z) {
+    ): r(255), g(255), b(255), a(255), s(), t(), u(u), v(v), w(w), x(x), y(y), z(z) {
     }
 
     Vertex(
         uint16_t s, uint16_t t,
         float u, float v, float w,
         float x, float y, float z
-    ): s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
+    ): r(255), g(255), b(255), a(255), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
     }
 
     Vertex(

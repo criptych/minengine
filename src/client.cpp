@@ -682,6 +682,42 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void makeBox(Vertex *verts, const sf::Vector3f &center, const sf::Vector3f &size) {
+    sf::Vector3f mx = center + size;
+    sf::Vector3f mn = center - size;
+    size_t i = 0;
+    verts[i++] = Vertex(0x7fff,0x0000, +1.0, 0.0, 0.0, mx.x,mx.y,mn.z);
+    verts[i++] = Vertex(0x7fff,0x7fff, +1.0, 0.0, 0.0, mx.x,mx.y,mx.z);
+    verts[i++] = Vertex(0x0000,0x7fff, +1.0, 0.0, 0.0, mx.x,mn.y,mx.z);
+    verts[i++] = Vertex(0x0000,0x0000, +1.0, 0.0, 0.0, mx.x,mn.y,mn.z);
+    verts[i++] = Vertex(0x0000,0x0000, -1.0, 0.0, 0.0, mn.x,mn.y,mn.z);
+    verts[i++] = Vertex(0x0000,0x7fff, -1.0, 0.0, 0.0, mn.x,mn.y,mx.z);
+    verts[i++] = Vertex(0x7fff,0x7fff, -1.0, 0.0, 0.0, mn.x,mx.y,mx.z);
+    verts[i++] = Vertex(0x7fff,0x0000, -1.0, 0.0, 0.0, mn.x,mx.y,mn.z);
+    verts[i++] = Vertex(0x0000,0x0000,  0.0,+1.0, 0.0, mn.x,mx.y,mn.z);
+    verts[i++] = Vertex(0x0000,0x7fff,  0.0,+1.0, 0.0, mn.x,mx.y,mx.z);
+    verts[i++] = Vertex(0x7fff,0x7fff,  0.0,+1.0, 0.0, mx.x,mx.y,mx.z);
+    verts[i++] = Vertex(0x7fff,0x0000,  0.0,+1.0, 0.0, mx.x,mx.y,mn.z);
+    verts[i++] = Vertex(0x7fff,0x0000,  0.0,-1.0, 0.0, mx.x,mn.y,mn.z);
+    verts[i++] = Vertex(0x7fff,0x7fff,  0.0,-1.0, 0.0, mx.x,mn.y,mx.z);
+    verts[i++] = Vertex(0x0000,0x7fff,  0.0,-1.0, 0.0, mn.x,mn.y,mx.z);
+    verts[i++] = Vertex(0x0000,0x0000,  0.0,-1.0, 0.0, mn.x,mn.y,mn.z);
+    verts[i++] = Vertex(0x7fff,0x0000,  0.0, 0.0,+1.0, mx.x,mn.y,mx.z);
+    verts[i++] = Vertex(0x7fff,0x7fff,  0.0, 0.0,+1.0, mx.x,mx.y,mx.z);
+    verts[i++] = Vertex(0x0000,0x7fff,  0.0, 0.0,+1.0, mn.x,mx.y,mx.z);
+    verts[i++] = Vertex(0x0000,0x0000,  0.0, 0.0,+1.0, mn.x,mn.y,mx.z);
+    verts[i++] = Vertex(0x0000,0x0000,  0.0, 0.0,-1.0, mn.x,mn.y,mn.z);
+    verts[i++] = Vertex(0x0000,0x7fff,  0.0, 0.0,-1.0, mn.x,mx.y,mn.z);
+    verts[i++] = Vertex(0x7fff,0x7fff,  0.0, 0.0,-1.0, mx.x,mx.y,mn.z);
+    verts[i++] = Vertex(0x7fff,0x0000,  0.0, 0.0,-1.0, mx.x,mn.y,mn.z);
+}
+
+void makeBox(Vertex *verts) {
+    makeBox(verts, sf::Vector3f(0,0,0), sf::Vector3f(1,1,1));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 extern "C"
 int main(int argc, char **argv) {
 
@@ -730,32 +766,8 @@ int main(int argc, char **argv) {
     shader.bindAttribLocation("aTexCoord", 2);
     shader.bindAttribLocation("aColor",    3);
 
-    Vertex cubeVerts[] = {
-        Vertex(0x00,0x00,0xff,0xff, 0x7fff,0x0000, +1.0, 0.0, 0.0, +1.0,+1.0,-1.0),
-        Vertex(0x00,0x00,0xff,0xff, 0x7fff,0x7fff, +1.0, 0.0, 0.0, +1.0,+1.0,+1.0),
-        Vertex(0x00,0x00,0xff,0xff, 0x0000,0x7fff, +1.0, 0.0, 0.0, +1.0,-1.0,+1.0),
-        Vertex(0x00,0x00,0xff,0xff, 0x0000,0x0000, +1.0, 0.0, 0.0, +1.0,-1.0,-1.0),
-        Vertex(0xff,0x00,0xff,0xff, 0x0000,0x0000, -1.0, 0.0, 0.0, -1.0,-1.0,-1.0),
-        Vertex(0xff,0x00,0xff,0xff, 0x0000,0x7fff, -1.0, 0.0, 0.0, -1.0,-1.0,+1.0),
-        Vertex(0xff,0x00,0xff,0xff, 0x7fff,0x7fff, -1.0, 0.0, 0.0, -1.0,+1.0,+1.0),
-        Vertex(0xff,0x00,0xff,0xff, 0x7fff,0x0000, -1.0, 0.0, 0.0, -1.0,+1.0,-1.0),
-        Vertex(0xff,0xff,0x00,0xff, 0x0000,0x0000,  0.0,+1.0, 0.0, -1.0,+1.0,-1.0),
-        Vertex(0xff,0xff,0x00,0xff, 0x0000,0x7fff,  0.0,+1.0, 0.0, -1.0,+1.0,+1.0),
-        Vertex(0xff,0xff,0x00,0xff, 0x7fff,0x7fff,  0.0,+1.0, 0.0, +1.0,+1.0,+1.0),
-        Vertex(0xff,0xff,0x00,0xff, 0x7fff,0x0000,  0.0,+1.0, 0.0, +1.0,+1.0,-1.0),
-        Vertex(0x00,0xff,0xff,0xff, 0x7fff,0x0000,  0.0,-1.0, 0.0, +1.0,-1.0,-1.0),
-        Vertex(0x00,0xff,0xff,0xff, 0x7fff,0x7fff,  0.0,-1.0, 0.0, +1.0,-1.0,+1.0),
-        Vertex(0x00,0xff,0xff,0xff, 0x0000,0x7fff,  0.0,-1.0, 0.0, -1.0,-1.0,+1.0),
-        Vertex(0x00,0xff,0xff,0xff, 0x0000,0x0000,  0.0,-1.0, 0.0, -1.0,-1.0,-1.0),
-        Vertex(0xff,0x00,0x00,0xff, 0x7fff,0x0000,  0.0, 0.0,+1.0, +1.0,-1.0,+1.0),
-        Vertex(0xff,0x00,0x00,0xff, 0x7fff,0x7fff,  0.0, 0.0,+1.0, +1.0,+1.0,+1.0),
-        Vertex(0xff,0x00,0x00,0xff, 0x0000,0x7fff,  0.0, 0.0,+1.0, -1.0,+1.0,+1.0),
-        Vertex(0xff,0x00,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,+1.0, -1.0,-1.0,+1.0),
-        Vertex(0x00,0xff,0x00,0xff, 0x0000,0x0000,  0.0, 0.0,-1.0, -1.0,-1.0,-1.0),
-        Vertex(0x00,0xff,0x00,0xff, 0x0000,0x7fff,  0.0, 0.0,-1.0, -1.0,+1.0,-1.0),
-        Vertex(0x00,0xff,0x00,0xff, 0x7fff,0x7fff,  0.0, 0.0,-1.0, +1.0,+1.0,-1.0),
-        Vertex(0x00,0xff,0x00,0xff, 0x7fff,0x0000,  0.0, 0.0,-1.0, +1.0,-1.0,-1.0),
-    };
+    Vertex cubeVerts[24];
+    makeBox(cubeVerts, sf::Vector3f(0,0,0), sf::Vector3f(0.5,0.5,0.5));
 
     Model cubeModel(GL_QUADS, cubeVerts);
 
@@ -806,7 +818,10 @@ int main(int argc, char **argv) {
                     break;
                 }
 
-                case sf::Event::LostFocus:
+                case sf::Event::LostFocus: {
+                    break;
+                }
+
                 case sf::Event::GainedFocus: {
                     break;
                 }
@@ -852,12 +867,18 @@ int main(int argc, char **argv) {
                     break;
                 }
 
-                case sf::Event::MouseWheelMoved:
+                case sf::Event::MouseWheelMoved: {
+                    break;
+                }
+
                 case sf::Event::MouseWheelScrolled: {
                     break;
                 }
 
-                case sf::Event::MouseButtonPressed:
+                case sf::Event::MouseButtonPressed: {
+                    break;
+                }
+
                 case sf::Event::MouseButtonReleased: {
                     break;
                 }
@@ -871,12 +892,18 @@ int main(int argc, char **argv) {
                     break;
                 }
 
-                case sf::Event::MouseEntered:
+                case sf::Event::MouseEntered: {
+                    break;
+                }
+
                 case sf::Event::MouseLeft: {
                     break;
                 }
 
-                case sf::Event::JoystickButtonPressed:
+                case sf::Event::JoystickButtonPressed: {
+                    break;
+                }
+
                 case sf::Event::JoystickButtonReleased: {
                     break;
                 }
@@ -887,36 +914,45 @@ int main(int argc, char **argv) {
                                 event.joystickMove.joystickId,
                                 event.joystickMove.axis,
                                 event.joystickMove.position);
+
                         switch (event.joystickMove.axis) {
                             case sf::Joystick::X: {
-                                camera.move(event.joystickMove.position*0.01,0,0);
+                                camera.move(event.joystickMove.position*0.01f,0,0);
                                 break;
                             }
+
                             case sf::Joystick::Y: {
-                                camera.move(0,0,event.joystickMove.position*0.01);
+                                camera.move(0,0,event.joystickMove.position*0.01f);
                                 break;
                             }
-                            //~ case sf::Joystick::Z: {
-                                //~ break;
-                            //~ }
-                            //~ case sf::Joystick::R: {
-                                //~ break;
-                            //~ }
+
+                            case sf::Joystick::Z: {
+                                break;
+                            }
+
+                            case sf::Joystick::R: {
+                                break;
+                            }
+
                             case sf::Joystick::U: {
                                 break;
                             }
+
                             case sf::Joystick::V: {
                                 break;
                             }
-                            //~ case sf::Joystick::PovX: {
-                                //~ break;
-                            //~ }
-                            //~ case sf::Joystick::PovY: {
-                                //~ break;
-                            //~ }
-                            default: {
+
+                            case sf::Joystick::PovX: {
                                 break;
                             }
+
+                            case sf::Joystick::PovY: {
+                                break;
+                            }
+
+                            //~ default: {
+                                //~ break;
+                            //~ }
                         }
                     }
                     break;
@@ -947,7 +983,10 @@ int main(int argc, char **argv) {
                 }
 
                 // silence "enumeration value not handled" warning
-                case sf::Event::Count: break;
+                //~ case sf::Event::Count: break;
+                default: {
+                    break;
+                }
             }
         }
 
