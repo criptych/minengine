@@ -16,6 +16,7 @@
 #include <cinttypes>
 #include <cmath>
 
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/System.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,31 +47,39 @@ typedef sf::Vector2<Angle> Orientation;
 ////////////////////////////////////////////////////////////////////////////////
 
 struct Vertex {
-    uint8_t r, g, b, a; // color
-    uint16_t s, t;      // texcoord
-    float u, v, w;      // normal
-    float x, y, z;      // vertex
+    //~ uint8_t r, g, b, a; // color
+    //~ uint16_t s, t;      // texcoord
+    //~ float u, v, w;      // normal
+    //~ float x, y, z;      // vertex
+    sf::Color color;
+    sf::Vector2<sf::Int16> texCoord;
+    sf::Vector3f normal;
+    sf::Vector3f position;
 
     Vertex(
-    ): r(255), g(255), b(255), a(255), s(), t(), u(), v(), w(), x(), y(), z() {
+    //~ ): r(255), g(255), b(255), a(255), s(), t(), u(), v(), w(), x(), y(), z() {
+    ): color(255, 255, 255, 255) {
     }
 
     Vertex(
         float x, float y, float z
-    ): r(255), g(255), b(255), a(255), s(), t(), u(), v(), w(), x(x), y(y), z(z) {
+    //~ ): r(255), g(255), b(255), a(255), s(), t(), u(), v(), w(), x(x), y(y), z(z) {
+    ): color(255, 255, 255, 255), position(x, y, z) {
     }
 
     Vertex(
         float u, float v, float w,
         float x, float y, float z
-    ): r(255), g(255), b(255), a(255), s(), t(), u(u), v(v), w(w), x(x), y(y), z(z) {
+    //~ ): r(255), g(255), b(255), a(255), s(), t(), u(u), v(v), w(w), x(x), y(y), z(z) {
+    ): color(255, 255, 255, 255), normal(u, v, w), position(x, y, z) {
     }
 
     Vertex(
         uint16_t s, uint16_t t,
         float u, float v, float w,
         float x, float y, float z
-    ): r(255), g(255), b(255), a(255), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
+    //~ ): r(255), g(255), b(255), a(255), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
+    ): color(255, 255, 255, 255), texCoord(s, t), normal(u, v, w), position(x, y, z) {
     }
 
     Vertex(
@@ -78,7 +87,8 @@ struct Vertex {
         uint16_t s, uint16_t t,
         float u, float v, float w,
         float x, float y, float z
-    ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
+    //~ ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
+    ): color(r, g, b, a), texCoord(s, t), normal(u, v, w), position(x, y, z) {
     }
 
 };

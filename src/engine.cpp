@@ -126,9 +126,7 @@ void Model::calcNormals(bool smooth) {
                 sf::Vector3f p[4], n[4];
 
                 for (size_t j = 0; j < 4; j++) {
-                    p[j] = sf::Vector3f(mVertices[i+j].x,
-                                        mVertices[i+j].y,
-                                        mVertices[i+j].z);
+                    p[j] = mVertices[i+j].position;
                 }
 
                 for (size_t j = 0; j < 4; j++) {
@@ -137,9 +135,7 @@ void Model::calcNormals(bool smooth) {
                 }
 
                 for (size_t j = 0; j < 4; j++) {
-                    mVertices[i+j].u = n[j].x;
-                    mVertices[i+j].v = n[j].y;
-                    mVertices[i+j].w = n[j].z;
+                    mVertices[i+j].normal = n[j];
                 }
             }
             break;

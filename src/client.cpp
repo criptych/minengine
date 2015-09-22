@@ -280,43 +280,36 @@ public:
 
     void setUniform(GLint location, int value) {
         TempBinder binder(this);
-        //~ std::fprintf(stderr, "setUniform(%d,int)\n", location);
         GLChecked(glUniform1i(location, value));
     }
 
     void setUniform(GLint location, const sf::Vector2i &value) {
         TempBinder binder(this);
-        //~ std::fprintf(stderr, "setUniform(%d,vec2i)\n", location);
         GLChecked(glUniform2i(location, value.x, value.y));
     }
 
     void setUniform(GLint location, const sf::Vector3i &value) {
         TempBinder binder(this);
-        //~ std::fprintf(stderr, "setUniform(%d,vec3i)\n", location);
         GLChecked(glUniform3i(location, value.x, value.y, value.z));
     }
 
     void setUniform(GLint location, float value) {
         TempBinder binder(this);
-        //~ std::fprintf(stderr, "setUniform(%d,float)\n", location);
         GLChecked(glUniform1f(location, value));
     }
 
     void setUniform(GLint location, const sf::Vector2f &value) {
         TempBinder binder(this);
-        //~ std::fprintf(stderr, "setUniform(%d,vec2)\n", location);
         GLChecked(glUniform2f(location, value.x, value.y));
     }
 
     void setUniform(GLint location, const sf::Vector3f &value) {
         TempBinder binder(this);
-        //~ std::fprintf(stderr, "setUniform(%d,vec3)\n", location);
         GLChecked(glUniform3f(location, value.x, value.y, value.z));
     }
 
     void setUniform(GLint location, const sf::Transform &value) {
         TempBinder binder(this);
-        //~ std::fprintf(stderr, "setUniform(%d,mat4)\n", location);
         GLChecked(glUniformMatrix4fv(location, 1, GL_FALSE, value.getMatrix()));
     }
 
@@ -626,20 +619,20 @@ public:
 
 #define SizeAndOffset(T, F) sizeof(T), reinterpret_cast<void*>(offsetof(T, F))
 
-            GLChecked(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, SizeAndOffset(Vertex, x)));
-            GLChecked(glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE,  SizeAndOffset(Vertex, u)));
-            GLChecked(glVertexAttribPointer(2, 2, GL_SHORT, GL_TRUE,  SizeAndOffset(Vertex, s)));
-            GLChecked(glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, SizeAndOffset(Vertex, r)));
+            GLChecked(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, SizeAndOffset(Vertex, position)));
+            GLChecked(glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE,  SizeAndOffset(Vertex, normal)));
+            GLChecked(glVertexAttribPointer(2, 2, GL_SHORT, GL_TRUE,  SizeAndOffset(Vertex, texCoord)));
+            GLChecked(glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, SizeAndOffset(Vertex, color)));
 
             GLChecked(glEnableVertexAttribArray(0));
             GLChecked(glEnableVertexAttribArray(1));
             GLChecked(glEnableVertexAttribArray(2));
             GLChecked(glEnableVertexAttribArray(3));
 
-            GLChecked(glVertexPointer(3, GL_FLOAT, SizeAndOffset(Vertex, x)));
-            GLChecked(glNormalPointer(GL_FLOAT, SizeAndOffset(Vertex, u)));
-            GLChecked(glTexCoordPointer(2, GL_SHORT, SizeAndOffset(Vertex, s)));
-            GLChecked(glColorPointer(4, GL_UNSIGNED_BYTE, SizeAndOffset(Vertex, r)));
+            GLChecked(glVertexPointer(3, GL_FLOAT, SizeAndOffset(Vertex, position)));
+            GLChecked(glNormalPointer(GL_FLOAT, SizeAndOffset(Vertex, normal)));
+            GLChecked(glTexCoordPointer(2, GL_SHORT, SizeAndOffset(Vertex, texCoord)));
+            GLChecked(glColorPointer(4, GL_UNSIGNED_BYTE, SizeAndOffset(Vertex, color)));
 
             GLChecked(glEnableClientState(GL_VERTEX_ARRAY));
             GLChecked(glEnableClientState(GL_NORMAL_ARRAY));
@@ -738,7 +731,7 @@ int main(int argc, char **argv) {
     sf::VideoMode videoMode(960, 540);
     sf::String windowTitle(L"MinEngine Client");
     sf::Uint32 windowStyle(sf::Style::Default);
-    sf::ContextSettings contextSettings;
+    sf::ContextSettings contextSettings(24,8, 0, 3,3);
 
     sf::Window window(videoMode, L"MinEngine Client", windowStyle, contextSettings);
 
@@ -776,13 +769,16 @@ int main(int argc, char **argv) {
     //~ ModelRenderer cube(&cubeModel);
     ModelRenderer cube(&cubeModel, &shader);
 
+    //~ ModelRenderer cube(&cubeModel);
+    ModelRenderer cube2(&cubeModel, &shader);
+
     float spin = 0, spinSpeed = 45; // degrees/second
 
     sf::Vector2i lastMousePos = sf::Mouse::getPosition(window);
     sf::Vector2f look;
 
     GLChecked(glEnable(GL_DEPTH_TEST));
-    GLChecked(glDepthMask(GL_TRUE));
+    //~ GLChecked(glDepthMask(GL_TRUE));
     GLChecked(glDepthFunc(GL_LESS));
 
     GLChecked(glEnable(GL_CULL_FACE));
@@ -859,7 +855,6 @@ int main(int argc, char **argv) {
                             break;
                         }
                     }
-
                     break;
                 }
 
@@ -917,12 +912,12 @@ int main(int argc, char **argv) {
 
                         switch (event.joystickMove.axis) {
                             case sf::Joystick::X: {
-                                camera.move(event.joystickMove.position*0.01f,0,0);
+                                camera.move(event.joystickMove.position * 0.01f, 0, 0);
                                 break;
                             }
 
                             case sf::Joystick::Y: {
-                                camera.move(0,0,event.joystickMove.position*0.01f);
+                                camera.move(0, 0, event.joystickMove.position * 0.01f);
                                 break;
                             }
 
@@ -996,6 +991,19 @@ int main(int argc, char **argv) {
 
         unsigned int frameTicks = maxFrameTicks;
 
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+            camera.move(0,0,-delta.asSeconds());
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+            camera.move(0,0,delta.asSeconds());
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+            camera.move(-delta.asSeconds(),0,0);
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+            camera.move(delta.asSeconds(),0,0);
+        }
+
         while (tickCount >= tickLength) {
             tickCount -= tickLength;
             if (frameTicks > 0) {
@@ -1052,20 +1060,25 @@ int main(int argc, char **argv) {
         //~ projectionTransform.rotate(look.y, sf::Vector3f(1.0f, 0.0f, 0.0f));
         //~ projectionTransform.rotate(look.x, sf::Vector3f(0.0f, 1.0f, 0.0f));
 
+        shader.setUniform("uTime", playTime.asSeconds());
+        shader.setUniform("uProjMatrix", projectionTransform);
+
         Transform3D modelViewTransform;
         modelViewTransform.rotate(std::sin(spin*PI/360.0f)*30.0f,
                                   sf::Vector3f(1.0f,0.0f,0.0f));
         modelViewTransform.rotate(spin,
                                   sf::Vector3f(0.0f,1.0f,0.0f));
 
-        shader.setUniform("uTime", playTime.asSeconds());
-        shader.setUniform("uProjMatrix", projectionTransform);
         shader.setUniform("uViewMatrix", modelViewTransform);
 
         //~ GLChecked(glPushMatrix());
         //~ GLChecked(glLoadMatrixf(modelViewTransform.getMatrix()));
         cube.render();
         //~ GLChecked(glPopMatrix());
+
+        modelViewTransform.translate(sf::Vector3f(1.0f,0.0f,0.0f));
+        shader.setUniform("uViewMatrix", modelViewTransform);
+        cube.render();
 
         // end 3D
 
