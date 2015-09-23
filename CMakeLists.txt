@@ -31,17 +31,34 @@ ADD_LIBRARY(${GLEW_LIBRARY} lib/glew-1.13.0/src/glew.c)
 
 ################################################################################
 
-INCLUDE_DIRECTORIES(${SFML_INCLUDE_DIR})
+SET(ENGINE_SRCS
+    src/engine/engine.cpp
+)
 
-ADD_LIBRARY(engine src/engine.cpp)
+SET(CLIENT_SRCS
+    src/client/client.cpp
+    src/client/Shader.cpp
+)
 
-ADD_EXECUTABLE(client src/client.cpp)
+SET(SERVER_SRCS
+    src/server/server.cpp
+)
+
+################################################################################
+
+INCLUDE_DIRECTORIES(src/ ${SFML_INCLUDE_DIR})
+
+ADD_LIBRARY(engine ${ENGINE_SRCS})
+
+ADD_EXECUTABLE(client ${CLIENT_SRCS})
 SET_TARGET_PROPERTIES(client PROPERTIES VERSION ${PROJECT_VERSION})
 TARGET_LINK_LIBRARIES(client engine ${SFML_LIBRARIES} ${GLEW_LIBRARIES})
 
-ADD_EXECUTABLE(server src/server.cpp)
+ADD_EXECUTABLE(server ${SERVER_SRCS})
 SET_TARGET_PROPERTIES(server PROPERTIES VERSION ${PROJECT_VERSION})
 TARGET_LINK_LIBRARIES(server engine ${SFML_LIBRARIES})
+
+################################################################################
 
 ADD_EXECUTABLE(testmain test/testmain.cpp)
 TARGET_LINK_LIBRARIES(testmain engine)

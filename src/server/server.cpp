@@ -2,7 +2,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "engine.hpp"
+#include "engine/engine.hpp"
 
 #include <SFML/System.hpp>
 #include <SFML/Network.hpp>
