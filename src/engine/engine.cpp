@@ -8,9 +8,6 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static const long double Pi    = 3.141592653589793238462643383279;
-static const long double TwoPi = 6.283185307179586476925286766559;
-
 class TrigHelper {
     float sintbl[256];
     float tantbl[256];
@@ -23,23 +20,23 @@ public:
         }
     }
 
-    float deg(Angle x) {
+    float deg(int8_t x) {
         return x * (180.0 / 128.0);
     }
 
-    float rad(Angle x) {
+    float rad(int8_t x) {
         return x * (Pi / 128.0);
     }
 
-    float sin(Angle x) {
+    float sin(int8_t x) {
         return sintbl[(x & 255)];
     }
 
-    float cos(Angle x) {
+    float cos(int8_t x) {
         return sintbl[((64 - x) & 255)];
     }
 
-    float tan(Angle x) {
+    float tan(int8_t x) {
         //~ return sin(x)/cos(x);
         return tantbl[(x & 255)];
     }
@@ -47,6 +44,25 @@ public:
 };
 
 static TrigHelper sTrig;
+
+////////////////////////////////////////////////////////////////////////////////
+
+float Angle::sin() const {
+    return sTrig.sin(mValue);
+}
+
+float Angle::cos() const {
+    return sTrig.cos(mValue);
+}
+
+float Angle::tan() const {
+    return sTrig.tan(mValue);
+}
+
+void Angle::sincos(float &s, float &c) const {
+    s = sin();
+    c = cos();
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -86,27 +102,36 @@ namespace std {
 # define GL_POLYGON 0x0009
 #endif
 
-sf::Vector3f normalize(const sf::Vector3f &v) {
-    float length = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
-
-    if (length == 0) {
-        return v;
-    } else {
-        return v * (1.0f / length);
+void Model::calcNormals(size_t start, size_t end, bool smooth) {
+    if (end > mVertices.size()) {
+        end = mVertices.size();
     }
-}
+    if (start > end) {
+        return;
+    }
 
-sf::Vector3f cross(const sf::Vector3f &a, const sf::Vector3f &b) {
-    return sf::Vector3f(a.y * b.z - a.z * b.y,
-                        a.z * b.x - a.x * b.z,
-                        a.x * b.y - a.y * b.x);
-}
+    sf::err() << "start == " << start << ", end == " << end << "\n";
 
-void Model::calcNormals(bool smooth) {
     switch (mPrimitive)
     {
         case GL_TRIANGLES:
         {
+            for (size_t i = 0; i < mVertices.size(); i += 3) {
+                sf::Vector3f p[3], n[3];
+
+                for (size_t j = 0; j < 3; j++) {
+                    p[j] = mVertices[i+j].position;
+                }
+
+                for (size_t j = 0; j < 3; j++) {
+                    n[j] = normalize(cross(p[(j+1)%3]-p[(j+0)%3],
+                                           p[(j-1)%3]-p[(j-0)%3]));
+                }
+
+                for (size_t j = 0; j < 4; j++) {
+                    mVertices[i+j].normal = n[j];
+                }
+            }
             break;
         }
 
@@ -130,8 +155,8 @@ void Model::calcNormals(bool smooth) {
                 }
 
                 for (size_t j = 0; j < 4; j++) {
-                    n[j] = normalize(cross(p[(j+1)&3]-p[(j+0)&3],
-                                           p[(j-1)&3]-p[(j-0)&3]));
+                    n[j] = normalize(cross(p[(j+1)%4]-p[(j+0)%4],
+                                           p[(j-1)%4]-p[(j-0)%4]));
                 }
 
                 for (size_t j = 0; j < 4; j++) {

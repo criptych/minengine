@@ -36,13 +36,62 @@
 
 typedef uint64_t EntityID;
 
-typedef int64_t Coord;
-typedef int16_t Delta;
-typedef int8_t Angle;
+const long double Pi    = 3.141592653589793238462643383279;
+const long double TwoPi = 6.283185307179586476925286766559;
 
-typedef sf::Vector3<Coord> Position;
-typedef sf::Vector3<Delta> Velocity;
+class Angle {
+    int8_t mValue;
+
+    Angle(int8_t value): mValue(value) {}
+
+public:
+    Angle(): mValue() {}
+
+    float asDegrees() const {
+        return mValue * (180.0f / 128.0f);
+    }
+
+    float asRadians() const {
+        return mValue * (Pi / 128.0f);
+    }
+
+    int8_t asByte() const {
+        return mValue;
+    }
+
+    float sin() const;
+    float cos() const;
+    float tan() const;
+
+    void sincos(float &s, float &c) const;
+
+    static Angle fromDegrees(
+        float angle
+    ) {
+        return Angle(static_cast<int8_t>(angle * (128.0f / 180.0f)));
+    }
+
+    static Angle fromRadians(
+        float angle
+    ) {
+        return Angle(static_cast<int8_t>(angle * (128.0f / Pi)));
+    }
+
+    static Angle fromByte(
+        int8_t angle
+    ) {
+        return Angle(angle);
+    }
+};
+
+typedef int64_t Coord;
+typedef uint16_t Size;
+typedef int16_t Delta;
+
 typedef sf::Vector2<Angle> Orientation;
+typedef sf::Vector3<Coord> Position;
+typedef sf::Vector3<Size>  Dimension;
+typedef sf::Vector3<Delta> Velocity;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -58,20 +107,87 @@ struct Vertex {
 
     Vertex(
     //~ ): r(255), g(255), b(255), a(255), s(), t(), u(), v(), w(), x(), y(), z() {
-    ): color(255, 255, 255, 255) {
+    ): color(sf::Color::White) {
+    }
+
+    Vertex(
+        const sf::Vector3f &position
+    //~ ): r(255), g(255), b(255), a(255), s(), t(), u(), v(), w(), x(x), y(y), z(z) {
+    ): color(sf::Color::White), position(position) {
+    }
+
+    Vertex(
+        const sf::Vector3f &normal,
+        const sf::Vector3f &position
+    //~ ): r(255), g(255), b(255), a(255), s(), t(), u(u), v(v), w(w), x(x), y(y), z(z) {
+    ): color(sf::Color::White), normal(normal), position(position) {
+    }
+
+    Vertex(
+        const sf::Vector2<sf::Int16> &texCoord,
+        const sf::Vector3f &position
+    //~ ): r(255), g(255), b(255), a(255), s(), t(), u(u), v(v), w(w), x(x), y(y), z(z) {
+    ): color(sf::Color::White), texCoord(texCoord), position(position) {
+    }
+
+    Vertex(
+        const sf::Vector2<sf::Int16> &texCoord,
+        const sf::Vector3f &normal,
+        const sf::Vector3f &position
+    //~ ): r(255), g(255), b(255), a(255), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
+    ): color(sf::Color::White), texCoord(texCoord), normal(normal), position(position) {
+    }
+
+    Vertex(
+        const sf::Color &color,
+        const sf::Vector3f &position
+    //~ ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
+    ): color(color), position(position) {
+    }
+
+    Vertex(
+        const sf::Color &color,
+        const sf::Vector3f &normal,
+        const sf::Vector3f &position
+    //~ ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
+    ): color(color), normal(normal), position(position) {
+    }
+
+    Vertex(
+        const sf::Color &color,
+        const sf::Vector2<sf::Int16> &texCoord,
+        const sf::Vector3f &position
+    //~ ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
+    ): color(color), texCoord(texCoord), position(position) {
+    }
+
+    Vertex(
+        const sf::Color &color,
+        const sf::Vector2<sf::Int16> &texCoord,
+        const sf::Vector3f &normal,
+        const sf::Vector3f &position
+    //~ ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
+    ): color(color), texCoord(texCoord), normal(normal), position(position) {
     }
 
     Vertex(
         float x, float y, float z
     //~ ): r(255), g(255), b(255), a(255), s(), t(), u(), v(), w(), x(x), y(y), z(z) {
-    ): color(255, 255, 255, 255), position(x, y, z) {
+    ): color(sf::Color::White), position(x, y, z) {
     }
 
     Vertex(
         float u, float v, float w,
         float x, float y, float z
     //~ ): r(255), g(255), b(255), a(255), s(), t(), u(u), v(v), w(w), x(x), y(y), z(z) {
-    ): color(255, 255, 255, 255), normal(u, v, w), position(x, y, z) {
+    ): color(sf::Color::White), normal(u, v, w), position(x, y, z) {
+    }
+
+    Vertex(
+        uint16_t s, uint16_t t,
+        float x, float y, float z
+    //~ ): r(255), g(255), b(255), a(255), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
+    ): color(sf::Color::White), texCoord(s, t), position(x, y, z) {
     }
 
     Vertex(
@@ -79,7 +195,30 @@ struct Vertex {
         float u, float v, float w,
         float x, float y, float z
     //~ ): r(255), g(255), b(255), a(255), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
-    ): color(255, 255, 255, 255), texCoord(s, t), normal(u, v, w), position(x, y, z) {
+    ): color(sf::Color::White), texCoord(s, t), normal(u, v, w), position(x, y, z) {
+    }
+
+    Vertex(
+        uint8_t r, uint8_t g, uint8_t b, uint8_t a,
+        float x, float y, float z
+    //~ ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
+    ): color(r, g, b, a), position(x, y, z) {
+    }
+
+    Vertex(
+        uint8_t r, uint8_t g, uint8_t b, uint8_t a,
+        float u, float v, float w,
+        float x, float y, float z
+    //~ ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
+    ): color(r, g, b, a), normal(u, v, w), position(x, y, z) {
+    }
+
+    Vertex(
+        uint8_t r, uint8_t g, uint8_t b, uint8_t a,
+        uint16_t s, uint16_t t,
+        float x, float y, float z
+    //~ ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
+    ): color(r, g, b, a), texCoord(s, t), position(x, y, z) {
     }
 
     Vertex(
@@ -138,7 +277,25 @@ public:
         mVertices.push_back(vertex);
     }
 
-    void calcNormals(bool smooth = false);
+    void calcNormals(size_t start, size_t end, bool smooth = false);
+
+    void calcNormals(bool smooth = false) {
+        calcNormals(0, mVertices.size(), smooth);
+    }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+class Sphere {
+    Position mCenter;
+    Size mRadius;
+
+public:
+    bool intersects(const Sphere &rhs) const {
+        Position l = rhs.mCenter - mCenter;
+        int32_t d = rhs.mRadius + mRadius;
+        return (l.x * l.x + l.y * l.y + l.z * l.z) <= (d * d);
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -189,11 +346,11 @@ public:
 };
 
 class ChunkData {
-    static const unsigned int Size = 16;
+    static const unsigned int Count = 16;
 
-    BlockType mBlockType[Size * Size * Size];
-    BlockData mBlockData[Size * Size * Size];
-    LightData mLightData[Size * Size * Size];
+    BlockType mBlockType[Count * Count * Count];
+    BlockData mBlockData[Count * Count * Count];
+    LightData mLightData[Count * Count * Count];
 
 public:
     ChunkData();
@@ -201,7 +358,9 @@ public:
     //~ ~ChunkData() {}
 
     Block getBlock(const Position &pos) {
-        uint16_t i = (pos.z % Size) * Size * Size + (pos.y % Size) * Size + (pos.x % Size);
+        uint16_t i = (pos.z % Count) * Count * Count +
+                     (pos.y % Count) * Count +
+                     (pos.x % Count);
         return Block(&mBlockType[i], &mBlockData[i], &mLightData[i]);
     }
 
@@ -341,6 +500,9 @@ public:
 
 class World {
     ChunkSource *mUpstream;
+
+    uint32_t mTicksPerSecond;
+    uint64_t mTicksPerDay;
 
 public:
     World(ChunkSource *upstream): mUpstream(upstream) {}
@@ -588,6 +750,31 @@ struct Packet {
     PacketType type;
     uint8_t data[];
 };
+
+////////////////////////////////////////////////////////////////////////////////
+
+template <typename T>
+sf::Vector3<T> cross(const sf::Vector3<T> &a, const sf::Vector3<T> &b) {
+    return sf::Vector3<T>(a.y * b.z - a.z * b.y,
+                          a.z * b.x - a.x * b.z,
+                          a.x * b.y - a.y * b.x);
+}
+
+template <typename T>
+T dot(const sf::Vector3<T> &a, const sf::Vector3<T> &b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+template <typename T>
+sf::Vector3<T> normalize(const sf::Vector3<T> &v) {
+    T length = std::sqrt(dot(v, v));
+
+    if (length == 0) {
+        return v;
+    } else {
+        return v / length;
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

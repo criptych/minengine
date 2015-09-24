@@ -45,5 +45,5 @@ void main () {
     fColor += glowColor;
     fColor.a = vColor.a * diffTexCol.a;
 
-    fColor.rg = gl_FragCoord.xy / uResolution;
+    //~ fColor.rg = gl_FragCoord.xy / uResolution;
 }

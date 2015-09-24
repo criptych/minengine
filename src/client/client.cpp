@@ -22,113 +22,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static const float PI = 3.14159265358;
-
-////////////////////////////////////////////////////////////////////////////////
-
-class Transform3D : public sf::Transform {
-public:
-    Transform3D(): Transform() {
-    }
-
-    Transform3D(
-        float a00, float a01, float a02, float a03,
-        float a10, float a11, float a12, float a13,
-        float a20, float a21, float a22, float a23,
-        float a30, float a31, float a32, float a33
-    ) {
-        float *m = const_cast<float*>(getMatrix());
-        m[ 0] = a00; m[ 4] = a01; m[ 8] = a02; m[12] = a03;
-        m[ 1] = a10; m[ 5] = a11; m[ 9] = a12; m[13] = a13;
-        m[ 2] = a20; m[ 6] = a21; m[10] = a22; m[14] = a23;
-        m[ 3] = a30; m[ 7] = a31; m[11] = a32; m[15] = a33;
-    }
-
-    Transform3D(const sf::Transform &transform) {
-        const float *a = transform.getMatrix();
-        float *b = const_cast<float*>(getMatrix());
-
-        b[ 0] = a[ 0]; b[ 4] = a[ 4]; b[ 8] = a[ 8]; b[12] = a[12];
-        b[ 1] = a[ 1]; b[ 5] = a[ 5]; b[ 9] = a[ 9]; b[13] = a[13];
-        b[ 2] = a[ 2]; b[ 6] = a[ 6]; b[10] = a[10]; b[14] = a[14];
-        b[ 3] = a[ 3]; b[ 7] = a[ 7]; b[11] = a[11]; b[15] = a[15];
-    }
-
-    Transform3D& combine(const sf::Transform& transform) {
-        const float *a = getMatrix();
-        const float *b = transform.getMatrix();
-
-        *this = Transform3D(a[ 0] * b[ 0] + a[ 4] * b[ 1] + a[ 8] * b[ 2] + a[12] * b[ 3],
-                            a[ 0] * b[ 4] + a[ 4] * b[ 5] + a[ 8] * b[ 6] + a[12] * b[ 7],
-                            a[ 0] * b[ 8] + a[ 4] * b[ 9] + a[ 8] * b[10] + a[12] * b[11],
-                            a[ 0] * b[12] + a[ 4] * b[13] + a[ 8] * b[14] + a[12] * b[15],
-                            a[ 1] * b[ 0] + a[ 5] * b[ 1] + a[ 9] * b[ 2] + a[13] * b[ 3],
-                            a[ 1] * b[ 4] + a[ 5] * b[ 5] + a[ 9] * b[ 6] + a[13] * b[ 7],
-                            a[ 1] * b[ 8] + a[ 5] * b[ 9] + a[ 9] * b[10] + a[13] * b[11],
-                            a[ 1] * b[12] + a[ 5] * b[13] + a[ 9] * b[14] + a[13] * b[15],
-                            a[ 2] * b[ 0] + a[ 6] * b[ 1] + a[10] * b[ 2] + a[14] * b[ 3],
-                            a[ 2] * b[ 4] + a[ 6] * b[ 5] + a[10] * b[ 6] + a[14] * b[ 7],
-                            a[ 2] * b[ 8] + a[ 6] * b[ 9] + a[10] * b[10] + a[14] * b[11],
-                            a[ 2] * b[12] + a[ 6] * b[13] + a[10] * b[14] + a[14] * b[15],
-                            a[ 3] * b[ 0] + a[ 7] * b[ 1] + a[11] * b[ 2] + a[15] * b[ 3],
-                            a[ 3] * b[ 4] + a[ 7] * b[ 5] + a[11] * b[ 6] + a[15] * b[ 7],
-                            a[ 3] * b[ 8] + a[ 7] * b[ 9] + a[11] * b[10] + a[15] * b[11],
-                            a[ 3] * b[12] + a[ 7] * b[13] + a[11] * b[14] + a[15] * b[15]);
-
-        return *this;
-    }
-
-    Transform3D &frustum(float left, float right, float bottom, float top, float near, float far) {
-        Transform3D transform(
-            (2 * near) / (right - left), 0.0f, (right + left) / (right - left), 0.0f,
-            0.0f, (2 * near) / (top - bottom), (top + bottom) / (top - bottom), 0.0f,
-            0.0f, 0.0f, (near + far) / (near - far), (2 * near * far) / (near - far),
-            0.0f, 0.0f, -1.0f, 0.0f);
-
-        return combine(transform);
-    }
-
-    Transform3D &perspective(float fov, float aspect, float near, float far) {
-        float fh = std::tan(fov*PI/360.0)*near;
-        float fw = fh * aspect;
-        return frustum(-fw, fw, -fh, fh, near, far);
-    }
-
-    Transform3D &translate(const sf::Vector3f &offset) {
-        Transform3D translation(1, 0, 0, offset.x,
-                                0, 1, 0, offset.y,
-                                0, 0, 1, offset.z,
-                                0, 0, 0, 1);
-
-        return combine(translation);
-    }
-
-    Transform3D &rotate(float angle, const sf::Vector3f &axis) {
-        float s = std::sin(angle*PI/180.0f), c = std::cos(angle*PI/180.0f);
-        float xx = axis.x * axis.x;
-        float xy = axis.x * axis.y;
-        float xz = axis.x * axis.z;
-        float yy = axis.y * axis.y;
-        float yz = axis.y * axis.z;
-        float zz = axis.z * axis.z;
-        float xs = axis.x * s;
-        float ys = axis.y * s;
-        float zs = axis.z * s;
-        float mc = 1.0f - c;
-
-        Transform3D rotation(xx*mc+ c, xy*mc-zs, xz*mc+ys, 0,
-                             xy*mc+zs, yy*mc+ c, yz*mc-xs, 0,
-                             xz*mc-ys, yz*mc+xs, zz*mc+ c, 0,
-                             0,        0,        0,        1);
-
-        return combine(rotation);
-    }
-
-    Transform3D getInverse() const {
-        //! @todo
-        return Transform3D();
-    }
-};
+#include "Transform3D.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -169,7 +63,7 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class CameraRenderer {
+class Camera {
     float mFOV;
     float mAspect;
     float mZNear;
@@ -181,11 +75,11 @@ class CameraRenderer {
     mutable bool mNeedsUpdate;
 
 public:
-    CameraRenderer(
+    Camera(
     ): mFOV(75.0), mAspect(1.0), mZNear(0.1), mZFar(100.0), mNeedsUpdate(true) {
     }
 
-    CameraRenderer(
+    Camera(
         float fov,
         float aspect,
         float zNear,
@@ -193,7 +87,7 @@ public:
     ): mFOV(fov), mAspect(aspect), mZNear(zNear), mZFar(zFar), mNeedsUpdate(true) {
     }
 
-    ~CameraRenderer() {
+    ~Camera() {
     }
 
     void setFOV(float fov) {
@@ -201,9 +95,17 @@ public:
         mNeedsUpdate = true;
     }
 
+    float getFOV() const {
+        return mFOV;
+    }
+
     void setAspect(float aspect) {
         mAspect = aspect;
         mNeedsUpdate = true;
+    }
+
+    float getAspect() const {
+        return mAspect;
     }
 
     void setZNear(float zNear) {
@@ -211,9 +113,17 @@ public:
         mNeedsUpdate = true;
     }
 
+    float getZNear() const {
+        return mZNear;
+    }
+
     void setZFar(float zFar) {
         mZFar = zFar;
         mNeedsUpdate = true;
+    }
+
+    float getZFar() const {
+        return mZFar;
     }
 
     void setZRange(float zNear, float zFar) {
@@ -231,10 +141,18 @@ public:
         setPosition(sf::Vector3f(x, y, z));
     }
 
+    const sf::Vector3f &getPosition() const {
+        return mPosition;
+    }
+
     void move(const sf::Vector3f &offset) {
         setPosition(mPosition.x + offset.x,
                     mPosition.y + offset.y,
                     mPosition.z + offset.z);
+    }
+
+    void move(const sf::Vector3f &offset, float angle) {
+        move(Transform3D().rotate(angle, sf::Vector3f(0, 1, 0)).transformPoint(offset));
     }
 
     void move(float dx, float dy, float dz) {
@@ -244,6 +162,10 @@ public:
     void setLook(const sf::Vector2f &look) {
         mLook = look;
         mNeedsUpdate = true;
+    }
+
+    const sf::Vector2f &getLook() const {
+        return mLook;
     }
 
     const Transform3D &getTransform() const {
@@ -345,11 +267,13 @@ private:
         if (mModel && !mVBO) {
             GLChecked(glGenBuffers(1, &mVBO));
 
+            sf::err() << "glGenBuffers -> " << mVBO << "\n";
+
             if (mVBO) {
                 GLChecked(glBindBuffer(GL_ARRAY_BUFFER, mVBO));
                 GLChecked(glBufferData(GL_ARRAY_BUFFER,
                     sizeof(Vertex) * mModel->getVertices().size(),
-                    &mModel->getVertices()[0], GL_STATIC_DRAW));
+                    mModel->getVertices().data(), GL_STATIC_DRAW));
                 GLChecked(glBindBuffer(GL_ARRAY_BUFFER, 0));
             }
         }
@@ -365,38 +289,124 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void makeBox(Vertex *verts, const sf::Vector3f &center, const sf::Vector3f &size) {
+size_t makeBox(std::vector<Vertex> &verts, GLenum mode, const sf::Vector3f &center, const sf::Vector3f &size) {
     sf::Vector3f mx = center + size;
     sf::Vector3f mn = center - size;
+
     size_t i = 0;
-    verts[i++] = Vertex(0x7fff,0x0000, +1.0, 0.0, 0.0, mx.x,mx.y,mn.z);
-    verts[i++] = Vertex(0x7fff,0x7fff, +1.0, 0.0, 0.0, mx.x,mx.y,mx.z);
-    verts[i++] = Vertex(0x0000,0x7fff, +1.0, 0.0, 0.0, mx.x,mn.y,mx.z);
-    verts[i++] = Vertex(0x0000,0x0000, +1.0, 0.0, 0.0, mx.x,mn.y,mn.z);
-    verts[i++] = Vertex(0x0000,0x0000, -1.0, 0.0, 0.0, mn.x,mn.y,mn.z);
-    verts[i++] = Vertex(0x0000,0x7fff, -1.0, 0.0, 0.0, mn.x,mn.y,mx.z);
-    verts[i++] = Vertex(0x7fff,0x7fff, -1.0, 0.0, 0.0, mn.x,mx.y,mx.z);
-    verts[i++] = Vertex(0x7fff,0x0000, -1.0, 0.0, 0.0, mn.x,mx.y,mn.z);
-    verts[i++] = Vertex(0x0000,0x0000,  0.0,+1.0, 0.0, mn.x,mx.y,mn.z);
-    verts[i++] = Vertex(0x0000,0x7fff,  0.0,+1.0, 0.0, mn.x,mx.y,mx.z);
-    verts[i++] = Vertex(0x7fff,0x7fff,  0.0,+1.0, 0.0, mx.x,mx.y,mx.z);
-    verts[i++] = Vertex(0x7fff,0x0000,  0.0,+1.0, 0.0, mx.x,mx.y,mn.z);
-    verts[i++] = Vertex(0x7fff,0x0000,  0.0,-1.0, 0.0, mx.x,mn.y,mn.z);
-    verts[i++] = Vertex(0x7fff,0x7fff,  0.0,-1.0, 0.0, mx.x,mn.y,mx.z);
-    verts[i++] = Vertex(0x0000,0x7fff,  0.0,-1.0, 0.0, mn.x,mn.y,mx.z);
-    verts[i++] = Vertex(0x0000,0x0000,  0.0,-1.0, 0.0, mn.x,mn.y,mn.z);
-    verts[i++] = Vertex(0x7fff,0x0000,  0.0, 0.0,+1.0, mx.x,mn.y,mx.z);
-    verts[i++] = Vertex(0x7fff,0x7fff,  0.0, 0.0,+1.0, mx.x,mx.y,mx.z);
-    verts[i++] = Vertex(0x0000,0x7fff,  0.0, 0.0,+1.0, mn.x,mx.y,mx.z);
-    verts[i++] = Vertex(0x0000,0x0000,  0.0, 0.0,+1.0, mn.x,mn.y,mx.z);
-    verts[i++] = Vertex(0x0000,0x0000,  0.0, 0.0,-1.0, mn.x,mn.y,mn.z);
-    verts[i++] = Vertex(0x0000,0x7fff,  0.0, 0.0,-1.0, mn.x,mx.y,mn.z);
-    verts[i++] = Vertex(0x7fff,0x7fff,  0.0, 0.0,-1.0, mx.x,mx.y,mn.z);
-    verts[i++] = Vertex(0x7fff,0x0000,  0.0, 0.0,-1.0, mx.x,mn.y,mn.z);
+
+    //~ verts[i++] = Vertex(0x7fff,0x0000, +1.0, 0.0, 0.0, mx.x,mx.y,mn.z);
+    //~ verts[i++] = Vertex(0x7fff,0x7fff, +1.0, 0.0, 0.0, mx.x,mx.y,mx.z);
+    //~ verts[i++] = Vertex(0x0000,0x7fff, +1.0, 0.0, 0.0, mx.x,mn.y,mx.z);
+    //~ verts[i++] = Vertex(0x0000,0x0000, +1.0, 0.0, 0.0, mx.x,mn.y,mn.z);
+    //~ verts[i++] = Vertex(0x0000,0x0000, -1.0, 0.0, 0.0, mn.x,mn.y,mn.z);
+    //~ verts[i++] = Vertex(0x0000,0x7fff, -1.0, 0.0, 0.0, mn.x,mn.y,mx.z);
+    //~ verts[i++] = Vertex(0x7fff,0x7fff, -1.0, 0.0, 0.0, mn.x,mx.y,mx.z);
+    //~ verts[i++] = Vertex(0x7fff,0x0000, -1.0, 0.0, 0.0, mn.x,mx.y,mn.z);
+    //~ verts[i++] = Vertex(0x0000,0x0000,  0.0,+1.0, 0.0, mn.x,mx.y,mn.z);
+    //~ verts[i++] = Vertex(0x0000,0x7fff,  0.0,+1.0, 0.0, mn.x,mx.y,mx.z);
+    //~ verts[i++] = Vertex(0x7fff,0x7fff,  0.0,+1.0, 0.0, mx.x,mx.y,mx.z);
+    //~ verts[i++] = Vertex(0x7fff,0x0000,  0.0,+1.0, 0.0, mx.x,mx.y,mn.z);
+    //~ verts[i++] = Vertex(0x7fff,0x0000,  0.0,-1.0, 0.0, mx.x,mn.y,mn.z);
+    //~ verts[i++] = Vertex(0x7fff,0x7fff,  0.0,-1.0, 0.0, mx.x,mn.y,mx.z);
+    //~ verts[i++] = Vertex(0x0000,0x7fff,  0.0,-1.0, 0.0, mn.x,mn.y,mx.z);
+    //~ verts[i++] = Vertex(0x0000,0x0000,  0.0,-1.0, 0.0, mn.x,mn.y,mn.z);
+    //~ verts[i++] = Vertex(0x7fff,0x0000,  0.0, 0.0,+1.0, mx.x,mn.y,mx.z);
+    //~ verts[i++] = Vertex(0x7fff,0x7fff,  0.0, 0.0,+1.0, mx.x,mx.y,mx.z);
+    //~ verts[i++] = Vertex(0x0000,0x7fff,  0.0, 0.0,+1.0, mn.x,mx.y,mx.z);
+    //~ verts[i++] = Vertex(0x0000,0x0000,  0.0, 0.0,+1.0, mn.x,mn.y,mx.z);
+    //~ verts[i++] = Vertex(0x0000,0x0000,  0.0, 0.0,-1.0, mn.x,mn.y,mn.z);
+    //~ verts[i++] = Vertex(0x0000,0x7fff,  0.0, 0.0,-1.0, mn.x,mx.y,mn.z);
+    //~ verts[i++] = Vertex(0x7fff,0x7fff,  0.0, 0.0,-1.0, mx.x,mx.y,mn.z);
+    //~ verts[i++] = Vertex(0x7fff,0x0000,  0.0, 0.0,-1.0, mx.x,mn.y,mn.z);
+
+    switch (mode) {
+        case GL_TRIANGLES:
+            verts.resize(36);
+
+            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z);
+            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z);
+            verts[i++] = Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z);
+            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z);
+            verts[i++] = Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z);
+            verts[i++] = Vertex(0x0000,0x0000, mx.x,mn.y,mn.z);
+
+            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mn.z);
+            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z);
+            verts[i++] = Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z);
+            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mn.z);
+            verts[i++] = Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z);
+            verts[i++] = Vertex(0x7fff,0x0000, mn.x,mx.y,mn.z);
+
+            verts[i++] = Vertex(0x0000,0x0000, mn.x,mx.y,mn.z);
+            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z);
+            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z);
+            verts[i++] = Vertex(0x0000,0x0000, mn.x,mx.y,mn.z);
+            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z);
+            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z);
+
+            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z);
+            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mn.y,mx.z);
+            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z);
+            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z);
+            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z);
+            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mn.z);
+
+            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z);
+            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z);
+            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z);
+            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z);
+            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z);
+            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mx.z);
+
+            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mn.z);
+            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mx.y,mn.z);
+            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z);
+            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mn.z);
+            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z);
+            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z);
+            break;
+
+        case GL_QUADS:
+            verts.resize(24);
+
+            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z);
+            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z);
+            verts[i++] = Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z);
+            verts[i++] = Vertex(0x0000,0x0000, mx.x,mn.y,mn.z);
+
+            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mn.z);
+            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z);
+            verts[i++] = Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z);
+            verts[i++] = Vertex(0x7fff,0x0000, mn.x,mx.y,mn.z);
+
+            verts[i++] = Vertex(0x0000,0x0000, mn.x,mx.y,mn.z);
+            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z);
+            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z);
+            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z);
+
+            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z);
+            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mn.y,mx.z);
+            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z);
+            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mn.z);
+
+            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z);
+            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z);
+            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z);
+            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mx.z);
+
+            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mn.z);
+            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mx.y,mn.z);
+            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z);
+            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z);
+            break;
+    }
+
+    return i;
 }
 
-void makeBox(Vertex *verts) {
-    makeBox(verts, sf::Vector3f(0,0,0), sf::Vector3f(1,1,1));
+size_t makeBox(std::vector<Vertex> &verts, GLenum mode) {
+    return makeBox(verts, mode, sf::Vector3f(0,0,0), sf::Vector3f(1,1,1));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -432,8 +442,8 @@ int main(int argc, char **argv) {
 
     glewInit();
 
-    CameraRenderer camera(90.0f, 16.0f/9.0f, 0.1f, 100.0f);
-    camera.setPosition(0.0, 0.0, 5.0);
+    Camera camera(90.0f, 16.0f/9.0f, 0.1f, 100.0f);
+    camera.setPosition(0.0, 1.7, 5.0);
     //~ camera.render();
 
     Shader shader;
@@ -451,18 +461,16 @@ int main(int argc, char **argv) {
 
     shader.setParameter("uResolution", sf::Vector2f(window.getSize()));
 
-    Vertex cubeVerts[24];
-    makeBox(cubeVerts, sf::Vector3f(0,0,0), sf::Vector3f(0.5,0.5,0.5));
+    std::vector<Vertex> cubeVerts;
+    makeBox(cubeVerts, GL_QUADS, sf::Vector3f(0.5,0.5,0.5), sf::Vector3f(0.5,0.5,0.5));
 
     Model cubeModel(GL_QUADS, cubeVerts);
 
     cubeModel.calcNormals();
 
-    //~ ModelRenderer cube(&cubeModel);
-    ModelRenderer cube(&cubeModel, &shader);
+    sf::err().flush();
 
-    //~ ModelRenderer cube(&cubeModel);
-    ModelRenderer cube2(&cubeModel, &shader);
+    ModelRenderer cube(&cubeModel, &shader);
 
     float spin = 0, spinSpeed = 45; // degrees/second
 
@@ -474,9 +482,9 @@ int main(int argc, char **argv) {
     GLChecked(glDepthFunc(GL_LESS));
 
     GLChecked(glEnable(GL_CULL_FACE));
-    GLChecked(glEnable(GL_COLOR_MATERIAL));
-    GLChecked(glEnable(GL_LIGHTING));
-    GLChecked(glEnable(GL_LIGHT0));
+    //~ GLChecked(glEnable(GL_COLOR_MATERIAL));
+    //~ GLChecked(glEnable(GL_LIGHTING));
+    //~ GLChecked(glEnable(GL_LIGHT0));
 
     GLChecked(glClearColor(0.200,0.267,0.333,0.0));
 
@@ -686,18 +694,32 @@ int main(int argc, char **argv) {
 
         unsigned int frameTicks = maxFrameTicks;
 
+        look.x = std::fmod(look.x + 180.0f, 360.0f) - 180.0f;
+
+        if (look.y > 89.9f) {
+            look.y = 89.9f;
+        }
+        if (look.y < -89.9f) {
+            look.y = -89.9f;
+        }
+
+        sf::Vector3f move;
+
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-            camera.move(0,0,-delta.asSeconds());
+            move.z -= delta.asSeconds();
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-            camera.move(0,0,delta.asSeconds());
+            move.z += delta.asSeconds();
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-            camera.move(-delta.asSeconds(),0,0);
+            move.x -= delta.asSeconds();
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-            camera.move(delta.asSeconds(),0,0);
+            move.x += delta.asSeconds();
         }
+
+        camera.setLook(look);
+        camera.move(move, -look.x);
 
         while (tickCount >= tickLength) {
             tickCount -= tickLength;
@@ -733,36 +755,27 @@ int main(int argc, char **argv) {
 
         GLChecked(glEnable(GL_DEPTH_TEST));
         GLChecked(glEnable(GL_CULL_FACE));
-        GLChecked(glEnable(GL_LIGHTING));
-        GLChecked(glEnable(GL_LIGHT0));
-        GLChecked(glEnable(GL_COLOR_MATERIAL));
+        //~ GLChecked(glEnable(GL_LIGHTING));
+        //~ GLChecked(glEnable(GL_LIGHT0));
+        //~ GLChecked(glEnable(GL_COLOR_MATERIAL));
 
         // draw 3D scene
 
         //~ camera.render();
 
-        look.x = std::fmod(look.x + 180.0f, 360.0f) - 180.0f;
-
-        if (look.y > 89.9f) {
-            look.y = 89.9f;
-        }
-        if (look.y < -89.9f) {
-            look.y = -89.9f;
-        }
-
-        camera.setLook(look);
         Transform3D projectionTransform(camera.getTransform());
-        //~ projectionTransform.rotate(look.y, sf::Vector3f(1.0f, 0.0f, 0.0f));
-        //~ projectionTransform.rotate(look.x, sf::Vector3f(0.0f, 1.0f, 0.0f));
 
         shader.setParameter("uTime", playTime.asSeconds());
         shader.setParameter("uProjMatrix", projectionTransform);
 
         Transform3D modelViewTransform;
-        modelViewTransform.rotate(std::sin(spin*PI/360.0f)*30.0f,
-                                  sf::Vector3f(1.0f,0.0f,0.0f));
-        modelViewTransform.rotate(spin,
-                                  sf::Vector3f(0.0f,1.0f,0.0f));
+
+        //~ const float Pi = 3.14159265358;
+
+        //~ modelViewTransform.rotate(std::sin(spin*Pi/360.0f)*30.0f,
+                                  //~ sf::Vector3f(1.0f,0.0f,0.0f));
+        //~ modelViewTransform.rotate(spin,
+                                  //~ sf::Vector3f(0.0f,1.0f,0.0f));
 
         shader.setParameter("uViewMatrix", modelViewTransform);
 
@@ -771,7 +784,7 @@ int main(int argc, char **argv) {
         cube.render();
         //~ GLChecked(glPopMatrix());
 
-        modelViewTransform.translate(sf::Vector3f(1.0f,0.0f,0.0f));
+        modelViewTransform.translate(sf::Vector3f(1.5f,0.0f,0.0f));
         shader.setParameter("uViewMatrix", modelViewTransform);
         cube.render();
 
@@ -783,7 +796,7 @@ int main(int argc, char **argv) {
 
         GLChecked(glDisable(GL_DEPTH_TEST));
         GLChecked(glDisable(GL_CULL_FACE));
-        GLChecked(glDisable(GL_LIGHTING));
+        //~ GLChecked(glDisable(GL_LIGHTING));
 
         // draw 2D overlay
 

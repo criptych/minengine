@@ -38,6 +38,7 @@ SET(ENGINE_SRCS
 SET(CLIENT_SRCS
     src/client/client.cpp
     src/client/Shader.cpp
+    src/client/Transform3D.cpp
 )
 
 SET(SERVER_SRCS
