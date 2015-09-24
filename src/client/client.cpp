@@ -267,7 +267,7 @@ private:
         if (mModel && !mVBO) {
             GLChecked(glGenBuffers(1, &mVBO));
 
-            sf::err() << "glGenBuffers -> " << mVBO << "\n";
+            sf::err() << "glGenBuffers -> " << mVBO << std::endl;
 
             if (mVBO) {
                 GLChecked(glBindBuffer(GL_ARRAY_BUFFER, mVBO));
@@ -462,9 +462,9 @@ int main(int argc, char **argv) {
     shader.setParameter("uResolution", sf::Vector2f(window.getSize()));
 
     std::vector<Vertex> cubeVerts;
-    makeBox(cubeVerts, GL_QUADS, sf::Vector3f(0.5,0.5,0.5), sf::Vector3f(0.5,0.5,0.5));
+    makeBox(cubeVerts, GL_TRIANGLES, sf::Vector3f(0.5,0.5,0.5), sf::Vector3f(0.5,0.5,0.5));
 
-    Model cubeModel(GL_QUADS, cubeVerts);
+    Model cubeModel(GL_TRIANGLES, cubeVerts);
 
     cubeModel.calcNormals();
 

@@ -1,6 +1,8 @@
 #version 330
 #extension all : warn
 
+precision lowp float;
+
 uniform float uTime = 0;
 uniform vec2 uResolution = vec2(1);
 
