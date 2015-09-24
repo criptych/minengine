@@ -131,6 +131,15 @@ Transform3D &Transform3D::rotate(float angle, const sf::Vector3f &axis) {
     return combine(transform);
 }
 
+Transform3D &Transform3D::scale(const sf::Vector3f &factors) {
+    Transform3D transform(factors.x, 0, 0, 0,
+                          0, factors.y, 0, 0,
+                          0, 0, factors.z, 0,
+                          0, 0, 0, 1);
+
+    return combine(transform);
+}
+
 Transform3D Transform3D::getInverse() const {
     //! @todo
     return Transform3D();

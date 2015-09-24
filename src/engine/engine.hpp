@@ -776,6 +776,29 @@ sf::Vector3<T> normalize(const sf::Vector3<T> &v) {
     }
 }
 
+template <typename T>
+T lerp(float t, T start, T end) {
+    return (1.0f - t) * start + t * end;
+}
+
+template <typename T>
+T quad(float t) {
+    t *= 2.0f;
+    if (t >= 1.0f) {
+        t = 2.0f - t
+        return t*t
+}
+
+template <typename T>
+T easeQuad(float t, T start, T end) {
+    T middle = lerp(0.5f, start, end);
+    t *= 2.0f;
+    if (t >= 0.5f) {
+        return lerp(t*t)
+        return lerp(
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 #endif // __ENGINE_HPP__

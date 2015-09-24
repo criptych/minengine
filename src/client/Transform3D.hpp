@@ -35,6 +35,9 @@ public:
 
     Transform3D &translate(const sf::Vector3f &offset);
     Transform3D &rotate(float angle, const sf::Vector3f &axis);
+    Transform3D &scale(const sf::Vector3f &factors);
+    Transform3D &scale(float factor);
+
     Transform3D getInverse() const;
 };
 
