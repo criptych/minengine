@@ -125,7 +125,7 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
 
                 for (size_t j = 0; j < 3; j++) {
                     n[j] = normalize(cross(p[(j+1)%3]-p[(j+0)%3],
-                                           p[(j-1)%3]-p[(j-0)%3]));
+                                           p[(j+2)%3]-p[(j+0)%3]));
                 }
 
                 for (size_t j = 0; j < 4; j++) {
@@ -156,7 +156,7 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
 
                 for (size_t j = 0; j < 4; j++) {
                     n[j] = normalize(cross(p[(j+1)%4]-p[(j+0)%4],
-                                           p[(j-1)%4]-p[(j-0)%4]));
+                                           p[(j+3)%4]-p[(j-0)%4]));
                 }
 
                 for (size_t j = 0; j < 4; j++) {
