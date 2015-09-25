@@ -56,17 +56,9 @@ class Angle {
 public:
     Angle(): mValue() {}
 
-    float asDegrees() const {
-        return mValue * (180.0f / 128.0f);
-    }
-
-    float asRadians() const {
-        return mValue * (Pi / 128.0f);
-    }
-
-    int8_t asByte() const {
-        return mValue;
-    }
+    float asDegrees() const;
+    float asRadians() const;
+    int8_t asByte() const;
 
     float sin() const;
     float cos() const;
@@ -74,23 +66,9 @@ public:
 
     void sincos(float &s, float &c) const;
 
-    static Angle fromDegrees(
-        float angle
-    ) {
-        return Angle(static_cast<int8_t>(angle * (128.0f / 180.0f)));
-    }
-
-    static Angle fromRadians(
-        float angle
-    ) {
-        return Angle(static_cast<int8_t>(angle * (128.0f / Pi)));
-    }
-
-    static Angle fromByte(
-        int8_t angle
-    ) {
-        return Angle(angle);
-    }
+    static Angle fromDegrees(float angle);
+    static Angle fromRadians(float angle);
+    static Angle fromByte(int8_t angle);
 };
 
 typedef int64_t Coord;
@@ -241,15 +219,14 @@ struct Vertex {
 
 };
 
+////////////////////////////////////////////////////////////////////////////////
+
 class Model {
     uint32_t mPrimitive;
     std::vector<Vertex> mVertices;
 
 public:
-    Model(
-        uint32_t primitive
-    ): mPrimitive(primitive) {
-    }
+    Model(uint32_t primitive);
 
     template <typename I>
     Model(
@@ -266,31 +243,18 @@ public:
     ): mPrimitive(primitive), mVertices(std::begin(array), std::end(array)) {
     }
 
-    uint32_t getPrimitive() const {
-        return mPrimitive;
-    }
+    uint32_t getPrimitive() const;
 
-    const std::vector<Vertex> &getVertices() const {
-        return mVertices;
-    }
+    const std::vector<Vertex> &getVertices() const;
+    std::vector<Vertex> &getVertices();
 
-    void setPrimitive(uint32_t primitive) {
-        mPrimitive = primitive;
-    }
+    void setPrimitive(uint32_t primitive);
 
-    void clearVertices() {
-        mVertices.clear();
-    }
-
-    void addVertex(const Vertex &vertex) {
-        mVertices.push_back(vertex);
-    }
+    void clearVertices();
+    void addVertex(const Vertex &vertex);
 
     void calcNormals(size_t start, size_t end, bool smooth = false);
-
-    void calcNormals(bool smooth = false) {
-        calcNormals(0, mVertices.size(), smooth);
-    }
+    void calcNormals(bool smooth = false);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -300,11 +264,26 @@ class Sphere {
     Size mRadius;
 
 public:
-    bool intersects(const Sphere &rhs) const {
-        Position l = rhs.mCenter - mCenter;
-        int32_t d = rhs.mRadius + mRadius;
-        return (l.x * l.x + l.y * l.y + l.z * l.z) <= (d * d);
-    }
+    const Position &getCenter() const;
+    Size getRadius() const;
+
+    bool intersects(const Sphere &rhs) const;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+class Capsule {
+    Position mBase;
+    Size mRadius;
+    Size mHeight;
+
+public:
+    const Position &getBase() const;
+    Size getRadius() const;
+    Size getHeight() const;
+
+    bool intersects(const Capsule &rhs) const;
+    bool intersects(const Sphere &rhs) const;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -316,11 +295,12 @@ class Entity {
     Orientation mOrientation;
 
 public:
-    void update() {
-        mPosition.x += mVelocity.x;
-        mPosition.y += mVelocity.y;
-        mPosition.z += mVelocity.z;
-    }
+    EntityID getID() const;
+    const Position &getPosition() const;
+    const Velocity &getVelocity() const;
+    const Orientation &getOrientation() const;
+
+    void update();
 };
 
 ////////////////////////////////////////////////////////////////////////////////

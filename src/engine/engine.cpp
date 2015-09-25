@@ -47,6 +47,18 @@ static TrigHelper sTrig;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+float Angle::asDegrees() const {
+    return sTrig.deg(mValue);
+}
+
+float Angle::asRadians() const {
+    return sTrig.rad(mValue);
+}
+
+int8_t Angle::asByte() const {
+    return mValue;
+}
+
 float Angle::sin() const {
     return sTrig.sin(mValue);
 }
@@ -62,6 +74,18 @@ float Angle::tan() const {
 void Angle::sincos(float &s, float &c) const {
     s = sin();
     c = cos();
+}
+
+Angle Angle::fromDegrees(float angle) {
+    return Angle(static_cast<int8_t>(angle * (128.0f / 180.0f)));
+}
+
+Angle Angle::fromRadians(float angle) {
+    return Angle(static_cast<int8_t>(angle * (128.0f / Pi)));
+}
+
+Angle Angle::fromByte(int8_t angle) {
+    return Angle(angle);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -88,6 +112,39 @@ namespace std {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+Model::Model(
+    uint32_t primitive
+): mPrimitive(primitive) {
+}
+
+uint32_t Model::getPrimitive() const {
+    return mPrimitive;
+}
+
+const std::vector<Vertex> &Model::getVertices() const {
+    return mVertices;
+}
+
+std::vector<Vertex> &Model::getVertices() {
+    return mVertices;
+}
+
+void Model::setPrimitive(uint32_t primitive) {
+    mPrimitive = primitive;
+}
+
+void Model::clearVertices() {
+    mVertices.clear();
+}
+
+void Model::addVertex(const Vertex &vertex) {
+    mVertices.push_back(vertex);
+}
+
+void Model::calcNormals(bool smooth) {
+    calcNormals(0, mVertices.size(), smooth);
+}
 
 #ifndef GL_VERSION_1_1
 # define GL_POINTS 0x0000
@@ -171,6 +228,70 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
             break;
         }
     }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+const Position &Sphere::getCenter() const {
+    return mCenter;
+}
+
+Size Sphere::getRadius() const {
+    return mRadius;
+}
+
+bool Sphere::intersects(const Sphere &rhs) const {
+    Position l = rhs.mCenter - mCenter;
+    int32_t d = rhs.mRadius + mRadius;
+    return (l.x * l.x + l.y * l.y + l.z * l.z) <= (d * d);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+const Position &Capsule::getBase() const {
+    return mBase;
+}
+
+Size Capsule::getRadius() const {
+    return mRadius;
+}
+
+Size Capsule::getHeight() const {
+    return mHeight;
+}
+
+bool Capsule::intersects(const Capsule &rhs) const {
+    //! @todo
+    return false;
+}
+
+bool Capsule::intersects(const Sphere &rhs) const {
+    //! @todo
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+EntityID Entity::getID() const {
+    return mID;
+}
+
+const Position &Entity::getPosition() const {
+    return mPosition;
+}
+
+const Velocity &Entity::getVelocity() const {
+    return mVelocity;
+}
+
+const Orientation &Entity::getOrientation() const {
+    return mOrientation;
+}
+
+void Entity::update() {
+    mPosition.x += mVelocity.x;
+    mPosition.y += mVelocity.y;
+    mPosition.z += mVelocity.z;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
