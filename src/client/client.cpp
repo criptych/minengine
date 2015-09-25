@@ -193,12 +193,14 @@ class ModelRenderer {
     const Model *mModel;
     const Shader *mShader;
     mutable GLuint mVBO;
+    mutable GLenum mPrimitive;
+    mutable GLuint mCount;
 
 public:
     ModelRenderer(
         const Model *model = nullptr,
         const Shader *shader = nullptr
-    ): mModel(model), mShader(shader), mVBO() {
+    ): mModel(model), mShader(shader), mVBO(), mPrimitive(), mCount() {
     }
 
     ~ModelRenderer() {
@@ -241,18 +243,17 @@ public:
             GLChecked(glEnableVertexAttribArray(2));
             GLChecked(glEnableVertexAttribArray(3));
 
-            GLChecked(glVertexPointer(3, GL_FLOAT, SizeAndOffset(Vertex, position)));
-            GLChecked(glNormalPointer(GL_FLOAT, SizeAndOffset(Vertex, normal)));
-            GLChecked(glTexCoordPointer(2, GL_SHORT, SizeAndOffset(Vertex, texCoord)));
-            GLChecked(glColorPointer(4, GL_UNSIGNED_BYTE, SizeAndOffset(Vertex, color)));
+            //~ GLChecked(glVertexPointer(3, GL_FLOAT, SizeAndOffset(Vertex, position)));
+            //~ GLChecked(glNormalPointer(GL_FLOAT, SizeAndOffset(Vertex, normal)));
+            //~ GLChecked(glTexCoordPointer(2, GL_SHORT, SizeAndOffset(Vertex, texCoord)));
+            //~ GLChecked(glColorPointer(4, GL_UNSIGNED_BYTE, SizeAndOffset(Vertex, color)));
 
-            GLChecked(glEnableClientState(GL_VERTEX_ARRAY));
-            GLChecked(glEnableClientState(GL_NORMAL_ARRAY));
-            GLChecked(glEnableClientState(GL_TEXTURE_COORD_ARRAY));
-            GLChecked(glEnableClientState(GL_COLOR_ARRAY));
+            //~ GLChecked(glEnableClientState(GL_VERTEX_ARRAY));
+            //~ GLChecked(glEnableClientState(GL_NORMAL_ARRAY));
+            //~ GLChecked(glEnableClientState(GL_TEXTURE_COORD_ARRAY));
+            //~ GLChecked(glEnableClientState(GL_COLOR_ARRAY));
 
-            GLChecked(glDrawArrays(mModel->getPrimitive(), 0,
-                mModel->getVertices().size()));
+            GLChecked(glDrawArrays(mPrimitive, 0, mCount));
 
             GLChecked(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
@@ -267,15 +268,25 @@ private:
         if (mModel && !mVBO) {
             GLChecked(glGenBuffers(1, &mVBO));
 
-            sf::err() << "glGenBuffers -> " << mVBO << std::endl;
+            sf::err() << "glGenBuffers -> " << mVBO;
 
-            if (mVBO) {
+            mPrimitive = mModel->getPrimitive();
+            mCount = mModel->getVertices().size();
+
+            sf::err() << ", mPrimitive = " << mPrimitive;
+            sf::err() << ", mCount = " << mCount;
+
+            if (mCount && mVBO) {
+                size_t size = sizeof(Vertex) * mCount;
+                const void *data = mModel->getVertices().data();
+                sf::err() << ", size == " << size;
                 GLChecked(glBindBuffer(GL_ARRAY_BUFFER, mVBO));
-                GLChecked(glBufferData(GL_ARRAY_BUFFER,
-                    sizeof(Vertex) * mModel->getVertices().size(),
-                    mModel->getVertices().data(), GL_STATIC_DRAW));
+                GLChecked(glBufferData(GL_ARRAY_BUFFER, size, data,
+                    GL_STATIC_DRAW));
                 GLChecked(glBindBuffer(GL_ARRAY_BUFFER, 0));
             }
+
+            sf::err() << std::endl;
         }
     }
 
@@ -283,6 +294,8 @@ private:
         if (mVBO) {
             GLChecked(glDeleteBuffers(1, &mVBO));
             mVBO = 0;
+            mPrimitive = 0;
+            mCount = 0;
         }
     }
 };
@@ -467,8 +480,6 @@ int main(int argc, char **argv) {
     Model cubeModel(GL_TRIANGLES, cubeVerts);
 
     cubeModel.calcNormals();
-
-    sf::err().flush();
 
     ModelRenderer cube(&cubeModel, &shader);
 

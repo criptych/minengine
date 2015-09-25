@@ -23,13 +23,22 @@
 
 /**
  *  A note on coordinates and angles:
- *   o  Absolute coordinates are given in blocks, as 64-bit fixed-point values
- *      with 8 fractional bits.
- *   o  Chunk coordinates are given as above, in whole blocks with no fractional
- *      bits.
- *   o  Angles use a 256-point scale analogous to degrees, with -128 = 180deg,
- *      reducing modular angle calculations to a mask operation and most
- *      trigonometry to a simple lookup.
+ *   o  Chunk coordinates are signed 64-bit integer values, in meters/16.
+ *   o  Block coordinates are signed 64-bit integer values, in meters.
+ *   o  Entity coordinates are signed 64-bit fixed-point values with
+ *      8 fractional bits, in meters.
+ *   o  Velocities are signed 16-bit fixed-point values with 8 fractional bits,
+ *      in meters/tick.
+ *   o  Sizes are unsigned 16-bit fixed-point values with 8 fractional bits,
+ *      in meters.
+ *   o  Angles are signed 8-bit integer values, in a 256-point scale analogous
+ *      to degrees, with -128 = 180deg.
+ *
+ *  These formats were chosen to allow high-performance integer calculations
+ *  for most operations and compact representation for transmission between
+ *  client and server, with enough precision for reasonably smooth physics.
+ *  The format of angles in particular allows for efficient wraparound handling
+ *  and implementing trigonometry as a table lookup.
  */
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -776,27 +785,65 @@ sf::Vector3<T> normalize(const sf::Vector3<T> &v) {
     }
 }
 
+inline float quadratic(float t) {
+    if (t >= 0.5f) {
+        t = 1.0f - t;
+        return 1.0f - (t * t);
+    } else {
+        return t * t;
+    }
+}
+
+inline float cubic(float t) {
+    if (t >= 0.5f) {
+        t = 1.0f - t;
+        return 1.0f - (t * t * t);
+    } else {
+        return t * t * t;
+    }
+}
+
+inline float quartic(float t) {
+    if (t >= 0.5f) {
+        t = 1.0f - t;
+        return 1.0f - (t * t * t * t);
+    } else {
+        return t * t * t * t;
+    }
+}
+
+inline float quintic(float t) {
+    if (t >= 0.5f) {
+        t = 1.0f - t;
+        return 1.0f - (t * t * t * t * t);
+    } else {
+        return t * t * t * t * t;
+    }
+}
+
 template <typename T>
 T lerp(float t, T start, T end) {
     return (1.0f - t) * start + t * end;
 }
 
 template <typename T>
-T quad(float t) {
-    t *= 2.0f;
-    if (t >= 1.0f) {
-        t = 2.0f - t
-        return t*t
+T easeQuadratic(float t, T start, T end) {
+    return lerp(quadratic(t), start, end);
 }
 
 template <typename T>
-T easeQuad(float t, T start, T end) {
-    T middle = lerp(0.5f, start, end);
-    t *= 2.0f;
-    if (t >= 0.5f) {
-        return lerp(t*t)
-        return lerp(
-    }
+T easeCubic(float t, T start, T end) {
+    return lerp(cubic(t), start, end);
+}
+
+template <typename T>
+T easeQuartic(float t, T start, T end) {
+    return lerp(quartic(t), start, end);
+}
+
+template <typename T>
+T easeQuintic(float t, T start, T end) {
+    return lerp(quintic(t), start, end);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
