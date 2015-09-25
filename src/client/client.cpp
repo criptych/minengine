@@ -459,6 +459,8 @@ int main(int argc, char **argv) {
     camera.setPosition(0.0, 1.7, 5.0);
     //~ camera.render();
 
+    sf::Vector3f lightPos(1, 5, 10);
+
     Shader shader;
 
     if (!
@@ -778,6 +780,10 @@ int main(int argc, char **argv) {
 
         shader.setParameter("uTime", playTime.asSeconds());
         shader.setParameter("uProjMatrix", projectionTransform);
+
+        Transform3D spinLight;
+        spinLight.rotate(spin, sf::Vector3f(1,0,0));
+        shader.setParameter("uLightPos", spinLight.transformPoint(lightPos));
 
         Transform3D modelViewTransform;
 

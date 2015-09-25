@@ -10,7 +10,7 @@ uniform vec3 uEyePos = vec3(0,0,5);
 
 uniform vec3 uLightPos  = vec3(-2,2,10);
 uniform vec4 uLightAmbt = vec4(0.2, 0.2, 0.2, 1.0);
-uniform vec4 uLightDiff = vec4(0.8, 0.8, 0.8, 1.0);
+uniform vec4 uLightDiff = vec4(0.5, 0.5, 0.5, 1.0);
 uniform vec4 uLightSpec = vec4(1.0, 1.0, 1.0, 1.0);
 
 uniform sampler2D uDiffMap;
@@ -32,7 +32,7 @@ void main () {
     float specFactor = max(0, dot(vNormal, normalize(eyeDir+lightDir)));
 
     vec4 diffTexCol = vec4(1.0,1.0,1.0,1.0); //texture2D(uDiffMap, vTexCoord);
-    vec4 specTexCol = vec4(1.0,1.0,1.0,0.5); //texture2D(uSpecMap, vTexCoord);
+    vec4 specTexCol = vec4(1.0,1.0,1.0,0.2); //texture2D(uSpecMap, vTexCoord);
     vec4 glowTexCol = vec4(0.0,0.0,0.0,1.0); //texture2D(uGlowMap, vTexCoord);
 
     vec4 ambtColor = uLightAmbt * diffTexCol * vColor;
