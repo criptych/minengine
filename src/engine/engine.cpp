@@ -232,6 +232,52 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+Box::Box(): mCenter(), mDimensions() {
+}
+
+Box::Box(
+    const Position &center, const Dimension &dim
+): mCenter(center), mDimensions(dim) {
+}
+
+Box::Box(
+    const Box &box, const Position &center
+): mCenter(center), mDimensions(box.mDimensions) {
+}
+
+Box::Box(
+    const Box &box, const Dimension &dim
+): mCenter(box.mCenter), mDimensions(dim) {
+}
+
+const Position &Box::getCenter() const {
+    return mCenter;
+}
+
+const Dimension &Box::getDimensions() const {
+    return mDimensions;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+Sphere::Sphere(): mCenter(), mRadius() {
+}
+
+Sphere::Sphere(
+    const Position &center, Size radius
+): mCenter(center), mRadius(radius) {
+}
+
+Sphere::Sphere(
+    const Sphere &sphere, const Position &center
+): mCenter(center), mRadius(sphere.mRadius) {
+}
+
+Sphere::Sphere(
+    const Sphere &sphere, Size radius
+): mCenter(sphere.mCenter), mRadius(radius) {
+}
+
 const Position &Sphere::getCenter() const {
     return mCenter;
 }
@@ -240,13 +286,25 @@ Size Sphere::getRadius() const {
     return mRadius;
 }
 
-bool Sphere::intersects(const Sphere &rhs) const {
-    Position l = rhs.mCenter - mCenter;
-    int32_t d = rhs.mRadius + mRadius;
-    return (l.x * l.x + l.y * l.y + l.z * l.z) <= (d * d);
+////////////////////////////////////////////////////////////////////////////////
+
+Capsule::Capsule(): mBase(), mRadius(), mHeight() {
 }
 
-////////////////////////////////////////////////////////////////////////////////
+Capsule::Capsule(
+    const Position &base, Size radius, Size height
+): mBase(base), mRadius(radius), mHeight(height) {
+}
+
+Capsule::Capsule(
+    const Capsule &capsule, const Position &base
+): mBase(base), mRadius(capsule.mRadius), mHeight(capsule.mHeight) {
+}
+
+Capsule::Capsule(
+    const Capsule &capsule, Size radius, Size height
+): mBase(capsule.mBase), mRadius(radius), mHeight(height) {
+}
 
 const Position &Capsule::getBase() const {
     return mBase;
@@ -260,14 +318,78 @@ Size Capsule::getHeight() const {
     return mHeight;
 }
 
-bool Capsule::intersects(const Capsule &rhs) const {
+////////////////////////////////////////////////////////////////////////////////
+
+Physics::CollisionType Physics::checkCollision(
+    const Box &a, const Box &b
+) {
     //! @todo
-    return false;
+    return CollisionType::None;
 }
 
-bool Capsule::intersects(const Sphere &rhs) const {
+Physics::CollisionType Physics::checkCollision(
+    const Box &a, const Box &b
+) {
     //! @todo
-    return false;
+    return CollisionType::None;
+}
+
+Physics::CollisionType Physics::checkCollision(
+    const Box &a, const Box &b
+) {
+    //! @todo
+    return CollisionType::None;
+}
+
+Physics::CollisionType Physics::checkCollision(
+    const Box &a, const Box &b
+) {
+    //! @todo
+    return CollisionType::None;
+}
+
+Physics::CollisionType Physics::checkCollision(
+    const Sphere &a, const Sphere &b
+) {
+    Position c = b.getCenter() - a.getCenter();
+    int32_t r = b.getRadius() + a.getRadius();
+    int64_t d = c.x * c.x + c.y * c.y + c.z * c.z - r * r;
+
+    if (d <= -Epsilon) {
+        return CollisionType::Intrusion;
+    } else if (d < Epsilon) {
+        return CollisionType::Contact;
+    } else {
+        return CollisionType::None;
+    }
+}
+
+Physics::CollisionType Physics::checkCollision(
+    const Box &a, const Box &b
+) {
+    //! @todo
+    return CollisionType::None;
+}
+
+Physics::CollisionType Physics::checkCollision(
+    const Box &a, const Box &b
+) {
+    //! @todo
+    return CollisionType::None;
+}
+
+Physics::CollisionType Physics::checkCollision(
+    const Box &a, const Box &b
+) {
+    //! @todo
+    return CollisionType::None;
+}
+
+Physics::CollisionType Physics::checkCollision(
+    const Box &a, const Box &b
+) {
+    //! @todo
+    return CollisionType::None;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

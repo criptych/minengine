@@ -23,42 +23,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "Transform3D.hpp"
-
-////////////////////////////////////////////////////////////////////////////////
-
-class Transformable3D {
-    sf::Vector3f mPosition;
-    sf::Vector3f mRotation;
-    mutable Transform3D mTransform;
-    mutable Transform3D mInverseTransform;
-    mutable bool mNeedsUpdate;
-    mutable bool mInverseNeedsUpdate;
-
-public:
-    Transformable3D(): mNeedsUpdate(true) {
-    }
-
-    const Transform3D &getTransform() const {
-        if (mNeedsUpdate) {
-            mTransform = Transform3D();
-
-            mNeedsUpdate = false;
-        }
-        return mTransform;
-    }
-
-    const Transform3D &getInverseTransform() const {
-        if (mInverseNeedsUpdate) {
-            mInverseTransform = mTransform.getInverse();
-
-            mInverseNeedsUpdate = false;
-        }
-        return mInverseTransform;
-    }
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
+#include "Transformable3D.hpp"
 #include "Shader.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////

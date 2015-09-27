@@ -38,7 +38,7 @@
  *  for most operations and compact representation for transmission between
  *  client and server, with enough precision for reasonably smooth physics.
  *  The format of angles in particular allows for efficient wraparound handling
- *  and implementing trigonometry as a table lookup.
+ *  and implementing most trigonometry operations as simple table lookups.
  */
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -83,37 +83,29 @@ typedef sf::Vector3<Delta> Velocity;
 ////////////////////////////////////////////////////////////////////////////////
 
 struct Vertex {
-    //~ uint8_t r, g, b, a; // color
-    //~ uint16_t s, t;      // texcoord
-    //~ float u, v, w;      // normal
-    //~ float x, y, z;      // vertex
     sf::Color color;
     sf::Vector2<sf::Int16> texCoord;
     sf::Vector3f normal;
     sf::Vector3f position;
 
     Vertex(
-    //~ ): r(255), g(255), b(255), a(255), s(), t(), u(), v(), w(), x(), y(), z() {
     ): color(sf::Color::White) {
     }
 
     Vertex(
         const sf::Vector3f &position
-    //~ ): r(255), g(255), b(255), a(255), s(), t(), u(), v(), w(), x(x), y(y), z(z) {
     ): color(sf::Color::White), position(position) {
     }
 
     Vertex(
         const sf::Vector3f &normal,
         const sf::Vector3f &position
-    //~ ): r(255), g(255), b(255), a(255), s(), t(), u(u), v(v), w(w), x(x), y(y), z(z) {
     ): color(sf::Color::White), normal(normal), position(position) {
     }
 
     Vertex(
         const sf::Vector2<sf::Int16> &texCoord,
         const sf::Vector3f &position
-    //~ ): r(255), g(255), b(255), a(255), s(), t(), u(u), v(v), w(w), x(x), y(y), z(z) {
     ): color(sf::Color::White), texCoord(texCoord), position(position) {
     }
 
@@ -121,14 +113,12 @@ struct Vertex {
         const sf::Vector2<sf::Int16> &texCoord,
         const sf::Vector3f &normal,
         const sf::Vector3f &position
-    //~ ): r(255), g(255), b(255), a(255), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
     ): color(sf::Color::White), texCoord(texCoord), normal(normal), position(position) {
     }
 
     Vertex(
         const sf::Color &color,
         const sf::Vector3f &position
-    //~ ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
     ): color(color), position(position) {
     }
 
@@ -136,7 +126,6 @@ struct Vertex {
         const sf::Color &color,
         const sf::Vector3f &normal,
         const sf::Vector3f &position
-    //~ ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
     ): color(color), normal(normal), position(position) {
     }
 
@@ -144,7 +133,6 @@ struct Vertex {
         const sf::Color &color,
         const sf::Vector2<sf::Int16> &texCoord,
         const sf::Vector3f &position
-    //~ ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
     ): color(color), texCoord(texCoord), position(position) {
     }
 
@@ -153,27 +141,23 @@ struct Vertex {
         const sf::Vector2<sf::Int16> &texCoord,
         const sf::Vector3f &normal,
         const sf::Vector3f &position
-    //~ ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
     ): color(color), texCoord(texCoord), normal(normal), position(position) {
     }
 
     Vertex(
         float x, float y, float z
-    //~ ): r(255), g(255), b(255), a(255), s(), t(), u(), v(), w(), x(x), y(y), z(z) {
     ): color(sf::Color::White), position(x, y, z) {
     }
 
     Vertex(
         float u, float v, float w,
         float x, float y, float z
-    //~ ): r(255), g(255), b(255), a(255), s(), t(), u(u), v(v), w(w), x(x), y(y), z(z) {
     ): color(sf::Color::White), normal(u, v, w), position(x, y, z) {
     }
 
     Vertex(
         uint16_t s, uint16_t t,
         float x, float y, float z
-    //~ ): r(255), g(255), b(255), a(255), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
     ): color(sf::Color::White), texCoord(s, t), position(x, y, z) {
     }
 
@@ -181,14 +165,12 @@ struct Vertex {
         uint16_t s, uint16_t t,
         float u, float v, float w,
         float x, float y, float z
-    //~ ): r(255), g(255), b(255), a(255), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
     ): color(sf::Color::White), texCoord(s, t), normal(u, v, w), position(x, y, z) {
     }
 
     Vertex(
         uint8_t r, uint8_t g, uint8_t b, uint8_t a,
         float x, float y, float z
-    //~ ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
     ): color(r, g, b, a), position(x, y, z) {
     }
 
@@ -196,7 +178,6 @@ struct Vertex {
         uint8_t r, uint8_t g, uint8_t b, uint8_t a,
         float u, float v, float w,
         float x, float y, float z
-    //~ ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
     ): color(r, g, b, a), normal(u, v, w), position(x, y, z) {
     }
 
@@ -204,7 +185,6 @@ struct Vertex {
         uint8_t r, uint8_t g, uint8_t b, uint8_t a,
         uint16_t s, uint16_t t,
         float x, float y, float z
-    //~ ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
     ): color(r, g, b, a), texCoord(s, t), position(x, y, z) {
     }
 
@@ -213,7 +193,6 @@ struct Vertex {
         uint16_t s, uint16_t t,
         float u, float v, float w,
         float x, float y, float z
-    //~ ): r(r), g(g), b(b), a(a), s(s), t(t), u(u), v(v), w(w), x(x), y(y), z(z) {
     ): color(r, g, b, a), texCoord(s, t), normal(u, v, w), position(x, y, z) {
     }
 
@@ -259,15 +238,34 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 
+class Box {
+    Position mCenter;
+    Dimension mDimensions;
+
+public:
+    Box();
+    Box(const Position &center, const Dimension &dim);
+    Box(const Box &box, const Position &center);
+    Box(const Box &box, const Dimension &dim);
+
+    const Position &getCenter() const;
+    const Dimension &getDimensions() const;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
 class Sphere {
     Position mCenter;
     Size mRadius;
 
 public:
+    Sphere();
+    Sphere(const Position &center, Size radius);
+    Sphere(const Sphere &sphere, const Position &center);
+    Sphere(const Sphere &sphere, Size radius);
+
     const Position &getCenter() const;
     Size getRadius() const;
-
-    bool intersects(const Sphere &rhs) const;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -278,12 +276,37 @@ class Capsule {
     Size mHeight;
 
 public:
+    Capsule();
+    Capsule(const Position &base, Size radius, Size height);
+    Capsule(const Capsule &capsule, const Position &base);
+    Capsule(const Capsule &capsule, Size radius, Size height);
+
     const Position &getBase() const;
     Size getRadius() const;
     Size getHeight() const;
+};
 
-    bool intersects(const Capsule &rhs) const;
-    bool intersects(const Sphere &rhs) const;
+////////////////////////////////////////////////////////////////////////////////
+
+class Physics {
+    Physics() {}
+
+public:
+    enum class CollisionType {
+        None, Contact, Intrusion
+    };
+
+    static const Size Epsilon = 2;
+
+    static CollisionType checkCollision(const Box &a, const Box &b);
+    static CollisionType checkCollision(const Box &a, const Sphere &b);
+    static CollisionType checkCollision(const Box &a, const Capsule &b);
+    static CollisionType checkCollision(const Sphere &a, const Box &b);
+    static CollisionType checkCollision(const Sphere &a, const Sphere &b);
+    static CollisionType checkCollision(const Sphere &a, const Capsule &b);
+    static CollisionType checkCollision(const Capsule &a, const Box &b);
+    static CollisionType checkCollision(const Capsule &a, const Sphere &b);
+    static CollisionType checkCollision(const Capsule &a, const Capsule &b);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
