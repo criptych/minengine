@@ -296,7 +296,7 @@ public:
         None, Contact, Intrusion
     };
 
-    static const Size Epsilon = 2;
+    static const Size Epsilon = 3; // ~1%
 
     static CollisionType checkCollision(const Box &a, const Box &b);
     static CollisionType checkCollision(const Box &a, const Sphere &b);

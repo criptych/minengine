@@ -323,29 +323,47 @@ Size Capsule::getHeight() const {
 Physics::CollisionType Physics::checkCollision(
     const Box &a, const Box &b
 ) {
-    //! @todo
+    Position minA = a.getCenter() - Position(a.getDimensions());
+    Position maxA = a.getCenter() + Position(a.getDimensions());
+    Position minB = b.getCenter() - Position(b.getDimensions());
+    Position maxB = b.getCenter() + Position(b.getDimensions());
+
+    if (
+        minA.x <= maxB.x && minA.y <= maxB.y && minA.z <= maxB.z &&
+        minB.x <= maxA.x && minB.y <= maxA.y && minB.z <= maxA.z
+    ) {
+
+        if (
+            minA.x < maxB.x && minA.y < maxB.y && minA.z < maxB.z &&
+            minB.x < maxA.x && minB.y < maxA.y && minB.z < maxA.z
+        ) {
+            return CollisionType::Intrusion;
+        }
+
+        return CollisionType::Contact;
+    }
+
     return CollisionType::None;
 }
 
 Physics::CollisionType Physics::checkCollision(
-    const Box &a, const Box &b
+    const Box &a, const Sphere &b
 ) {
     //! @todo
     return CollisionType::None;
 }
 
 Physics::CollisionType Physics::checkCollision(
-    const Box &a, const Box &b
+    const Box &a, const Capsule &b
 ) {
     //! @todo
     return CollisionType::None;
 }
 
 Physics::CollisionType Physics::checkCollision(
-    const Box &a, const Box &b
+    const Sphere &a, const Box &b
 ) {
-    //! @todo
-    return CollisionType::None;
+    return checkCollision(b, a);
 }
 
 Physics::CollisionType Physics::checkCollision(
@@ -355,41 +373,51 @@ Physics::CollisionType Physics::checkCollision(
     int32_t r = b.getRadius() + a.getRadius();
     int64_t d = c.x * c.x + c.y * c.y + c.z * c.z - r * r;
 
-    if (d <= -Epsilon) {
-        return CollisionType::Intrusion;
-    } else if (d < Epsilon) {
+    if (d >= Epsilon) {
+        return CollisionType::None;
+    } else if (d > -Epsilon) {
         return CollisionType::Contact;
     } else {
-        return CollisionType::None;
+        return CollisionType::Intrusion;
     }
 }
 
 Physics::CollisionType Physics::checkCollision(
-    const Box &a, const Box &b
+    const Sphere &a, const Capsule &b
 ) {
     //! @todo
     return CollisionType::None;
 }
 
 Physics::CollisionType Physics::checkCollision(
-    const Box &a, const Box &b
+    const Capsule &a, const Box &b
 ) {
-    //! @todo
-    return CollisionType::None;
+    return checkCollision(b, a);
 }
 
 Physics::CollisionType Physics::checkCollision(
-    const Box &a, const Box &b
+    const Capsule &a, const Sphere &b
 ) {
-    //! @todo
-    return CollisionType::None;
+    return checkCollision(b, a);
 }
 
 Physics::CollisionType Physics::checkCollision(
-    const Box &a, const Box &b
+    const Capsule &a, const Capsule &b
 ) {
-    //! @todo
-    return CollisionType::None;
+    Position c = b.getBase() - a.getBase();
+    int32_t r = b.getRadius() + a.getRadius();
+    //~ int32_t h = b.getHeight() + a.getHeight() - r;
+    int64_t d = c.x * c.x + c.z * c.z - r * r;
+
+    if (d >= Epsilon) {
+        return CollisionType::None;
+    } else if (d > -Epsilon) {
+        //! @todo
+        return CollisionType::Contact;
+    } else {
+        //! @todo
+        return CollisionType::Intrusion;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
