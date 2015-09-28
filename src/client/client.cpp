@@ -188,7 +188,7 @@ int main(int argc, char **argv) {
     camera.setPosition(0.0, 1.7, 5.0);
     //~ camera.render();
 
-    sf::Vector3f lightPos(1, 5, 10);
+    sf::Vector3f lightPos(1, 10, 0);
 
     Shader shader;
 
