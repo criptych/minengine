@@ -6,7 +6,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 
 PROJECT(minengine VERSION 0.1 LANGUAGES C CXX)
 
-SET(CMAKE_BUILD_TYPE Debug)
+IF(NOT CMAKE_BUILD_TYPE)
+    SET(CMAKE_BUILD_TYPE Debug CACHE)
+ENDIF()
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Werror")
@@ -37,6 +39,8 @@ SET(ENGINE_SRCS
 
 SET(CLIENT_SRCS
     src/client/client.cpp
+    src/client/Camera.cpp
+    src/client/ClientModel.cpp
     src/client/Shader.cpp
     src/client/Transform3D.cpp
     src/client/Transformable3D.cpp

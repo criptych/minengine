@@ -74,11 +74,106 @@ public:
 typedef int64_t Coord;
 typedef uint16_t Size;
 typedef int16_t Delta;
+typedef int32_t LargeDelta;
 
 typedef sf::Vector2<Angle> Orientation;
 typedef sf::Vector3<Coord> Position;
 typedef sf::Vector3<Size>  Dimension;
 typedef sf::Vector3<Delta> Velocity;
+typedef sf::Vector3<LargeDelta> Acceleration;
+typedef sf::Vector3<LargeDelta> Force;
+
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ *  Axis-aligned box, used for physics simulation of (most) blocks.
+ */
+class Box {
+    Dimension mDimensions;
+
+public:
+    Box();
+    Box(const Dimension &dim);
+
+    const Dimension &getDimensions() const;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ *  Centered sphere, used for physics simulation of various items e.g. EXP orbs.
+ */
+class Sphere {
+    Size mRadius;
+
+public:
+    Sphere();
+    Sphere(Size radius);
+
+    Size getRadius() const;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ *  Vertical capsule, used for physics simulation of e.g. mobs.
+ */
+class Capsule {
+    Size mRadius;
+    Size mHeight;
+
+public:
+    Capsule();
+    Capsule(Size radius, Size height);
+
+    Size getRadius() const;
+    Size getHeight() const;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+class Physics {
+    static const Size Epsilon = 3; // ~1%
+
+    Physics();
+
+    Velocity mGravity;
+
+public:
+    enum class CollisionType {
+        None,       //!< Bounding volumes do not intersect
+        Contact,    //!< Bounding volume surfaces intersect ("touch")
+        Intrusion   //!< Bounding volume interiors intersect ("overlap")
+    };
+
+    class Body {
+        Position mPosition;
+        Velocity mVelocity;
+        Size mMass;
+
+        friend class Physics;
+
+    public:
+        const Position &getPosition() const;
+        const Velocity &getVelocity() const;
+        Size getMass() const;
+    };
+
+    CollisionType checkCollision(const Position &pa, const Box     &a, const Position &pb, const Box     &b);
+    CollisionType checkCollision(const Position &pa, const Box     &a, const Position &pb, const Sphere  &b);
+    CollisionType checkCollision(const Position &pa, const Box     &a, const Position &pb, const Capsule &b);
+    CollisionType checkCollision(const Position &pa, const Sphere  &a, const Position &pb, const Box     &b);
+    CollisionType checkCollision(const Position &pa, const Sphere  &a, const Position &pb, const Sphere  &b);
+    CollisionType checkCollision(const Position &pa, const Sphere  &a, const Position &pb, const Capsule &b);
+    CollisionType checkCollision(const Position &pa, const Capsule &a, const Position &pb, const Box     &b);
+    CollisionType checkCollision(const Position &pa, const Capsule &a, const Position &pb, const Sphere  &b);
+    CollisionType checkCollision(const Position &pa, const Capsule &a, const Position &pb, const Capsule &b);
+
+    void update(Body &b, const sf::Time &t) const;
+    void accelerate(Body &b, const Velocity &v) const;
+    void gravitate(Body &b) const;
+    void impulse(Body &b, const Velocity &v, const sf::Time &t) const;
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -212,14 +307,16 @@ public:
         uint32_t primitive,
         const I &start,
         const I &end
-    ): mPrimitive(primitive), mVertices(start, end) {
+    ): mPrimitive(primitive) {
+        addVertices(start, end);
     }
 
     template <typename A>
     Model(
         uint32_t primitive,
         const A &array
-    ): mPrimitive(primitive), mVertices(std::begin(array), std::end(array)) {
+    ): mPrimitive(primitive) {
+        addVertices(array);
     }
 
     uint32_t getPrimitive() const;
@@ -232,81 +329,29 @@ public:
     void clearVertices();
     void addVertex(const Vertex &vertex);
 
-    void calcNormals(size_t start, size_t end, bool smooth = false);
+    void addVertices(const Vertex *verts, size_t count);
+
+    template <typename I>
+    void addVertices(
+        const I &start,
+        const I &end
+    ) {
+        for (I it = start; it != end; it++) {
+            addVertex(*it);
+        }
+    }
+
+    template <typename A>
+    void addVertices(
+        const A &array
+    ) {
+        for (const Vertex &v : array) {
+            addVertex(v);
+        }
+    }
+
     void calcNormals(bool smooth = false);
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-class Box {
-    Position mCenter;
-    Dimension mDimensions;
-
-public:
-    Box();
-    Box(const Position &center, const Dimension &dim);
-    Box(const Box &box, const Position &center);
-    Box(const Box &box, const Dimension &dim);
-
-    const Position &getCenter() const;
-    const Dimension &getDimensions() const;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-class Sphere {
-    Position mCenter;
-    Size mRadius;
-
-public:
-    Sphere();
-    Sphere(const Position &center, Size radius);
-    Sphere(const Sphere &sphere, const Position &center);
-    Sphere(const Sphere &sphere, Size radius);
-
-    const Position &getCenter() const;
-    Size getRadius() const;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-class Capsule {
-    Position mBase;
-    Size mRadius;
-    Size mHeight;
-
-public:
-    Capsule();
-    Capsule(const Position &base, Size radius, Size height);
-    Capsule(const Capsule &capsule, const Position &base);
-    Capsule(const Capsule &capsule, Size radius, Size height);
-
-    const Position &getBase() const;
-    Size getRadius() const;
-    Size getHeight() const;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-class Physics {
-    Physics() {}
-
-public:
-    enum class CollisionType {
-        None, Contact, Intrusion
-    };
-
-    static const Size Epsilon = 3; // ~1%
-
-    static CollisionType checkCollision(const Box &a, const Box &b);
-    static CollisionType checkCollision(const Box &a, const Sphere &b);
-    static CollisionType checkCollision(const Box &a, const Capsule &b);
-    static CollisionType checkCollision(const Sphere &a, const Box &b);
-    static CollisionType checkCollision(const Sphere &a, const Sphere &b);
-    static CollisionType checkCollision(const Sphere &a, const Capsule &b);
-    static CollisionType checkCollision(const Capsule &a, const Box &b);
-    static CollisionType checkCollision(const Capsule &a, const Sphere &b);
-    static CollisionType checkCollision(const Capsule &a, const Capsule &b);
+    void calcNormals(size_t start, size_t end, bool smooth = false);
 };
 
 ////////////////////////////////////////////////////////////////////////////////

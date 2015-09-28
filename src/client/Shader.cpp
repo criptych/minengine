@@ -138,7 +138,7 @@ void Shader::setParameter(GLint location, const sf::Vector3f &value) {
     GLChecked(glUniform3f(location, value.x, value.y, value.z));
 }
 
-void Shader::setParameter(GLint location, const sf::Transform &value) {
+void Shader::setParameter(GLint location, const Transform3D &value) {
     TempBinder binder(this);
     GLChecked(glUniformMatrix4fv(location, 1, GL_FALSE, value.getMatrix()));
 }
@@ -167,7 +167,7 @@ void Shader::setParameter(const std::string &name, const sf::Vector3f &value) {
     return setParameter(getUniformLocation(name), value);
 }
 
-void Shader::setParameter(const std::string &name, const sf::Transform &value) {
+void Shader::setParameter(const std::string &name, const Transform3D &value) {
     return setParameter(getUniformLocation(name), value);
 }
 

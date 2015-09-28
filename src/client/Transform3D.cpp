@@ -8,7 +8,12 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Transform3D::Transform3D(): Transform() {
+Transform3D::Transform3D() {
+    float *m = mMatrix;
+    m[ 0] = 1.0f; m[ 4] = 0.0f; m[ 8] = 0.0f; m[12] = 0.0f;
+    m[ 1] = 0.0f; m[ 5] = 1.0f; m[ 9] = 0.0f; m[13] = 0.0f;
+    m[ 2] = 0.0f; m[ 6] = 0.0f; m[10] = 1.0f; m[14] = 0.0f;
+    m[ 3] = 0.0f; m[ 7] = 0.0f; m[11] = 0.0f; m[15] = 1.0f;
 }
 
 Transform3D::Transform3D(
@@ -17,16 +22,16 @@ Transform3D::Transform3D(
     float a20, float a21, float a22, float a23,
     float a30, float a31, float a32, float a33
 ) {
-    float *m = const_cast<float*>(getMatrix());
+    float *m = mMatrix;
     m[ 0] = a00; m[ 4] = a01; m[ 8] = a02; m[12] = a03;
     m[ 1] = a10; m[ 5] = a11; m[ 9] = a12; m[13] = a13;
     m[ 2] = a20; m[ 6] = a21; m[10] = a22; m[14] = a23;
     m[ 3] = a30; m[ 7] = a31; m[11] = a32; m[15] = a33;
 }
 
-Transform3D::Transform3D(const sf::Transform &transform) {
-    const float *a = transform.getMatrix();
-    float *b = const_cast<float*>(getMatrix());
+Transform3D::Transform3D(const Transform3D &transform) {
+    const float *a = transform.mMatrix;
+    float *b = mMatrix;
 
     b[ 0] = a[ 0]; b[ 4] = a[ 4]; b[ 8] = a[ 8]; b[12] = a[12];
     b[ 1] = a[ 1]; b[ 5] = a[ 5]; b[ 9] = a[ 9]; b[13] = a[13];
@@ -34,9 +39,13 @@ Transform3D::Transform3D(const sf::Transform &transform) {
     b[ 3] = a[ 3]; b[ 7] = a[ 7]; b[11] = a[11]; b[15] = a[15];
 }
 
-Transform3D &Transform3D::combine(const sf::Transform& transform) {
-    const float *a = getMatrix();
-    const float *b = transform.getMatrix();
+const float *Transform3D::getMatrix() const {
+    return mMatrix;
+}
+
+Transform3D &Transform3D::combine(const Transform3D& transform) {
+    const float *a = mMatrix;
+    const float *b = transform.mMatrix;
 
     *this = Transform3D(a[ 0] * b[ 0] + a[ 4] * b[ 1] + a[ 8] * b[ 2] + a[12] * b[ 3],
                         a[ 0] * b[ 4] + a[ 4] * b[ 5] + a[ 8] * b[ 6] + a[12] * b[ 7],
@@ -58,8 +67,8 @@ Transform3D &Transform3D::combine(const sf::Transform& transform) {
     return *this;
 }
 
-sf::Vector3f Transform3D::transformPoint(const sf::Vector3f& p) {
-    const float *a = getMatrix();
+sf::Vector3f Transform3D::transformPoint(const sf::Vector3f& p) const {
+    const float *a = mMatrix;
     float x = a[ 0] * p.x + a[ 4] * p.y + a[ 8] * p.z + a[12];
     float y = a[ 1] * p.x + a[ 5] * p.y + a[ 9] * p.z + a[13];
     float z = a[ 2] * p.x + a[ 6] * p.y + a[10] * p.z + a[14];

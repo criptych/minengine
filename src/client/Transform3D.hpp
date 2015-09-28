@@ -12,7 +12,9 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Transform3D : public sf::Transform {
+class Transform3D {
+    float mMatrix[16];
+
 public:
     Transform3D();
 
@@ -23,10 +25,12 @@ public:
         float a30, float a31, float a32, float a33
     );
 
-    Transform3D(const sf::Transform &transform);
+    Transform3D(const Transform3D &transform);
 
-    Transform3D &combine(const sf::Transform& transform);
-    sf::Vector3f transformPoint(const sf::Vector3f &point);
+    const float *getMatrix() const;
+
+    Transform3D &combine(const Transform3D& transform);
+    sf::Vector3f transformPoint(const sf::Vector3f &point) const;
 
     Transform3D &frustum(float left, float right, float bottom, float top, float near, float far);
     Transform3D &perspective(float fov, float aspect, float near, float far);

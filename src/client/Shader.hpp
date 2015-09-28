@@ -12,8 +12,10 @@
 
 #include <GL/glew.h>
 
-#include <SFML/Graphics/Transform.hpp>
+//~ #include <SFML/Graphics/Transform.hpp>
 #include <SFML/System.hpp>
+
+#include "Transform3D.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -53,14 +55,14 @@ public:
     void setParameter(GLint location, float value);
     void setParameter(GLint location, const sf::Vector2f &value);
     void setParameter(GLint location, const sf::Vector3f &value);
-    void setParameter(GLint location, const sf::Transform &value);
+    void setParameter(GLint location, const Transform3D &value);
     void setParameter(const std::string &name, int value);
     void setParameter(const std::string &name, const sf::Vector2i &value);
     void setParameter(const std::string &name, const sf::Vector3i &value);
     void setParameter(const std::string &name, float value);
     void setParameter(const std::string &name, const sf::Vector2f &value);
     void setParameter(const std::string &name, const sf::Vector3f &value);
-    void setParameter(const std::string &name, const sf::Transform &value);
+    void setParameter(const std::string &name, const Transform3D &value);
 
     GLuint getProgramID() const;
 

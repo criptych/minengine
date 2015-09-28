@@ -113,6 +113,219 @@ namespace std {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+Box::Box(): mDimensions() {
+}
+
+Box::Box(
+    const Dimension &dim
+): mDimensions(dim) {
+}
+
+const Dimension &Box::getDimensions() const {
+    return mDimensions;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+Sphere::Sphere(): mRadius() {
+}
+
+Sphere::Sphere(
+    Size radius
+): mRadius(radius) {
+}
+
+Size Sphere::getRadius() const {
+    return mRadius;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+Capsule::Capsule(): mRadius(), mHeight() {
+}
+
+Capsule::Capsule(
+    Size radius, Size height
+): mRadius(radius), mHeight(height) {
+}
+
+Size Capsule::getRadius() const {
+    return mRadius;
+}
+
+Size Capsule::getHeight() const {
+    return mHeight;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+const Position &Physics::Body::getPosition() const {
+    return mPosition;
+}
+
+const Velocity &Physics::Body::getVelocity() const {
+    return mVelocity;
+}
+
+Size Physics::Body::getMass() const {
+    return mMass;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+Physics::Physics(
+): mGravity(0,-6,0) {
+}
+
+Physics::CollisionType Physics::checkCollision(
+    const Position &pa,
+    const Box &a,
+    const Position &pb,
+    const Box &b
+) {
+    Position minA = pa - Position(a.getDimensions());
+    Position maxA = pa + Position(a.getDimensions());
+    Position minB = pb - Position(b.getDimensions());
+    Position maxB = pb + Position(b.getDimensions());
+
+    if (
+        minA.x <= maxB.x && minA.y <= maxB.y && minA.z <= maxB.z &&
+        minB.x <= maxA.x && minB.y <= maxA.y && minB.z <= maxA.z
+    ) {
+
+        if (
+            minA.x < maxB.x && minA.y < maxB.y && minA.z < maxB.z &&
+            minB.x < maxA.x && minB.y < maxA.y && minB.z < maxA.z
+        ) {
+            return CollisionType::Intrusion;
+        }
+
+        return CollisionType::Contact;
+    }
+
+    return CollisionType::None;
+}
+
+Physics::CollisionType Physics::checkCollision(
+    const Position &pa,
+    const Box &a,
+    const Position &pb,
+    const Sphere &b
+) {
+    //! @todo
+    return CollisionType::None;
+}
+
+Physics::CollisionType Physics::checkCollision(
+    const Position &pa,
+    const Box &a,
+    const Position &pb,
+    const Capsule &b
+) {
+    //! @todo
+    return CollisionType::None;
+}
+
+Physics::CollisionType Physics::checkCollision(
+    const Position &pa,
+    const Sphere &a,
+    const Position &pb,
+    const Box &b
+) {
+    return checkCollision(pb, b, pa, a);
+}
+
+Physics::CollisionType Physics::checkCollision(
+    const Position &pa,
+    const Sphere &a,
+    const Position &pb,
+    const Sphere &b
+) {
+    Position c = pb - pa;
+    int32_t r = b.getRadius() + a.getRadius();
+    int64_t d = c.x * c.x + c.y * c.y + c.z * c.z - r * r;
+
+    if (d >= Epsilon) {
+        return CollisionType::None;
+    } else if (d > -Epsilon) {
+        return CollisionType::Contact;
+    } else {
+        return CollisionType::Intrusion;
+    }
+}
+
+Physics::CollisionType Physics::checkCollision(
+    const Position &pa,
+    const Sphere &a,
+    const Position &pb,
+    const Capsule &b
+) {
+    //! @todo
+    return CollisionType::None;
+}
+
+Physics::CollisionType Physics::checkCollision(
+    const Position &pa,
+    const Capsule &a,
+    const Position &pb,
+    const Box &b
+) {
+    return checkCollision(pb, b, pa, a);
+}
+
+Physics::CollisionType Physics::checkCollision(
+    const Position &pa,
+    const Capsule &a,
+    const Position &pb,
+    const Sphere &b
+) {
+    return checkCollision(pb, b, pa, a);
+}
+
+Physics::CollisionType Physics::checkCollision(
+    const Position &pa,
+    const Capsule &a,
+    const Position &pb,
+    const Capsule &b
+) {
+    Position c = pb - pa;
+    int32_t r = b.getRadius() + a.getRadius();
+    //~ int32_t h = b.getHeight() + a.getHeight() - r;
+    int64_t d = c.x * c.x + c.z * c.z - r * r;
+
+    if (d >= Epsilon) {
+        // out of horizontal range
+        return CollisionType::None;
+    } else if (d > -Epsilon) {
+        //! @todo
+        return CollisionType::Contact;
+    } else {
+        //! @todo
+        return CollisionType::Intrusion;
+    }
+}
+
+
+void Physics::update(Body &b, const sf::Time &t) const {
+    float s = t.asSeconds();
+    b.mPosition += Position(b.mVelocity.x * s, b.mVelocity.y * s, b.mVelocity.z * s);
+}
+
+void Physics::accelerate(Body &b, const Velocity &v) const {
+    b.mVelocity += v;
+}
+
+void Physics::gravitate(Body &b) const {
+    accelerate(b, mGravity);
+}
+
+void Physics::impulse(Body &b, const Velocity &v, const sf::Time &t) const {
+    float s = t.asSeconds();
+    accelerate(b, Velocity(v.x * s, v.y * s, v.z * s));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 Model::Model(
     uint32_t primitive
 ): mPrimitive(primitive) {
@@ -146,18 +359,18 @@ void Model::calcNormals(bool smooth) {
     calcNormals(0, mVertices.size(), smooth);
 }
 
-#ifndef GL_VERSION_1_1
-# define GL_POINTS 0x0000
-# define GL_LINES 0x0001
-# define GL_LINE_LOOP 0x0002
-# define GL_LINE_STRIP 0x0003
-# define GL_TRIANGLES 0x0004
-# define GL_TRIANGLE_STRIP 0x0005
-# define GL_TRIANGLE_FAN 0x0006
-# define GL_QUADS 0x0007
-# define GL_QUAD_STRIP 0x0008
-# define GL_POLYGON 0x0009
-#endif
+enum GLPrimitive {
+    GLPoints,
+    GLLines,
+    GLLineLoop,
+    GLLineStrip,
+    GLTriangles,
+    GLTriangleStrip,
+    GLTriangleFan,
+    GLQuads,
+    GLQuadStrip,
+    GLPolygon,
+};
 
 void Model::calcNormals(size_t start, size_t end, bool smooth) {
     if (end > mVertices.size()) {
@@ -169,10 +382,8 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
 
     sf::err() << "start == " << start << ", end == " << end << "\n";
 
-    switch (mPrimitive)
-    {
-        case GL_TRIANGLES:
-        {
+    switch (mPrimitive) {
+        case GLTriangles: {
             for (size_t i = 0; i < mVertices.size(); i += 3) {
                 sf::Vector3f p[3], n[3];
 
@@ -192,18 +403,15 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
             break;
         }
 
-        case GL_TRIANGLE_FAN:
-        {
+        case GLTriangleFan: {
             break;
         }
 
-        case GL_TRIANGLE_STRIP:
-        {
+        case GLTriangleStrip: {
             break;
         }
 
-        case GL_QUADS:
-        {
+        case GLQuads: {
             for (size_t i = 0; i < mVertices.size(); i += 4) {
                 sf::Vector3f p[4], n[4];
 
@@ -223,200 +431,9 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
             break;
         }
 
-        case GL_QUAD_STRIP:
-        {
+        case GLQuadStrip: {
             break;
         }
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-Box::Box(): mCenter(), mDimensions() {
-}
-
-Box::Box(
-    const Position &center, const Dimension &dim
-): mCenter(center), mDimensions(dim) {
-}
-
-Box::Box(
-    const Box &box, const Position &center
-): mCenter(center), mDimensions(box.mDimensions) {
-}
-
-Box::Box(
-    const Box &box, const Dimension &dim
-): mCenter(box.mCenter), mDimensions(dim) {
-}
-
-const Position &Box::getCenter() const {
-    return mCenter;
-}
-
-const Dimension &Box::getDimensions() const {
-    return mDimensions;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-Sphere::Sphere(): mCenter(), mRadius() {
-}
-
-Sphere::Sphere(
-    const Position &center, Size radius
-): mCenter(center), mRadius(radius) {
-}
-
-Sphere::Sphere(
-    const Sphere &sphere, const Position &center
-): mCenter(center), mRadius(sphere.mRadius) {
-}
-
-Sphere::Sphere(
-    const Sphere &sphere, Size radius
-): mCenter(sphere.mCenter), mRadius(radius) {
-}
-
-const Position &Sphere::getCenter() const {
-    return mCenter;
-}
-
-Size Sphere::getRadius() const {
-    return mRadius;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-Capsule::Capsule(): mBase(), mRadius(), mHeight() {
-}
-
-Capsule::Capsule(
-    const Position &base, Size radius, Size height
-): mBase(base), mRadius(radius), mHeight(height) {
-}
-
-Capsule::Capsule(
-    const Capsule &capsule, const Position &base
-): mBase(base), mRadius(capsule.mRadius), mHeight(capsule.mHeight) {
-}
-
-Capsule::Capsule(
-    const Capsule &capsule, Size radius, Size height
-): mBase(capsule.mBase), mRadius(radius), mHeight(height) {
-}
-
-const Position &Capsule::getBase() const {
-    return mBase;
-}
-
-Size Capsule::getRadius() const {
-    return mRadius;
-}
-
-Size Capsule::getHeight() const {
-    return mHeight;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-Physics::CollisionType Physics::checkCollision(
-    const Box &a, const Box &b
-) {
-    Position minA = a.getCenter() - Position(a.getDimensions());
-    Position maxA = a.getCenter() + Position(a.getDimensions());
-    Position minB = b.getCenter() - Position(b.getDimensions());
-    Position maxB = b.getCenter() + Position(b.getDimensions());
-
-    if (
-        minA.x <= maxB.x && minA.y <= maxB.y && minA.z <= maxB.z &&
-        minB.x <= maxA.x && minB.y <= maxA.y && minB.z <= maxA.z
-    ) {
-
-        if (
-            minA.x < maxB.x && minA.y < maxB.y && minA.z < maxB.z &&
-            minB.x < maxA.x && minB.y < maxA.y && minB.z < maxA.z
-        ) {
-            return CollisionType::Intrusion;
-        }
-
-        return CollisionType::Contact;
-    }
-
-    return CollisionType::None;
-}
-
-Physics::CollisionType Physics::checkCollision(
-    const Box &a, const Sphere &b
-) {
-    //! @todo
-    return CollisionType::None;
-}
-
-Physics::CollisionType Physics::checkCollision(
-    const Box &a, const Capsule &b
-) {
-    //! @todo
-    return CollisionType::None;
-}
-
-Physics::CollisionType Physics::checkCollision(
-    const Sphere &a, const Box &b
-) {
-    return checkCollision(b, a);
-}
-
-Physics::CollisionType Physics::checkCollision(
-    const Sphere &a, const Sphere &b
-) {
-    Position c = b.getCenter() - a.getCenter();
-    int32_t r = b.getRadius() + a.getRadius();
-    int64_t d = c.x * c.x + c.y * c.y + c.z * c.z - r * r;
-
-    if (d >= Epsilon) {
-        return CollisionType::None;
-    } else if (d > -Epsilon) {
-        return CollisionType::Contact;
-    } else {
-        return CollisionType::Intrusion;
-    }
-}
-
-Physics::CollisionType Physics::checkCollision(
-    const Sphere &a, const Capsule &b
-) {
-    //! @todo
-    return CollisionType::None;
-}
-
-Physics::CollisionType Physics::checkCollision(
-    const Capsule &a, const Box &b
-) {
-    return checkCollision(b, a);
-}
-
-Physics::CollisionType Physics::checkCollision(
-    const Capsule &a, const Sphere &b
-) {
-    return checkCollision(b, a);
-}
-
-Physics::CollisionType Physics::checkCollision(
-    const Capsule &a, const Capsule &b
-) {
-    Position c = b.getBase() - a.getBase();
-    int32_t r = b.getRadius() + a.getRadius();
-    //~ int32_t h = b.getHeight() + a.getHeight() - r;
-    int64_t d = c.x * c.x + c.z * c.z - r * r;
-
-    if (d >= Epsilon) {
-        return CollisionType::None;
-    } else if (d > -Epsilon) {
-        //! @todo
-        return CollisionType::Contact;
-    } else {
-        //! @todo
-        return CollisionType::Intrusion;
     }
 }
 

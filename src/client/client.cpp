@@ -5,7 +5,7 @@
 #include "engine/engine.hpp"
 
 #include <GL/glew.h>
-#include <GL/glu.h>
+//~ #include <GL/glu.h>
 
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
@@ -25,366 +25,130 @@
 #include "Transform3D.hpp"
 #include "Transformable3D.hpp"
 #include "Shader.hpp"
+#include "Camera.hpp"
+#include "ClientModel.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Camera {
-    float mFOV;
-    float mAspect;
-    float mZNear;
-    float mZFar;
-    sf::Vector3f mPosition;
-    sf::Vector2f mLook;
+void makeBall(Model &model, const sf::Vector3f &center, float size, size_t step) {
+    if (step < 2) {
+        step = 2;
+    }
+    size_t rstep = 2 * step;
+    size_t n = (step - 1) * rstep + 1;
 
-    mutable Transform3D mTransform;
-    mutable bool mNeedsUpdate;
+    float phi = 0, theta = 0, dphi = Pi / (step * rstep), dtheta = 2.0 * Pi / rstep;
 
-public:
-    Camera(
-    ): mFOV(75.0), mAspect(1.0), mZNear(0.1), mZFar(100.0), mNeedsUpdate(true) {
+    model.clearVertices();
+    model.setPrimitive(GL_TRIANGLE_STRIP);
+
+    //~ model.addVertex(sf::Vector3f(center.x, center.y+size, center.z));
+
+    for (size_t i = 0; i <= n; i++) {
+        model.addVertex(sf::Vector3f(
+            center.x+size*std::sin(phi)*std::cos(theta),
+            center.y+size*std::cos(phi),
+            center.z+size*std::sin(phi)*std::sin(theta)
+        ));
+
+        theta += dtheta;
+        phi += dphi;
     }
 
-    Camera(
-        float fov,
-        float aspect,
-        float zNear,
-        float zFar
-    ): mFOV(fov), mAspect(aspect), mZNear(zNear), mZFar(zFar), mNeedsUpdate(true) {
-    }
+    //~ model.addVertex(sf::Vector3f(center.x, center.y-size, center.z));
+}
 
-    ~Camera() {
-    }
-
-    void setFOV(float fov) {
-        mFOV = fov;
-        mNeedsUpdate = true;
-    }
-
-    float getFOV() const {
-        return mFOV;
-    }
-
-    void setAspect(float aspect) {
-        mAspect = aspect;
-        mNeedsUpdate = true;
-    }
-
-    float getAspect() const {
-        return mAspect;
-    }
-
-    void setZNear(float zNear) {
-        mZNear = zNear;
-        mNeedsUpdate = true;
-    }
-
-    float getZNear() const {
-        return mZNear;
-    }
-
-    void setZFar(float zFar) {
-        mZFar = zFar;
-        mNeedsUpdate = true;
-    }
-
-    float getZFar() const {
-        return mZFar;
-    }
-
-    void setZRange(float zNear, float zFar) {
-        mZNear = zNear;
-        mZFar = zFar;
-        mNeedsUpdate = true;
-    }
-
-    void setPosition(const sf::Vector3f &position) {
-        mPosition = position;
-        mNeedsUpdate = true;
-    }
-
-    void setPosition(float x, float y, float z) {
-        setPosition(sf::Vector3f(x, y, z));
-    }
-
-    const sf::Vector3f &getPosition() const {
-        return mPosition;
-    }
-
-    void move(const sf::Vector3f &offset) {
-        setPosition(mPosition.x + offset.x,
-                    mPosition.y + offset.y,
-                    mPosition.z + offset.z);
-    }
-
-    void move(const sf::Vector3f &offset, float angle) {
-        move(Transform3D().rotate(angle, sf::Vector3f(0, 1, 0)).transformPoint(offset));
-    }
-
-    void move(float dx, float dy, float dz) {
-        move(sf::Vector3f(dx, dy, dz));
-    }
-
-    void setLook(const sf::Vector2f &look) {
-        mLook = look;
-        mNeedsUpdate = true;
-    }
-
-    const sf::Vector2f &getLook() const {
-        return mLook;
-    }
-
-    const Transform3D &getTransform() const {
-        if (mNeedsUpdate) {
-            mTransform = Transform3D();
-            mTransform.perspective(mFOV, mAspect, mZNear, mZFar);
-            mTransform.rotate(mLook.y, sf::Vector3f(1.0f, 0.0f, 0.0f));
-            mTransform.rotate(mLook.x, sf::Vector3f(0.0f, 1.0f, 0.0f));
-            mTransform.translate(-sf::Vector3f(mPosition));
-            mNeedsUpdate = false;
-        }
-        return mTransform;
-    }
-
-    void render() const {
-        GLChecked(glMatrixMode(GL_PROJECTION));
-        GLChecked(glLoadMatrixf(getTransform().getMatrix()));
-        GLChecked(glMatrixMode(GL_MODELVIEW));
-    }
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-class ModelRenderer {
-    const Model *mModel;
-    const Shader *mShader;
-    mutable GLuint mVBO;
-    mutable GLenum mPrimitive;
-    mutable GLuint mCount;
-
-public:
-    ModelRenderer(
-        const Model *model = nullptr,
-        const Shader *shader = nullptr
-    ): mModel(model), mShader(shader), mVBO(), mPrimitive(), mCount() {
-    }
-
-    ~ModelRenderer() {
-        destroyVBO();
-    }
-
-    void setModel(const Model *model) {
-        destroyVBO();
-        mModel = model;
-    }
-
-    void setShader(const Shader *shader) {
-        mShader = shader;
-    }
-
-    void render() const {
-        if (mModel) {
-            if (mVBO == 0) {
-                createVBO();
-                if (mVBO == 0) {
-                    return;
-                }
-            }
-
-            if (mShader) {
-                Shader::bind(mShader);
-            }
-
-            GLChecked(glBindBuffer(GL_ARRAY_BUFFER, mVBO));
-
-#define SizeAndOffset(T, F) sizeof(T), reinterpret_cast<void*>(offsetof(T, F))
-
-            GLChecked(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, SizeAndOffset(Vertex, position)));
-            GLChecked(glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE,  SizeAndOffset(Vertex, normal)));
-            GLChecked(glVertexAttribPointer(2, 2, GL_SHORT, GL_TRUE,  SizeAndOffset(Vertex, texCoord)));
-            GLChecked(glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, SizeAndOffset(Vertex, color)));
-
-            GLChecked(glEnableVertexAttribArray(0));
-            GLChecked(glEnableVertexAttribArray(1));
-            GLChecked(glEnableVertexAttribArray(2));
-            GLChecked(glEnableVertexAttribArray(3));
-
-            //~ GLChecked(glVertexPointer(3, GL_FLOAT, SizeAndOffset(Vertex, position)));
-            //~ GLChecked(glNormalPointer(GL_FLOAT, SizeAndOffset(Vertex, normal)));
-            //~ GLChecked(glTexCoordPointer(2, GL_SHORT, SizeAndOffset(Vertex, texCoord)));
-            //~ GLChecked(glColorPointer(4, GL_UNSIGNED_BYTE, SizeAndOffset(Vertex, color)));
-
-            //~ GLChecked(glEnableClientState(GL_VERTEX_ARRAY));
-            //~ GLChecked(glEnableClientState(GL_NORMAL_ARRAY));
-            //~ GLChecked(glEnableClientState(GL_TEXTURE_COORD_ARRAY));
-            //~ GLChecked(glEnableClientState(GL_COLOR_ARRAY));
-
-            GLChecked(glDrawArrays(mPrimitive, 0, mCount));
-
-            GLChecked(glBindBuffer(GL_ARRAY_BUFFER, 0));
-
-            if (mShader) {
-                Shader::bind(nullptr);
-            }
-        }
-    }
-
-private:
-    void createVBO() const {
-        if (mModel && !mVBO) {
-            GLChecked(glGenBuffers(1, &mVBO));
-
-            sf::err() << "glGenBuffers -> " << mVBO;
-
-            mPrimitive = mModel->getPrimitive();
-            mCount = mModel->getVertices().size();
-
-            sf::err() << ", mPrimitive = " << mPrimitive;
-            sf::err() << ", mCount = " << mCount;
-
-            if (mCount && mVBO) {
-                size_t size = sizeof(Vertex) * mCount;
-                const void *data = mModel->getVertices().data();
-                sf::err() << ", size == " << size;
-                GLChecked(glBindBuffer(GL_ARRAY_BUFFER, mVBO));
-                GLChecked(glBufferData(GL_ARRAY_BUFFER, size, data,
-                    GL_STATIC_DRAW));
-                GLChecked(glBindBuffer(GL_ARRAY_BUFFER, 0));
-            }
-
-            sf::err() << std::endl;
-        }
-    }
-
-    void destroyVBO() {
-        if (mVBO) {
-            GLChecked(glDeleteBuffers(1, &mVBO));
-            mVBO = 0;
-            mPrimitive = 0;
-            mCount = 0;
-        }
-    }
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-size_t makeBox(std::vector<Vertex> &verts, GLenum mode, const sf::Vector3f &center, const sf::Vector3f &size) {
+void makeBox(Model &model, const sf::Vector3f &center, const sf::Vector3f &size) {
     sf::Vector3f mx = center + size;
     sf::Vector3f mn = center - size;
 
-    size_t i = 0;
+    model.clearVertices();
 
-    //~ verts[i++] = Vertex(0x7fff,0x0000, +1.0, 0.0, 0.0, mx.x,mx.y,mn.z);
-    //~ verts[i++] = Vertex(0x7fff,0x7fff, +1.0, 0.0, 0.0, mx.x,mx.y,mx.z);
-    //~ verts[i++] = Vertex(0x0000,0x7fff, +1.0, 0.0, 0.0, mx.x,mn.y,mx.z);
-    //~ verts[i++] = Vertex(0x0000,0x0000, +1.0, 0.0, 0.0, mx.x,mn.y,mn.z);
-    //~ verts[i++] = Vertex(0x0000,0x0000, -1.0, 0.0, 0.0, mn.x,mn.y,mn.z);
-    //~ verts[i++] = Vertex(0x0000,0x7fff, -1.0, 0.0, 0.0, mn.x,mn.y,mx.z);
-    //~ verts[i++] = Vertex(0x7fff,0x7fff, -1.0, 0.0, 0.0, mn.x,mx.y,mx.z);
-    //~ verts[i++] = Vertex(0x7fff,0x0000, -1.0, 0.0, 0.0, mn.x,mx.y,mn.z);
-    //~ verts[i++] = Vertex(0x0000,0x0000,  0.0,+1.0, 0.0, mn.x,mx.y,mn.z);
-    //~ verts[i++] = Vertex(0x0000,0x7fff,  0.0,+1.0, 0.0, mn.x,mx.y,mx.z);
-    //~ verts[i++] = Vertex(0x7fff,0x7fff,  0.0,+1.0, 0.0, mx.x,mx.y,mx.z);
-    //~ verts[i++] = Vertex(0x7fff,0x0000,  0.0,+1.0, 0.0, mx.x,mx.y,mn.z);
-    //~ verts[i++] = Vertex(0x7fff,0x0000,  0.0,-1.0, 0.0, mx.x,mn.y,mn.z);
-    //~ verts[i++] = Vertex(0x7fff,0x7fff,  0.0,-1.0, 0.0, mx.x,mn.y,mx.z);
-    //~ verts[i++] = Vertex(0x0000,0x7fff,  0.0,-1.0, 0.0, mn.x,mn.y,mx.z);
-    //~ verts[i++] = Vertex(0x0000,0x0000,  0.0,-1.0, 0.0, mn.x,mn.y,mn.z);
-    //~ verts[i++] = Vertex(0x7fff,0x0000,  0.0, 0.0,+1.0, mx.x,mn.y,mx.z);
-    //~ verts[i++] = Vertex(0x7fff,0x7fff,  0.0, 0.0,+1.0, mx.x,mx.y,mx.z);
-    //~ verts[i++] = Vertex(0x0000,0x7fff,  0.0, 0.0,+1.0, mn.x,mx.y,mx.z);
-    //~ verts[i++] = Vertex(0x0000,0x0000,  0.0, 0.0,+1.0, mn.x,mn.y,mx.z);
-    //~ verts[i++] = Vertex(0x0000,0x0000,  0.0, 0.0,-1.0, mn.x,mn.y,mn.z);
-    //~ verts[i++] = Vertex(0x0000,0x7fff,  0.0, 0.0,-1.0, mn.x,mx.y,mn.z);
-    //~ verts[i++] = Vertex(0x7fff,0x7fff,  0.0, 0.0,-1.0, mx.x,mx.y,mn.z);
-    //~ verts[i++] = Vertex(0x7fff,0x0000,  0.0, 0.0,-1.0, mx.x,mn.y,mn.z);
+    switch (model.getPrimitive()) {
+        case GL_TRIANGLES: {
+            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
+            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
+            model.addVertex(Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z));
+            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
+            model.addVertex(Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z));
+            model.addVertex(Vertex(0x0000,0x0000, mx.x,mn.y,mn.z));
 
-    switch (mode) {
-        case GL_TRIANGLES:
-            verts.resize(36);
+            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
+            model.addVertex(Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z));
+            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+            model.addVertex(Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z));
+            model.addVertex(Vertex(0x7fff,0x0000, mn.x,mx.y,mn.z));
 
-            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z);
-            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z);
-            verts[i++] = Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z);
-            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z);
-            verts[i++] = Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z);
-            verts[i++] = Vertex(0x0000,0x0000, mx.x,mn.y,mn.z);
+            model.addVertex(Vertex(0x0000,0x0000, mn.x,mx.y,mn.z));
+            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
+            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
+            model.addVertex(Vertex(0x0000,0x0000, mn.x,mx.y,mn.z));
+            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
+            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
 
-            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mn.z);
-            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z);
-            verts[i++] = Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z);
-            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mn.z);
-            verts[i++] = Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z);
-            verts[i++] = Vertex(0x7fff,0x0000, mn.x,mx.y,mn.z);
+            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
+            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mn.y,mx.z));
+            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
+            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
+            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
+            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
 
-            verts[i++] = Vertex(0x0000,0x0000, mn.x,mx.y,mn.z);
-            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z);
-            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z);
-            verts[i++] = Vertex(0x0000,0x0000, mn.x,mx.y,mn.z);
-            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z);
-            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z);
+            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z));
+            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
+            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
+            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z));
+            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
+            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mx.z));
 
-            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z);
-            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mn.y,mx.z);
-            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z);
-            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z);
-            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z);
-            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mn.z);
-
-            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z);
-            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z);
-            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z);
-            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z);
-            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z);
-            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mx.z);
-
-            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mn.z);
-            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mx.y,mn.z);
-            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z);
-            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mn.z);
-            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z);
-            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z);
+            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mn.z));
+            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z));
+            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z));
+            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
             break;
+        }
 
-        case GL_QUADS:
-            verts.resize(24);
+        case GL_QUADS: {
+            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
+            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
+            model.addVertex(Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z));
+            model.addVertex(Vertex(0x0000,0x0000, mx.x,mn.y,mn.z));
 
-            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z);
-            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z);
-            verts[i++] = Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z);
-            verts[i++] = Vertex(0x0000,0x0000, mx.x,mn.y,mn.z);
+            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
+            model.addVertex(Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z));
+            model.addVertex(Vertex(0x7fff,0x0000, mn.x,mx.y,mn.z));
 
-            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mn.z);
-            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z);
-            verts[i++] = Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z);
-            verts[i++] = Vertex(0x7fff,0x0000, mn.x,mx.y,mn.z);
+            model.addVertex(Vertex(0x0000,0x0000, mn.x,mx.y,mn.z));
+            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
+            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
+            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
 
-            verts[i++] = Vertex(0x0000,0x0000, mn.x,mx.y,mn.z);
-            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z);
-            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z);
-            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z);
+            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
+            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mn.y,mx.z));
+            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
+            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
 
-            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z);
-            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mn.y,mx.z);
-            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z);
-            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mn.z);
+            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z));
+            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
+            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
+            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mx.z));
 
-            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z);
-            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z);
-            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z);
-            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mx.z);
-
-            verts[i++] = Vertex(0x0000,0x0000, mn.x,mn.y,mn.z);
-            verts[i++] = Vertex(0x0000,0x7fff, mn.x,mx.y,mn.z);
-            verts[i++] = Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z);
-            verts[i++] = Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z);
+            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mn.z));
+            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z));
+            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
             break;
+        }
     }
 
-    return i;
+    model.calcNormals();
 }
 
-size_t makeBox(std::vector<Vertex> &verts, GLenum mode) {
-    return makeBox(verts, mode, sf::Vector3f(0,0,0), sf::Vector3f(1,1,1));
+void makeBox(Model &model) {
+    makeBox(model, sf::Vector3f(0,0,0), sf::Vector3f(1,1,1));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -441,14 +205,14 @@ int main(int argc, char **argv) {
 
     shader.setParameter("uResolution", sf::Vector2f(window.getSize()));
 
-    std::vector<Vertex> cubeVerts;
-    makeBox(cubeVerts, GL_TRIANGLES, sf::Vector3f(0.5,0.5,0.5), sf::Vector3f(0.5,0.5,0.5));
+    Model cubeModel(GL_TRIANGLES);
+    makeBox(cubeModel, sf::Vector3f(0.5,0.5,0.5), sf::Vector3f(0.5,0.5,0.5));
+    ClientModel cube(&cubeModel, &shader);
 
-    Model cubeModel(GL_TRIANGLES, cubeVerts);
-
-    cubeModel.calcNormals();
-
-    ModelRenderer cube(&cubeModel, &shader);
+    Model ballModel(GL_TRIANGLES);
+    //~ makeBall(ballModel, sf::Vector3f(0.5,0.5,0.5), 0.5, 4);
+    makeBox(ballModel, sf::Vector3f(), sf::Vector3f(0.1,0.1,0.1));
+    ClientModel ball(&cubeModel, &shader);
 
     float spin = 0, spinSpeed = 45; // degrees/second
 
@@ -747,8 +511,16 @@ int main(int argc, char **argv) {
         shader.setParameter("uProjMatrix", projectionTransform);
 
         Transform3D spinLight;
-        spinLight.rotate(spin, sf::Vector3f(1,0,0));
-        shader.setParameter("uLightPos", spinLight.transformPoint(lightPos));
+        spinLight.rotate(spin, sf::Vector3f(0,0,1));
+        sf::Vector3f spinLightPos = spinLight.transformPoint(lightPos);
+
+        shader.setParameter("uLightPos", spinLightPos);
+        shader.setParameter("uEyePos", camera.getPosition());
+
+        Transform3D lightBallTransform;
+        lightBallTransform.translate(spinLightPos);
+        shader.setParameter("uViewMatrix", lightBallTransform);
+        ball.render();
 
         Transform3D modelViewTransform;
 
