@@ -407,14 +407,20 @@ int main(int argc, char **argv) {
                 }
 
                 case sf::Event::TouchBegan: {
+                    sf::err() << "T-down " << event.touch.finger << ':' <<
+                        event.touch.x << ',' << event.touch.y << std::endl;
                     break;
                 }
 
                 case sf::Event::TouchMoved: {
+                    sf::err() << "T-move " << event.touch.finger << ':' <<
+                        event.touch.x << ',' << event.touch.y << std::endl;
                     break;
                 }
 
                 case sf::Event::TouchEnded: {
+                    sf::err() << "T-up   " << event.touch.finger << ':' <<
+                        event.touch.x << ',' << event.touch.y << std::endl;
                     break;
                 }
 
