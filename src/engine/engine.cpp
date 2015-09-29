@@ -603,7 +603,7 @@ void Model::makeBox() {
     makeBox(sf::Vector3f(1,1,1));
 }
 
-void Model::makeBall(float size, size_t step, const sf::Vector3f &center) {
+void Model::makeBall(float radius, size_t step, const sf::Vector3f &center) {
     if (step < 2) {
         step = 2;
     }
@@ -615,7 +615,33 @@ void Model::makeBall(float size, size_t step, const sf::Vector3f &center) {
     clearVertices();
     setPrimitive(GLTriangleStrip);
 
-    float ct, st, cp, sp, x, y, z;
+    float ct, st, cp, sp;
+    sf::Vector3f n;
+
+#define VERTEX(T,P) ( \
+    ct = std::cos((T)), st = std::sin((T)), \
+    cp = std::cos((P)), sp = std::sin((P)), \
+    n.x = sp*ct, n.y = cp, n.z = sp*st, \
+    addVertex(Vertex(n, center + radius * n)) )
+
+
+    for (size_t j = 0; j < step; j++) {
+        phi = j * dPhi;
+
+        float d = -dTheta * 0.5f * j;
+
+        VERTEX(theta-d, phi+dPhi);
+        VERTEX(theta, phi);
+
+        for (size_t i = 0; i < rstep; i++) {
+            theta = i * dTheta;
+
+            VERTEX(theta-d, phi+dPhi);
+            VERTEX(theta, phi);
+        }
+    }
+
+/*
 
     //~ addVertex(Vertex(sf::Vector3f(0,-1,0), sf::Vector3f(
         //~ center.x, center.y-size, center.z
@@ -688,6 +714,8 @@ void Model::makeBall(float size, size_t step, const sf::Vector3f &center) {
     //~ )));
 
     //~ calcNormals();
+*/
+
 }
 
 void Model::makeBall(float size, size_t step) {

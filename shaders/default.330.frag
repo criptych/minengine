@@ -9,9 +9,9 @@ uniform vec2 uResolution = vec2(1);
 uniform vec3 uEyePos = vec3(0,0,5);
 
 uniform vec3 uLightPos  = vec3(-4,4,4);
-uniform vec4 uLightAmbt = vec4(0.4, 0.4, 1.0, 1.0);
-uniform vec4 uLightDiff = vec4(1.0, 0.4, 0.4, 1.0);
-uniform vec4 uLightSpec = vec4(0.4, 1.0, 0.4, 1.0);
+uniform vec4 uLightAmbt = vec4(0.5, 0.5, 1.0, 1.0);
+uniform vec4 uLightDiff = vec4(1.0, 0.5, 0.5, 1.0);
+uniform vec4 uLightSpec = vec4(0.5, 1.0, 0.5, 1.0);
 
 uniform sampler2D uDiffMap;
 uniform sampler2D uSpecMap;
