@@ -5,6 +5,7 @@
 #include "engine.hpp"
 
 #include <cstdio>
+#include <cmath>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -37,7 +38,6 @@ public:
     }
 
     float tan(int8_t x) {
-        //~ return sin(x)/cos(x);
         return tantbl[(x & 255)];
     }
 
@@ -326,6 +326,23 @@ void Physics::impulse(Body &b, const Velocity &v, const sf::Time &t) const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+enum GLPrimitive {
+    GLPoints,
+    GLLines,
+    GLLineLoop,
+    GLLineStrip,
+    GLTriangles,
+    GLTriangleStrip,
+    GLTriangleFan,
+    GLQuads,
+    GLQuadStrip,
+    GLPolygon,
+};
+
+Model::Model(
+): mPrimitive(GLPoints) {
+}
+
 Model::Model(
     uint32_t primitive
 ): mPrimitive(primitive) {
@@ -359,19 +376,6 @@ void Model::calcNormals(bool smooth) {
     calcNormals(0, mVertices.size(), smooth);
 }
 
-enum GLPrimitive {
-    GLPoints,
-    GLLines,
-    GLLineLoop,
-    GLLineStrip,
-    GLTriangles,
-    GLTriangleStrip,
-    GLTriangleFan,
-    GLQuads,
-    GLQuadStrip,
-    GLPolygon,
-};
-
 void Model::calcNormals(size_t start, size_t end, bool smooth) {
     if (end > mVertices.size()) {
         end = mVertices.size();
@@ -380,16 +384,37 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
         return;
     }
 
-    sf::err() << "start == " << start << ", end == " << end << "\n";
+    sf::err() << "start == " << start << ", end == " << end << '\n';
 
     switch (mPrimitive) {
         case GLTriangles: {
-            for (size_t i = 0; i < mVertices.size(); i += 3) {
+            for (size_t i = start; i < end; i += 3) {
                 sf::Vector3f p[3], n[3];
 
                 for (size_t j = 0; j < 3; j++) {
                     p[j] = mVertices[i+j].position;
                 }
+
+                for (size_t j = 0; j < 3; j++) {
+                    n[j] = normalize(cross(p[(j+1)%3]-p[(j+0)%3],
+                                           p[(j+2)%3]-p[(j+0)%3]));
+                }
+
+                for (size_t j = 0; j < 3; j++) {
+                    mVertices[i+j].normal = n[j];
+                }
+            }
+            break;
+        }
+
+        case GLTriangleFan: {
+            for (size_t i = start; i < end; i += 1) {
+                sf::Vector3f p[3], n[3];
+
+                for (size_t j = 1; j < 3; j++) {
+                    p[j] = mVertices[i+j].position;
+                }
+                p[0] = mVertices[start].position;
 
                 for (size_t j = 0; j < 3; j++) {
                     n[j] = normalize(cross(p[(j+1)%3]-p[(j+0)%3],
@@ -403,16 +428,36 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
             break;
         }
 
-        case GLTriangleFan: {
-            break;
-        }
-
         case GLTriangleStrip: {
+            end -= 2;
+            for (size_t i = start; i < end; i += 1) {
+                sf::Vector3f p[3], n[3];
+
+                for (size_t j = 0; j < 3; j++) {
+                    p[j] = mVertices[i+j].position;
+                }
+
+                if ((i - start) % 2 == 0) {
+                    for (size_t j = 0; j < 3; j++) {
+                        n[j] = normalize(cross(p[(j+1)%3]-p[(j+0)%3],
+                                               p[(j+2)%3]-p[(j+0)%3]));
+                    }
+                } else {
+                    for (size_t j = 0; j < 3; j++) {
+                        n[j] = normalize(cross(p[(j+2)%3]-p[(j+0)%3],
+                                               p[(j+1)%3]-p[(j+0)%3]));
+                    }
+                }
+
+                for (size_t j = 0; j < 3; j++) {
+                    mVertices[i+j].normal = n[j];
+                }
+            }
             break;
         }
 
         case GLQuads: {
-            for (size_t i = 0; i < mVertices.size(); i += 4) {
+            for (size_t i = start; i < end; i += 4) {
                 sf::Vector3f p[4], n[4];
 
                 for (size_t j = 0; j < 4; j++) {
@@ -432,9 +477,221 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
         }
 
         case GLQuadStrip: {
+            end -= 2;
+            for (size_t i = start; i < end; i += 2) {
+                sf::Vector3f p[4], n[4];
+
+                for (size_t j = 0; j < 4; j++) {
+                    p[j] = mVertices[i+j].position;
+                }
+
+                for (size_t j = 0; j < 4; j++) {
+                    n[j] = normalize(cross(p[(j+1)%4]-p[(j+0)%4],
+                                           p[(j+3)%4]-p[(j-0)%4]));
+                }
+
+                for (size_t j = 0; j < 4; j++) {
+                    mVertices[i+j].normal = n[j];
+                }
+            }
             break;
         }
     }
+
+    sf::err() << std::flush;
+}
+
+void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center) {
+    sf::Vector3f mx = center + size;
+    sf::Vector3f mn = center - size;
+
+    clearVertices();
+
+    switch (mPrimitive) {
+        default: {
+            mPrimitive = GLTriangles;
+            // continue
+        }
+
+        case GLTriangles: {
+            addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
+            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
+            addVertex(Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z));
+            addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
+            addVertex(Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z));
+            addVertex(Vertex(0x0000,0x0000, mx.x,mn.y,mn.z));
+
+            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+            addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
+            addVertex(Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z));
+            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+            addVertex(Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z));
+            addVertex(Vertex(0x7fff,0x0000, mn.x,mx.y,mn.z));
+
+            addVertex(Vertex(0x0000,0x0000, mn.x,mx.y,mn.z));
+            addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
+            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
+            addVertex(Vertex(0x0000,0x0000, mn.x,mx.y,mn.z));
+            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
+            addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
+
+            addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
+            addVertex(Vertex(0x7fff,0x7fff, mx.x,mn.y,mx.z));
+            addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
+            addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
+            addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
+            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+
+            addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z));
+            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
+            addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
+            addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z));
+            addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
+            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mx.z));
+
+            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+            addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mn.z));
+            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z));
+            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z));
+            addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
+            break;
+        }
+
+        case GLQuads: {
+            addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
+            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
+            addVertex(Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z));
+            addVertex(Vertex(0x0000,0x0000, mx.x,mn.y,mn.z));
+
+            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+            addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
+            addVertex(Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z));
+            addVertex(Vertex(0x7fff,0x0000, mn.x,mx.y,mn.z));
+
+            addVertex(Vertex(0x0000,0x0000, mn.x,mx.y,mn.z));
+            addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
+            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
+            addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
+
+            addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
+            addVertex(Vertex(0x7fff,0x7fff, mx.x,mn.y,mx.z));
+            addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
+            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+
+            addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z));
+            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
+            addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
+            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mx.z));
+
+            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+            addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mn.z));
+            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z));
+            addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
+            break;
+        }
+    }
+
+    calcNormals();
+}
+
+void Model::makeBox(const sf::Vector3f &size) {
+    makeBox(sf::Vector3f(), size);
+}
+
+void Model::makeBox() {
+    makeBox(sf::Vector3f(1,1,1));
+}
+
+void Model::makeBall(float size, size_t step, const sf::Vector3f &center) {
+    if (step < 2) {
+        step = 2;
+    }
+    size_t rstep = 2 * step;
+    //~ size_t n = (step + 1) * rstep;
+
+    float phi = 0, theta = 0, dPhi = Pi / (step), dTheta = 2.0 * Pi / rstep;
+
+    clearVertices();
+    setPrimitive(GLTriangleStrip);
+
+    float ct, st, cp, sp, x, y, z;
+
+    //~ addVertex(Vertex(sf::Vector3f(0,-1,0), sf::Vector3f(
+        //~ center.x, center.y-size, center.z
+    //~ )));
+
+    for (size_t j = 0; j < step; j++) {
+        //~ theta = -(j + 0.5f) * dTheta;
+
+        for (size_t i = 0; i < rstep; i++) {
+            theta = static_cast<float>(i)/static_cast<float>(rstep) -
+                0.5f * static_cast<float>(j)/static_cast<float>(step);
+            phi = static_cast<float>(j)/static_cast<float>(step);
+
+            ct = std::cos(theta-dTheta);
+            st = std::sin(theta-dTheta);
+
+            cp = std::cos(phi+dPhi);
+            sp = std::sin(phi+dPhi);
+
+            x = sp*ct; y = cp; z = sp*st;
+
+            addVertex(Vertex(sf::Vector3f(x, y, z), sf::Vector3f(
+                center.x+size*x, center.y-size*y, center.z+size*z
+            )));
+
+            ct = std::cos(theta);
+            st = std::sin(theta);
+
+            cp = std::cos(phi);
+            sp = std::sin(phi);
+
+            x = sp*ct; y = cp; z = sp*st;
+
+            addVertex(Vertex(sf::Vector3f(x, y, z), sf::Vector3f(
+                center.x+size*x, center.y-size*y, center.z+size*z
+            )));
+
+            //~ theta += dTheta;
+        }
+
+        //~ ct = std::cos(theta-0.5*dTheta);
+        //~ st = std::sin(theta-0.5*dTheta);
+
+        //~ cp = std::cos(phi+dPhi);
+        //~ sp = std::sin(phi+dPhi);
+
+        //~ x = sp*ct; y = cp; z = sp*st;
+
+        //~ addVertex(Vertex(sf::Vector3f(x, y, z), sf::Vector3f(
+            //~ center.x+size*x, center.y-size*y, center.z+size*z
+        //~ )));
+
+        //~ ct = std::cos(theta);
+        //~ st = std::sin(theta);
+
+        //~ cp = std::cos(phi);
+        //~ sp = std::sin(phi);
+
+        //~ x = sp*ct; y = cp; z = sp*st;
+
+        //~ addVertex(Vertex(sf::Vector3f(x, y, z), sf::Vector3f(
+            //~ center.x+size*x, center.y-size*y, center.z+size*z
+        //~ )));
+
+        //~ phi += dPhi;
+    }
+
+    //~ addVertex(Vertex(sf::Vector3f(0,1,0), sf::Vector3f(
+        //~ center.x, center.y+size, center.z
+    //~ )));
+
+    //~ calcNormals();
+}
+
+void Model::makeBall(float size, size_t step) {
+    makeBall(size, step, sf::Vector3f());
 }
 
 ////////////////////////////////////////////////////////////////////////////////

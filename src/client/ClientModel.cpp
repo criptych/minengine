@@ -15,6 +15,17 @@ ClientModel::ClientModel(
 ): mModel(model), mShader(shader), mVBO(), mPrimitive(), mCount() {
 }
 
+ClientModel::ClientModel(
+    const Model &model
+): mModel(&model), mShader(nullptr), mVBO(), mPrimitive(), mCount() {
+}
+
+ClientModel::ClientModel(
+    const Model &model,
+    const Shader &shader
+): mModel(&model), mShader(&shader), mVBO(), mPrimitive(), mCount() {
+}
+
 ClientModel::~ClientModel() {
     destroyVBO();
 }
@@ -24,12 +35,20 @@ void ClientModel::setModel(const Model *model) {
     mModel = model;
 }
 
+void ClientModel::setModel(const Model &model) {
+    setModel(&model);
+}
+
 const Model *ClientModel::getModel() const {
     return mModel;
 }
 
 void ClientModel::setShader(const Shader *shader) {
     mShader = shader;
+}
+
+void ClientModel::setShader(const Shader &shader) {
+    setShader(&shader);
 }
 
 const Shader *ClientModel::getShader() const {

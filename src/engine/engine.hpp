@@ -300,6 +300,7 @@ class Model {
     std::vector<Vertex> mVertices;
 
 public:
+    Model();
     Model(uint32_t primitive);
 
     template <typename I>
@@ -352,6 +353,13 @@ public:
 
     void calcNormals(bool smooth = false);
     void calcNormals(size_t start, size_t end, bool smooth = false);
+
+    void makeBox(const sf::Vector3f &size, const sf::Vector3f &center);
+    void makeBox(const sf::Vector3f &size);
+    void makeBox();
+
+    void makeBall(float radius, size_t step, const sf::Vector3f &center);
+    void makeBall(float radius, size_t step);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -400,6 +408,26 @@ public:
 
     LightData getLight() const { return *mLight; }
     void setLight(LightData light) { *mLight = light; }
+
+public:
+    enum class Attributes : uint8_t {
+        Default     = 0,
+        Transparent = 1,
+    };
+
+private:
+    static std::vector<Attributes> mAttrs;
+    static std::map<std::string, BlockType> mNames;
+    static std::map<BlockType, std::string> mNamesInv;
+
+public:
+    static std::string getName(BlockType type);
+    static BlockType getType(const std::string &name);
+    static Attributes getAttributes(BlockType type);
+    static Attributes getAttributes(const std::string &name);
+
+    static void enlist(BlockType type, const std::string &name, Attributes attr = Attributes::Default);
+    static void delist(BlockType type);
 };
 
 class ChunkData {

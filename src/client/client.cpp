@@ -5,12 +5,9 @@
 #include "engine/engine.hpp"
 
 #include <GL/glew.h>
-//~ #include <GL/glu.h>
 
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
-//~ #include <SFML/Graphics.hpp>
-#include <SFML/Graphics/Shader.hpp>
 #include <SFML/OpenGL.hpp>
 #include <SFML/Audio.hpp>
 #include <SFML/Network.hpp>
@@ -30,125 +27,506 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void makeBall(Model &model, const sf::Vector3f &center, float size, size_t step) {
-    if (step < 2) {
-        step = 2;
-    }
-    size_t rstep = 2 * step;
-    size_t n = (step - 1) * rstep + 1;
+class GameWindow : protected sf::Window {
+    bool mFullscreen;
+    bool mMouseLocked;
+    bool mAllowQuit;
+    bool mPaused;
 
-    float phi = 0, theta = 0, dphi = Pi / (step * rstep), dtheta = 2.0 * Pi / rstep;
+    sf::VideoMode mDesktopMode;
+    sf::VideoMode mWindowMode;
+    sf::String mWindowTitle;
+    sf::Uint32 mWindowStyle;
+    sf::Vector2i mWindowCenter;
 
-    model.clearVertices();
-    model.setPrimitive(GL_TRIANGLE_STRIP);
+    sf::Time mTickLength;
+    sf::Time mPlayTime;
+    unsigned int mMaxTicksPerFrame;
 
-    //~ model.addVertex(sf::Vector3f(center.x, center.y+size, center.z));
+    Camera mCamera;
+    Shader mBlockShader;
 
-    for (size_t i = 0; i <= n; i++) {
-        model.addVertex(sf::Vector3f(
-            center.x+size*std::sin(phi)*std::cos(theta),
-            center.y+size*std::cos(phi),
-            center.z+size*std::sin(phi)*std::sin(theta)
-        ));
+    sf::Vector3f mLightPos;
+    sf::Vector2f mLookDir;
+    float mSpinAngle;
+    float mSpinSpeed; // degrees/second
 
-        theta += dtheta;
-        phi += dphi;
-    }
+    Model mCubeModel;
+    ClientModel mCube;
 
-    //~ model.addVertex(sf::Vector3f(center.x, center.y-size, center.z));
+    Model mBallModel;
+    ClientModel mBall;
+
+
+public:
+    GameWindow();
+
+    void run();
+    void quit();
+
+protected:
+    void init();
+    void quit(bool internal);
+
+    void handleEvents();
+    void handleInput(const sf::Time &delta);
+
+    void handleEvent(const sf::Event &event);
+    void update(const sf::Time &delta);
+    void render();
+
+    void setMousePosition(const sf::Vector2i &position);
+    sf::Vector2i getMousePosition() const;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+GameWindow::GameWindow(
+): mFullscreen(
+    false
+), mMouseLocked(
+    true
+), mAllowQuit(
+    true
+), mPaused(
+    false
+), mTickLength(
+    sf::microseconds(20000) // 50000
+), mMaxTicksPerFrame(
+    5
+), mLightPos(
+    1, 5, 5
+), mSpinAngle(
+), mSpinSpeed(
+    45
+) {
 }
 
-void makeBox(Model &model, const sf::Vector3f &center, const sf::Vector3f &size) {
-    sf::Vector3f mx = center + size;
-    sf::Vector3f mn = center - size;
+void GameWindow::run() {
+    sf::Clock clock;
+    sf::Time tickCount;
 
-    model.clearVertices();
+    init();
 
-    switch (model.getPrimitive()) {
-        case GL_TRIANGLES: {
-            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
-            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
-            model.addVertex(Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z));
-            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
-            model.addVertex(Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z));
-            model.addVertex(Vertex(0x0000,0x0000, mx.x,mn.y,mn.z));
+    while (isOpen()) {
+        handleEvents();
 
-            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
-            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
-            model.addVertex(Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z));
-            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
-            model.addVertex(Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z));
-            model.addVertex(Vertex(0x7fff,0x0000, mn.x,mx.y,mn.z));
+        sf::Time delta = clock.restart();
 
-            model.addVertex(Vertex(0x0000,0x0000, mn.x,mx.y,mn.z));
-            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
-            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
-            model.addVertex(Vertex(0x0000,0x0000, mn.x,mx.y,mn.z));
-            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
-            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
+        handleInput(delta);
 
-            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
-            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mn.y,mx.z));
-            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
-            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
-            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
-            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+        tickCount += delta;
 
-            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z));
-            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
-            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
-            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z));
-            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
-            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mx.z));
+        unsigned int frameTicks = mMaxTicksPerFrame;
 
-            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
-            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mn.z));
-            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z));
-            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
-            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z));
-            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
+        while (tickCount >= mTickLength) {
+            tickCount -= mTickLength;
+
+            if (frameTicks > 0) {
+                update(mTickLength);
+                frameTicks -= 1;
+            }
+        }
+
+        render();
+
+        display();
+    }
+
+    quit(true);
+}
+
+void GameWindow::quit() {
+    quit(false);
+}
+
+void GameWindow::init() {
+    sf::VideoMode videoMode(960, 540);
+    sf::String windowTitle(L"MinEngine Client");
+    sf::Uint32 windowStyle(sf::Style::Default);
+    sf::ContextSettings contextSettings(24,8, 0, 3,3);
+
+    mDesktopMode = sf::VideoMode::getDesktopMode();
+
+    std::fprintf(stderr, "Desktop mode: %dx%d %dbpp\n",
+                 mDesktopMode.width, mDesktopMode.height,
+                 mDesktopMode.bitsPerPixel);
+
+    create(videoMode, windowTitle, windowStyle, contextSettings);
+
+    mWindowCenter = sf::Vector2i(getSize()) / 2;
+
+    glewInit();
+
+    GLChecked(glEnable(GL_DEPTH_TEST));
+    GLChecked(glDepthFunc(GL_LESS));
+    GLChecked(glEnable(GL_CULL_FACE));
+    GLChecked(glClearColor(0.200,0.267,0.333,0.0));
+
+    mCamera.setFOV(90.0f);
+    mCamera.setAspect(16.0f/9.0f);
+    mCamera.setZRange(0.01f, 100.0f);
+    mCamera.setPosition(0.0, 1.7, 5.0);
+
+    if (!mBlockShader.loadFromFile(
+        "shaders/default.330.vert", "shaders/default.330.frag"
+    )) {
+        quit(true);
+    }
+
+    mBlockShader.bindAttribLocation("aVertex",   0);
+    mBlockShader.bindAttribLocation("aNormal",   1);
+    mBlockShader.bindAttribLocation("aTexCoord", 2);
+    mBlockShader.bindAttribLocation("aColor",    3);
+    mBlockShader.setParameter("uResolution", sf::Vector2f(getSize()));
+
+    mCubeModel.makeBox(sf::Vector3f(0.5,0.5,0.5), sf::Vector3f(0.5,0.5,0.5));
+    mCube.setModel(mCubeModel);
+    mCube.setShader(mBlockShader);
+
+    mBallModel.makeBall(0.5, 6);
+    mBall.setModel(mBallModel);
+    mBall.setShader(mBlockShader);
+
+    setMousePosition(mWindowCenter);
+}
+
+void GameWindow::quit(bool internal) {
+    if (internal || mAllowQuit) {
+        close();
+    }
+}
+
+void GameWindow::handleEvents() {
+    sf::Event event;
+
+    while (pollEvent(event)) {
+        handleEvent(event);
+    }
+}
+
+void GameWindow::handleEvent(const sf::Event &event) {
+    switch (event.type) {
+        case sf::Event::Closed: {
+            quit();
             break;
         }
 
-        case GL_QUADS: {
-            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
-            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
-            model.addVertex(Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z));
-            model.addVertex(Vertex(0x0000,0x0000, mx.x,mn.y,mn.z));
+        case sf::Event::Resized: {
+            sf::Vector2f size(getSize());
+            mBlockShader.setParameter("uResolution", size);
+            GLChecked(glViewport(0, 0, size.x, size.y));
+            mCamera.setAspect(size.x / size.y);
+            break;
+        }
 
-            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
-            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
-            model.addVertex(Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z));
-            model.addVertex(Vertex(0x7fff,0x0000, mn.x,mx.y,mn.z));
+        case sf::Event::LostFocus: {
+            break;
+        }
 
-            model.addVertex(Vertex(0x0000,0x0000, mn.x,mx.y,mn.z));
-            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
-            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
-            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
+        case sf::Event::GainedFocus: {
+            break;
+        }
 
-            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
-            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mn.y,mx.z));
-            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
-            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+        case sf::Event::TextEntered: {
+            break;
+        }
 
-            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z));
-            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
-            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
-            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mx.z));
+        case sf::Event::KeyPressed: {
+            /// @note for debugging
+            switch (event.key.code) {
+                case sf::Keyboard::Escape: {
+                    quit();
+                    break;
+                }
 
-            model.addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
-            model.addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mn.z));
-            model.addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z));
-            model.addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
+                case sf::Keyboard::Tab: {
+                    mMouseLocked = !mMouseLocked;
+                    if (mMouseLocked) {
+                        setMousePosition(mWindowCenter);
+                    }
+                    break;
+                }
+
+                case sf::Keyboard::Space: {
+                    mPaused = not mPaused;
+                    break;
+                }
+
+                case sf::Keyboard::F11: {
+                    if (mFullscreen) {
+                        create(mWindowMode, mWindowTitle, mWindowStyle, getSettings());
+                    } else {
+                        create(mDesktopMode, mWindowTitle, mWindowStyle | sf::Style::Fullscreen, getSettings());
+                    }
+
+                    GLChecked(glClearColor(0.200,0.267,0.333,0.0));
+
+                    mFullscreen = !mFullscreen;
+
+                    break;
+                }
+
+                default: {
+                    break;
+                }
+            }
+            break;
+        }
+
+        case sf::Event::KeyReleased: {
+            break;
+        }
+
+        case sf::Event::MouseWheelMoved: {
+            break;
+        }
+
+        case sf::Event::MouseWheelScrolled: {
+            break;
+        }
+
+        case sf::Event::MouseButtonPressed: {
+            break;
+        }
+
+        case sf::Event::MouseButtonReleased: {
+            break;
+        }
+
+        case sf::Event::MouseMoved: {
+            break;
+        }
+
+        case sf::Event::MouseEntered: {
+            break;
+        }
+
+        case sf::Event::MouseLeft: {
+            break;
+        }
+
+        case sf::Event::JoystickButtonPressed: {
+            break;
+        }
+
+        case sf::Event::JoystickButtonReleased: {
+            break;
+        }
+
+        case sf::Event::JoystickMoved: {
+            if (std::fabs(event.joystickMove.position) >= 10.0f) {
+                fprintf(stderr, "%d:%d: %.2f\n",
+                        event.joystickMove.joystickId,
+                        event.joystickMove.axis,
+                        event.joystickMove.position);
+
+                switch (event.joystickMove.axis) {
+                    case sf::Joystick::X: {
+                        mCamera.move(event.joystickMove.position * 0.01f, 0, 0);
+                        break;
+                    }
+
+                    case sf::Joystick::Y: {
+                        mCamera.move(0, 0, event.joystickMove.position * 0.01f);
+                        break;
+                    }
+
+                    case sf::Joystick::Z: {
+                        break;
+                    }
+
+                    case sf::Joystick::R: {
+                        break;
+                    }
+
+                    case sf::Joystick::U: {
+                        break;
+                    }
+
+                    case sf::Joystick::V: {
+                        break;
+                    }
+
+                    case sf::Joystick::PovX: {
+                        break;
+                    }
+
+                    case sf::Joystick::PovY: {
+                        break;
+                    }
+                }
+            }
+            break;
+        }
+
+        case sf::Event::JoystickConnected: {
+            break;
+        }
+
+        case sf::Event::JoystickDisconnected: {
+            break;
+        }
+
+        case sf::Event::TouchBegan: {
+            sf::err() << "T-down " << event.touch.finger << ':' <<
+                event.touch.x << ',' << event.touch.y << std::endl;
+            break;
+        }
+
+        case sf::Event::TouchMoved: {
+            sf::err() << "T-move " << event.touch.finger << ':' <<
+                event.touch.x << ',' << event.touch.y << std::endl;
+            break;
+        }
+
+        case sf::Event::TouchEnded: {
+            sf::err() << "T-up   " << event.touch.finger << ':' <<
+                event.touch.x << ',' << event.touch.y << std::endl;
+            break;
+        }
+
+        case sf::Event::SensorChanged: {
+            break;
+        }
+
+        // silence "enumeration value not handled" warning
+        default: {
             break;
         }
     }
-
-    model.calcNormals();
 }
 
-void makeBox(Model &model) {
-    makeBox(model, sf::Vector3f(0,0,0), sf::Vector3f(1,1,1));
+void GameWindow::handleInput(const sf::Time &delta) {
+    if (mMouseLocked) {
+        sf::Vector2i mousePos = getMousePosition();
+        sf::Vector2i mouseDelta = mousePos - mWindowCenter;
+        mLookDir += sf::Vector2f(mouseDelta);
+        setMousePosition(mWindowCenter);
+    }
+
+    mLookDir.x = std::fmod(mLookDir.x + 180.0f, 360.0f) - 180.0f;
+
+    if (mLookDir.y > 89.9f) {
+        mLookDir.y = 89.9f;
+    }
+    if (mLookDir.y < -89.9f) {
+        mLookDir.y = -89.9f;
+    }
+
+    sf::Vector3f move;
+
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+        move.z -= 2*delta.asSeconds();
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+        move.z += 2*delta.asSeconds();
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+        move.x -= 2*delta.asSeconds();
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+        move.x += 2*delta.asSeconds();
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z)) {
+        move.y -= 2*delta.asSeconds();
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) {
+        move.y += 2*delta.asSeconds();
+    }
+
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+        move *= 0.25f;
+    }
+
+    mCamera.setLook(mLookDir);
+    mCamera.move(move, -mLookDir.x);
+
+}
+
+void GameWindow::update(const sf::Time &delta) {
+    mPlayTime += delta;
+
+    if (not mPaused) {
+        mSpinAngle += delta.asSeconds() * mSpinSpeed;
+    }
+}
+
+void GameWindow::render() {
+    GLChecked(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+    ////////////////////////////////////////////////////////////
+    //  3D setup
+    ////////////////////////////////////////////////////////////
+
+    GLChecked(glEnable(GL_DEPTH_TEST));
+    GLChecked(glEnable(GL_CULL_FACE));
+
+    // draw 3D scene
+
+    /**
+     * @todo
+     * for each visible chunk:
+     *      create vbo
+     *      convert blocks to polys
+     *      render vbo
+     */
+
+    //! camera.render();
+
+    Transform3D projectionTransform(mCamera.getTransform());
+
+    mBlockShader.setParameter("uTime", mPlayTime.asSeconds());
+    mBlockShader.setParameter("uProjMatrix", projectionTransform);
+
+    Transform3D spinLight;
+    spinLight.rotate(mSpinAngle, sf::Vector3f(0,0,1));
+    sf::Vector3f spinLightPos = spinLight.transformPoint(mLightPos);
+
+    mBlockShader.setParameter("uLightPos", spinLightPos);
+    mBlockShader.setParameter("uEyePos", mCamera.getPosition());
+
+    Transform3D lightBallTransform;
+    lightBallTransform.translate(spinLightPos);
+    mBlockShader.setParameter("uViewMatrix", lightBallTransform);
+    mBall.render();
+
+    Transform3D modelViewTransform;
+
+    mBlockShader.setParameter("uViewMatrix", modelViewTransform);
+
+    mCube.render();
+
+    modelViewTransform.translate(sf::Vector3f(1.5f,0.0f,0.0f));
+    mBlockShader.setParameter("uViewMatrix", modelViewTransform);
+    mCube.render();
+
+    ////////////////////////////////////////////////////////////
+    //  end 3D
+    ////////////////////////////////////////////////////////////
+
+
+    ////////////////////////////////////////////////////////////
+    //  2D setup
+    ////////////////////////////////////////////////////////////
+
+    GLChecked(glDisable(GL_DEPTH_TEST));
+    GLChecked(glDisable(GL_CULL_FACE));
+
+    // draw 2D overlay
+
+
+    ////////////////////////////////////////////////////////////
+    //  end 2D
+    ////////////////////////////////////////////////////////////
+}
+
+void GameWindow::setMousePosition(const sf::Vector2i &position) {
+    sf::Mouse::setPosition(position, *this);
+}
+
+sf::Vector2i GameWindow::getMousePosition() const {
+    return sf::Mouse::getPosition(*this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -158,415 +536,20 @@ int main(int argc, char **argv) {
 
     // mine::Engine engine;
 
-    ChunkGenerator chunkGen;
-    ChunkCache chunkCache(chunkGen);
+    //~ ChunkGenerator chunkGen;
+    //~ ChunkCache chunkCache(chunkGen);
 
-    for (size_t i = 0; i < 4098; i++) {
-        chunkCache.getChunk(Position(0,0,0));
-    }
+    //~ for (size_t i = 0; i < 4098; i++) {
+        //~ chunkCache.getChunk(Position(0,0,0));
+    //~ }
 
-    Chunk *chunk = chunkCache.getChunk(Position(0,0,0));
+    //~ Chunk *chunk = chunkCache.getChunk(Position(0,0,0));
 
-    printf("chunk == %p, chunk->getData() == %p\n", chunk, chunk->getData());
+    //~ printf("chunk == %p, chunk->getData() == %p\n", chunk, chunk->getData());
 
-    bool fullscreen = false;
-    sf::VideoMode videoMode(960, 540);
-    sf::String windowTitle(L"MinEngine Client");
-    sf::Uint32 windowStyle(sf::Style::Default);
-    sf::ContextSettings contextSettings(24,8, 0, 3,3);
+    GameWindow gameWindow;
 
-    sf::Window window(videoMode, L"MinEngine Client", windowStyle, contextSettings);
-
-    sf::VideoMode desktopMode(sf::VideoMode::getDesktopMode());
-
-    std::fprintf(stderr, "Desktop mode: %dx%d %dbpp\n",
-                 desktopMode.width, desktopMode.height, desktopMode.bitsPerPixel);
-
-    glewInit();
-
-    Camera camera(90.0f, 16.0f/9.0f, 0.1f, 100.0f);
-    camera.setPosition(0.0, 1.7, 5.0);
-    //~ camera.render();
-
-    sf::Vector3f lightPos(1, 10, 0);
-
-    Shader shader;
-
-    if (!
-        shader.loadFromFile("shaders/default.330.vert", "shaders/default.330.frag")
-    ) {
-        return -1;
-    }
-
-    shader.bindAttribLocation("aVertex",   0);
-    shader.bindAttribLocation("aNormal",   1);
-    shader.bindAttribLocation("aTexCoord", 2);
-    shader.bindAttribLocation("aColor",    3);
-
-    shader.setParameter("uResolution", sf::Vector2f(window.getSize()));
-
-    Model cubeModel(GL_TRIANGLES);
-    makeBox(cubeModel, sf::Vector3f(0.5,0.5,0.5), sf::Vector3f(0.5,0.5,0.5));
-    ClientModel cube(&cubeModel, &shader);
-
-    Model ballModel(GL_TRIANGLES);
-    //~ makeBall(ballModel, sf::Vector3f(0.5,0.5,0.5), 0.5, 4);
-    makeBox(ballModel, sf::Vector3f(), sf::Vector3f(0.1,0.1,0.1));
-    ClientModel ball(&cubeModel, &shader);
-
-    float spin = 0, spinSpeed = 45; // degrees/second
-
-    sf::Vector2i lastMousePos = sf::Mouse::getPosition(window);
-    sf::Vector2f look;
-
-    GLChecked(glEnable(GL_DEPTH_TEST));
-    //~ GLChecked(glDepthMask(GL_TRUE));
-    GLChecked(glDepthFunc(GL_LESS));
-
-    GLChecked(glEnable(GL_CULL_FACE));
-    //~ GLChecked(glEnable(GL_COLOR_MATERIAL));
-    //~ GLChecked(glEnable(GL_LIGHTING));
-    //~ GLChecked(glEnable(GL_LIGHT0));
-
-    GLChecked(glClearColor(0.200,0.267,0.333,0.0));
-
-    const sf::Time tickLength(sf::microseconds(50000)); // 20000
-    const unsigned int maxFrameTicks = 5;
-
-    sf::Clock clock;
-    sf::Time tickCount;
-
-    sf::Time playTime;
-
-    bool paused = false;
-
-    while (window.isOpen()) {
-        sf::Event event;
-        while (window.pollEvent(event)) {
-            switch (event.type) {
-                case sf::Event::Closed: {
-                    window.close();
-                    break;
-                }
-
-                case sf::Event::Resized: {
-                    sf::Vector2f size(window.getSize());
-                    shader.setParameter("uResolution", size);
-                    GLChecked(glViewport(0, 0, size.x, size.y));
-                    camera.setAspect(size.x / size.y);
-                    break;
-                }
-
-                case sf::Event::LostFocus: {
-                    break;
-                }
-
-                case sf::Event::GainedFocus: {
-                    break;
-                }
-
-                case sf::Event::TextEntered: {
-                    break;
-                }
-
-                case sf::Event::KeyPressed: {
-                    /// @note for debugging
-                    switch (event.key.code) {
-                        case sf::Keyboard::Escape: {
-                            window.close();
-                            break;
-                        }
-
-                        case sf::Keyboard::Space: {
-                            paused = not paused;
-                            break;
-                        }
-
-                        case sf::Keyboard::F11: {
-                            if (fullscreen) {
-                                window.create(videoMode, windowTitle, windowStyle, contextSettings);
-                            } else {
-                                window.create(desktopMode, windowTitle, windowStyle | sf::Style::Fullscreen, contextSettings);
-                            }
-
-                            GLChecked(glClearColor(0.200,0.267,0.333,0.0));
-
-                            fullscreen = !fullscreen;
-
-                            break;
-                        }
-
-                        default: {
-                            break;
-                        }
-                    }
-                    break;
-                }
-
-                case sf::Event::KeyReleased: {
-                    break;
-                }
-
-                case sf::Event::MouseWheelMoved: {
-                    break;
-                }
-
-                case sf::Event::MouseWheelScrolled: {
-                    break;
-                }
-
-                case sf::Event::MouseButtonPressed: {
-                    break;
-                }
-
-                case sf::Event::MouseButtonReleased: {
-                    break;
-                }
-
-                case sf::Event::MouseMoved: {
-                    sf::Vector2i mousePos(event.mouseMove.x, event.mouseMove.y);
-                    sf::Vector2i mouseDelta = mousePos - lastMousePos;
-                    look.x += mouseDelta.x;
-                    look.y += mouseDelta.y;
-                    lastMousePos = mousePos;
-                    break;
-                }
-
-                case sf::Event::MouseEntered: {
-                    break;
-                }
-
-                case sf::Event::MouseLeft: {
-                    break;
-                }
-
-                case sf::Event::JoystickButtonPressed: {
-                    break;
-                }
-
-                case sf::Event::JoystickButtonReleased: {
-                    break;
-                }
-
-                case sf::Event::JoystickMoved: {
-                    if (std::fabs(event.joystickMove.position) >= 10.0f) {
-                        fprintf(stderr, "%d:%d: %.2f\n",
-                                event.joystickMove.joystickId,
-                                event.joystickMove.axis,
-                                event.joystickMove.position);
-
-                        switch (event.joystickMove.axis) {
-                            case sf::Joystick::X: {
-                                camera.move(event.joystickMove.position * 0.01f, 0, 0);
-                                break;
-                            }
-
-                            case sf::Joystick::Y: {
-                                camera.move(0, 0, event.joystickMove.position * 0.01f);
-                                break;
-                            }
-
-                            case sf::Joystick::Z: {
-                                break;
-                            }
-
-                            case sf::Joystick::R: {
-                                break;
-                            }
-
-                            case sf::Joystick::U: {
-                                break;
-                            }
-
-                            case sf::Joystick::V: {
-                                break;
-                            }
-
-                            case sf::Joystick::PovX: {
-                                break;
-                            }
-
-                            case sf::Joystick::PovY: {
-                                break;
-                            }
-
-                            //~ default: {
-                                //~ break;
-                            //~ }
-                        }
-                    }
-                    break;
-                }
-
-                case sf::Event::JoystickConnected: {
-                    break;
-                }
-
-                case sf::Event::JoystickDisconnected: {
-                    break;
-                }
-
-                case sf::Event::TouchBegan: {
-                    sf::err() << "T-down " << event.touch.finger << ':' <<
-                        event.touch.x << ',' << event.touch.y << std::endl;
-                    break;
-                }
-
-                case sf::Event::TouchMoved: {
-                    sf::err() << "T-move " << event.touch.finger << ':' <<
-                        event.touch.x << ',' << event.touch.y << std::endl;
-                    break;
-                }
-
-                case sf::Event::TouchEnded: {
-                    sf::err() << "T-up   " << event.touch.finger << ':' <<
-                        event.touch.x << ',' << event.touch.y << std::endl;
-                    break;
-                }
-
-                case sf::Event::SensorChanged: {
-                    break;
-                }
-
-                // silence "enumeration value not handled" warning
-                //~ case sf::Event::Count: break;
-                default: {
-                    break;
-                }
-            }
-        }
-
-        sf::Time delta = clock.restart();
-        playTime += delta;
-        tickCount += delta;
-
-        unsigned int frameTicks = maxFrameTicks;
-
-        look.x = std::fmod(look.x + 180.0f, 360.0f) - 180.0f;
-
-        if (look.y > 89.9f) {
-            look.y = 89.9f;
-        }
-        if (look.y < -89.9f) {
-            look.y = -89.9f;
-        }
-
-        sf::Vector3f move;
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-            move.z -= delta.asSeconds();
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-            move.z += delta.asSeconds();
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-            move.x -= delta.asSeconds();
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-            move.x += delta.asSeconds();
-        }
-
-        camera.setLook(look);
-        camera.move(move, -look.x);
-
-        while (tickCount >= tickLength) {
-            tickCount -= tickLength;
-            if (frameTicks > 0) {
-                /*
-                 * update blocks, entities, etc.
-                 */
-
-                //~ engine.tick();
-
-                if (not paused) {
-                    spin += tickLength.asSeconds() * spinSpeed;
-                }
-
-                frameTicks -= 1;
-            }
-        }
-
-        /*
-         * for each visible chunk:
-         *      create vbo
-         *      convert blocks to polys
-         *      render vbo
-         */
-
-        //~ render(engine)
-
-        GLChecked(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-
-        ////////////////////////////////////////////////////////////
-
-        // 3D setup
-
-        GLChecked(glEnable(GL_DEPTH_TEST));
-        GLChecked(glEnable(GL_CULL_FACE));
-        //~ GLChecked(glEnable(GL_LIGHTING));
-        //~ GLChecked(glEnable(GL_LIGHT0));
-        //~ GLChecked(glEnable(GL_COLOR_MATERIAL));
-
-        // draw 3D scene
-
-        //~ camera.render();
-
-        Transform3D projectionTransform(camera.getTransform());
-
-        shader.setParameter("uTime", playTime.asSeconds());
-        shader.setParameter("uProjMatrix", projectionTransform);
-
-        Transform3D spinLight;
-        spinLight.rotate(spin, sf::Vector3f(0,0,1));
-        sf::Vector3f spinLightPos = spinLight.transformPoint(lightPos);
-
-        shader.setParameter("uLightPos", spinLightPos);
-        shader.setParameter("uEyePos", camera.getPosition());
-
-        Transform3D lightBallTransform;
-        lightBallTransform.translate(spinLightPos);
-        shader.setParameter("uViewMatrix", lightBallTransform);
-        ball.render();
-
-        Transform3D modelViewTransform;
-
-        //~ const float Pi = 3.14159265358;
-
-        //~ modelViewTransform.rotate(std::sin(spin*Pi/360.0f)*30.0f,
-                                  //~ sf::Vector3f(1.0f,0.0f,0.0f));
-        //~ modelViewTransform.rotate(spin,
-                                  //~ sf::Vector3f(0.0f,1.0f,0.0f));
-
-        shader.setParameter("uViewMatrix", modelViewTransform);
-
-        //~ GLChecked(glPushMatrix());
-        //~ GLChecked(glLoadMatrixf(modelViewTransform.getMatrix()));
-        cube.render();
-        //~ GLChecked(glPopMatrix());
-
-        modelViewTransform.translate(sf::Vector3f(1.5f,0.0f,0.0f));
-        shader.setParameter("uViewMatrix", modelViewTransform);
-        cube.render();
-
-        // end 3D
-
-        ////////////////////////////////////////////////////////////
-
-        // 2D setup
-
-        GLChecked(glDisable(GL_DEPTH_TEST));
-        GLChecked(glDisable(GL_CULL_FACE));
-        //~ GLChecked(glDisable(GL_LIGHTING));
-
-        // draw 2D overlay
-
-
-        // end 2D
-
-        ////////////////////////////////////////////////////////////
-
-        window.display();
-    }
+    gameWindow.run();
 
     return 0;
 }

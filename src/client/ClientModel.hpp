@@ -22,11 +22,15 @@ class ClientModel {
 
 public:
     ClientModel(const Model *model = nullptr, const Shader *shader = nullptr);
+    ClientModel(const Model &model);
+    ClientModel(const Model &model, const Shader &shader);
     ~ClientModel();
 
+    void setModel(const Model &model);
     void setModel(const Model *model);
     const Model *getModel() const;
 
+    void setShader(const Shader &shader);
     void setShader(const Shader *shader);
     const Shader *getShader() const;
 
