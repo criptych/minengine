@@ -603,6 +603,15 @@ void Model::makeBox() {
     makeBox(sf::Vector3f(1,1,1));
 }
 
+static void addPolarVertex(Model &model, const sf::Vector3f &center, float t, float p, float r) {
+    float ct = std::cos(t);
+    float st = std::sin(t);
+    float cp = std::cos(p);
+    float sp = std::sin(p);
+    sf::Vector3f n(sp*ct, cp, sp*st);
+    model.addVertex(Vertex(n, center + r * n));
+}
+
 void Model::makeBall(float radius, size_t step, const sf::Vector3f &center) {
     if (step < 2) {
         step = 2;
@@ -615,29 +624,31 @@ void Model::makeBall(float radius, size_t step, const sf::Vector3f &center) {
     clearVertices();
     setPrimitive(GLTriangleStrip);
 
-    float ct, st, cp, sp;
-    sf::Vector3f n;
+    //~ float ct, st, cp, sp;
+    //~ sf::Vector3f n;
 
-#define VERTEX(T,P) ( \
+/*
+#define VERTEX(T,P,R) ( \
     ct = std::cos((T)), st = std::sin((T)), \
     cp = std::cos((P)), sp = std::sin((P)), \
     n.x = sp*ct, n.y = cp, n.z = sp*st, \
-    addVertex(Vertex(n, center + radius * n)) )
-
+    addVertex(Vertex(n, center + (R) * n)) )
+*/
 
     for (size_t j = 0; j < step; j++) {
         phi = j * dPhi;
+        theta = 0;
 
-        float d = -dTheta * 0.5f * j;
+        float d = dTheta * 0.5f * (j/2);
 
-        VERTEX(theta-d, phi+dPhi);
-        VERTEX(theta, phi);
+        addPolarVertex(*this, center, theta-d, phi+dPhi, radius);
+        addPolarVertex(*this, center, theta, phi, radius);
 
         for (size_t i = 0; i < rstep; i++) {
             theta = i * dTheta;
 
-            VERTEX(theta-d, phi+dPhi);
-            VERTEX(theta, phi);
+            addPolarVertex(*this, center, theta-d, phi+dPhi, radius);
+            addPolarVertex(*this, center, theta, phi, radius);
         }
     }
 

@@ -185,7 +185,7 @@ void GameWindow::init() {
     mCube.setShader(mBlockShader);
 
     mBallModel.makeBall(0.5, 6);
-    //~ mBallModel.setPrimitive(GL_LINE_STRIP);
+    mBallModel.setPrimitive(GL_LINE_STRIP);
     mBall.setModel(mBallModel);
     mBall.setShader(mBlockShader);
 
@@ -406,13 +406,20 @@ void GameWindow::handleInput(const sf::Time &delta) {
         setMousePosition(mWindowCenter);
     }
 
-    mLookDir.x = std::fmod(mLookDir.x + 180.0f, 360.0f) - 180.0f;
-
-    if (mLookDir.y > 89.9f) {
-        mLookDir.y = 89.9f;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
+        mLookDir.x -= 180*delta.asSeconds();
     }
-    if (mLookDir.y < -89.9f) {
-        mLookDir.y = -89.9f;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
+        mLookDir.x += 180*delta.asSeconds();
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
+        mLookDir.y -= 180*delta.asSeconds();
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
+        mLookDir.y += 180*delta.asSeconds();
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {
+        mLookDir = sf::Vector2f();
     }
 
     sf::Vector3f move;
@@ -440,9 +447,11 @@ void GameWindow::handleInput(const sf::Time &delta) {
         move *= 0.25f;
     }
 
+    mLookDir.x = std::fmod(mLookDir.x + 180.0f, 360.0f) - 180.0f;
+    mLookDir.y = std::min(89.9f, std::max(-89.9f, mLookDir.y));
+
     mCamera.setLook(mLookDir);
     mCamera.move(move, -mLookDir.x);
-
 }
 
 void GameWindow::update(const sf::Time &delta) {
