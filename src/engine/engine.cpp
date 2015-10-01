@@ -641,8 +641,8 @@ void Model::makeBall(float radius, size_t step, const sf::Vector3f &center) {
 
         float d = dTheta * 0.5f * (j/2);
 
+        addPolarVertex(*this, center, theta, phi, radius);
         addPolarVertex(*this, center, theta-d, phi+dPhi, radius);
-        //~ addPolarVertex(*this, center, theta, phi, radius);
 
         for (size_t i = 0; i < rstep; i++) {
             theta = i * dTheta;
