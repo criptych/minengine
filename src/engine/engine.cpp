@@ -619,7 +619,7 @@ void Model::makeBall(float radius, size_t step, const sf::Vector3f &center) {
     size_t rstep = 2 * step;
     //~ size_t n = (step + 1) * rstep;
 
-    float phi = 0, theta = 0, dPhi = Pi / (step), dTheta = 2.0 * Pi / rstep;
+    float phi = 0, theta = 0, dPhi = Pi / (step), dTheta = 2.0f * Pi / rstep;
 
     clearVertices();
     setPrimitive(GLTriangleStrip);
@@ -635,22 +635,30 @@ void Model::makeBall(float radius, size_t step, const sf::Vector3f &center) {
     addVertex(Vertex(n, center + (R) * n)) )
 */
 
-    for (size_t j = 0; j < step; j++) {
-        phi = j * dPhi;
-        theta = 0;
+    size_t n = step * rstep + 1;
 
-        float d = dTheta * 0.5f * (j/2);
+    addPolarVertex(*this, center, 0, 0, radius);
+    mVertices.back().color = sf::Color::Red;
 
-        addPolarVertex(*this, center, theta, phi, radius);
-        addPolarVertex(*this, center, theta-d, phi+dPhi, radius);
+    for (size_t j = 0; j < step; j++, phi += dPhi) {
+        float d = dTheta * 0.5f * j;
 
-        for (size_t i = 0; i < rstep; i++) {
-            theta = i * dTheta;
+        theta = -d;
 
+        //~ addPolarVertex(*this, center, theta, phi, radius);
+        //~ addPolarVertex(*this, center, theta-d, phi+dPhi, radius);
+
+        for (size_t i = 0; i < rstep; i++, theta += dTheta) {
+            float t = static_cast<float>(j*rstep+i+1)/static_cast<float>(n);
             addPolarVertex(*this, center, theta, phi, radius);
+            mVertices.back().color = sf::Color(255*(1.0f-t),255*t,0);
             addPolarVertex(*this, center, theta-d, phi+dPhi, radius);
+            mVertices.back().color = sf::Color(255*(1.0f-t),255*t,0);
         }
     }
+
+    addPolarVertex(*this, center, 0, phi, radius);
+    mVertices.back().color = sf::Color::Green;
 
 /*
 

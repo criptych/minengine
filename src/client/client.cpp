@@ -185,7 +185,7 @@ void GameWindow::init() {
     mCube.setShader(mBlockShader);
 
     mBallModel.makeBall(0.5, 6);
-    mBallModel.setPrimitive(GL_LINE_STRIP);
+    //~ mBallModel.setPrimitive(GL_LINE_STRIP);
     mBall.setModel(mBallModel);
     mBall.setShader(mBlockShader);
 

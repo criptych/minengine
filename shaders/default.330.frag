@@ -9,13 +9,13 @@ uniform vec2 uResolution = vec2(1);
 uniform vec3 uEyePos = vec3(0,0,5);
 
 uniform vec3 uLightPos  = vec3(-4,4,4);
-uniform vec4 uLightAmbt = vec4(0.5, 0.5, 1.0, 1.0);
-uniform vec4 uLightDiff = vec4(1.0, 0.5, 0.5, 1.0);
-uniform vec4 uLightSpec = vec4(0.5, 1.0, 0.5, 1.0);
+uniform vec4 uLightAmbt = vec4(0.8, 0.8, 0.8, 1.0);
+uniform vec4 uLightDiff = vec4(0.2, 0.2, 0.2, 1.0);
+uniform vec4 uLightSpec = vec4(1.0, 1.0, 1.0, 1.0);
 
-uniform sampler2D uDiffMap;
-uniform sampler2D uSpecMap;
-uniform sampler2D uGlowMap;
+uniform sampler2D uDiffMap; // surface color (albedo)
+uniform sampler2D uSpecMap; // specular reflection
+uniform sampler2D uGlowMap; // emission color
 
 in vec3 vVertex;
 in vec3 vNormal;
@@ -48,7 +48,7 @@ void main () {
     fColor += glowColor;
     fColor.a = vColor.a * diffTexCol.a;
 
-    fColor.rgb = 0.5 + 0.5 * normal;
+    //~ fColor.rgb = 0.5 + 0.5 * normal;
 
     //~ fColor.rg = gl_FragCoord.xy / uResolution;
 }
