@@ -108,46 +108,38 @@ typedef sf::Vector3<LargeDelta> Force;
 /**
  *  Axis-aligned box, used for physics simulation of (most) blocks.
  */
-class Box {
+class BoundingVolume {
+public:
+    enum Type {
+        AABB,
+        Sphere,
+        Capsule
+    };
+
+private:
+    Type mType;
     Dimension mDimensions;
 
-public:
-    Box();
-    Box(const Dimension &dim);
+    BoundingVolume(BoundingVolume::Type type, const Dimension &dimensions);
 
+public:
+    BoundingVolume();
+    BoundingVolume(const Dimension &dimensions);
+    BoundingVolume(Size radius);
+    BoundingVolume(Size radius, Size height);
+
+    Type getType() const;
     const Dimension &getDimensions() const;
-};
 
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- *  Centered sphere, used for physics simulation of various items e.g. EXP orbs.
- */
-class Sphere {
-    Size mRadius;
+    Size getWidth() const; // for box
+    Size getRadius() const; // for sphere and capsule
+    Size getHeight() const; // for box and capsule
+    Size getDepth() const; // for box
 
 public:
-    Sphere();
-    Sphere(Size radius);
-
-    Size getRadius() const;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- *  Vertical capsule, used for physics simulation of e.g. mobs.
- */
-class Capsule {
-    Size mRadius;
-    Size mHeight;
-
-public:
-    Capsule();
-    Capsule(Size radius, Size height);
-
-    Size getRadius() const;
-    Size getHeight() const;
+    static BoundingVolume box(const Dimension &dimensions);
+    static BoundingVolume sphere(Size radius);
+    static BoundingVolume capsule(Size radius, Size height);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -170,24 +162,45 @@ public:
         Position mPosition;
         Velocity mVelocity;
         Size mMass;
+        BoundingVolume mBounds;
 
         friend class Physics;
 
     public:
-        const Position &getPosition() const;
-        const Velocity &getVelocity() const;
-        Size getMass() const;
+        const Position &getPosition() const {
+            return mPosition;
+        }
+
+        void setPosition(const Position &position) {
+            mPosition = position;
+        }
+
+        const Velocity &getVelocity() const {
+            return mVelocity;
+        }
+
+        void setVelocity(const Velocity &velocity) {
+            mVelocity = velocity;
+        }
+
+        Size getMass() const {
+            return mMass;
+        }
+
+        void setMass(Size mass) {
+            mMass = mass;
+        }
+
+        const BoundingVolume &getBounds() const {
+            return mBounds;
+        }
+
+        void setBounds(const BoundingVolume &bounds) {
+            mBounds = bounds;
+        }
     };
 
-    CollisionType checkCollision(const Position &pa, const Box     &a, const Position &pb, const Box     &b);
-    CollisionType checkCollision(const Position &pa, const Box     &a, const Position &pb, const Sphere  &b);
-    CollisionType checkCollision(const Position &pa, const Box     &a, const Position &pb, const Capsule &b);
-    CollisionType checkCollision(const Position &pa, const Sphere  &a, const Position &pb, const Box     &b);
-    CollisionType checkCollision(const Position &pa, const Sphere  &a, const Position &pb, const Sphere  &b);
-    CollisionType checkCollision(const Position &pa, const Sphere  &a, const Position &pb, const Capsule &b);
-    CollisionType checkCollision(const Position &pa, const Capsule &a, const Position &pb, const Box     &b);
-    CollisionType checkCollision(const Position &pa, const Capsule &a, const Position &pb, const Sphere  &b);
-    CollisionType checkCollision(const Position &pa, const Capsule &a, const Position &pb, const Capsule &b);
+    CollisionType checkCollision(const Body &a, const Body &b);
 
     void update(Body &b, const sf::Time &t) const;
     void accelerate(Body &b, const Velocity &v) const;

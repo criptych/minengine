@@ -164,62 +164,58 @@ namespace std {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Box::Box(): mDimensions() {
+BoundingVolume::BoundingVolume(
+    BoundingVolume::Type type,
+    const Dimension &dimensions
+): mType(type), mDimensions(dimensions) {
 }
 
-Box::Box(
-    const Dimension &dim
-): mDimensions(dim) {
+BoundingVolume::BoundingVolume(
+): mType(), mDimensions() {
 }
 
-const Dimension &Box::getDimensions() const {
+BoundingVolume::BoundingVolume(
+    const Dimension &dimensions
+): mType(AABB), mDimensions() {
+}
+
+BoundingVolume::BoundingVolume(
+    Size radius
+): mType(Sphere), mDimensions(radius, radius, radius) {
+}
+
+BoundingVolume::BoundingVolume(
+    Size radius,
+    Size height
+): mType(Capsule), mDimensions(radius, height, radius) {
+}
+
+BoundingVolume::Type BoundingVolume::getType() const {
+    return mType;
+}
+
+const Dimension &BoundingVolume::getDimensions() const {
     return mDimensions;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-Sphere::Sphere(): mRadius() {
+Size BoundingVolume::getRadius() const {
+    return mDimensions.x;
 }
 
-Sphere::Sphere(
-    Size radius
-): mRadius(radius) {
+Size BoundingVolume::getHeight() const {
+    return mDimensions.y;
 }
 
-Size Sphere::getRadius() const {
-    return mRadius;
+BoundingVolume BoundingVolume::box(const Dimension &dimensions) {
+    return BoundingVolume(dimensions);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-Capsule::Capsule(): mRadius(), mHeight() {
+BoundingVolume BoundingVolume::sphere(Size radius) {
+    return BoundingVolume(radius);
 }
 
-Capsule::Capsule(
-    Size radius, Size height
-): mRadius(radius), mHeight(height) {
-}
-
-Size Capsule::getRadius() const {
-    return mRadius;
-}
-
-Size Capsule::getHeight() const {
-    return mHeight;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-const Position &Physics::Body::getPosition() const {
-    return mPosition;
-}
-
-const Velocity &Physics::Body::getVelocity() const {
-    return mVelocity;
-}
-
-Size Physics::Body::getMass() const {
-    return mMass;
+BoundingVolume BoundingVolume::capsule(Size radius, Size height) {
+    return BoundingVolume(radius, height);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -229,133 +225,93 @@ Physics::Physics(
 }
 
 Physics::CollisionType Physics::checkCollision(
-    const Position &pa,
-    const Box &a,
-    const Position &pb,
-    const Box &b
+    const Body &a,
+    const Body &b
 ) {
-    Position minA = pa - Position(a.getDimensions());
-    Position maxA = pa + Position(a.getDimensions());
-    Position minB = pb - Position(b.getDimensions());
-    Position maxB = pb + Position(b.getDimensions());
+    const Position &pa = a.getPosition();
+    const Position &pb = b.getPosition();
+    const BoundingVolume &va = a.getBounds();
+    const BoundingVolume &vb = b.getBounds();
 
-    if (
-        minA.x <= maxB.x && minA.y <= maxB.y && minA.z <= maxB.z &&
-        minB.x <= maxA.x && minB.y <= maxA.y && minB.z <= maxA.z
-    ) {
+    if (va.getType() == vb.getType()) {
+        switch (va.getType()) {
+            case BoundingVolume::AABB: {
+                // box <-> box collision test
+                Position minA = pa - Position(va.getDimensions());
+                Position maxA = pa + Position(va.getDimensions());
+                Position minB = pb - Position(vb.getDimensions());
+                Position maxB = pb + Position(vb.getDimensions());
 
-        if (
-            minA.x < maxB.x && minA.y < maxB.y && minA.z < maxB.z &&
-            minB.x < maxA.x && minB.y < maxA.y && minB.z < maxA.z
-        ) {
-            return CollisionType::Intrusion;
+                if (
+                    minA.x <= maxB.x && minA.y <= maxB.y && minA.z <= maxB.z &&
+                    minB.x <= maxA.x && minB.y <= maxA.y && minB.z <= maxA.z
+                ) {
+                    if (
+                        minA.x < maxB.x && minA.y < maxB.y && minA.z < maxB.z &&
+                        minB.x < maxA.x && minB.y < maxA.y && minB.z < maxA.z
+                    ) {
+                        return CollisionType::Intrusion;
+                    } else {
+                        return CollisionType::Contact;
+                    }
+                } else {
+                    return CollisionType::None;
+                }
+            }
+
+            case BoundingVolume::Sphere: {
+                // sphere <-> sphere collision test
+                Position c = pb - pa;
+                LargeDelta r = vb.getRadius() + va.getRadius();
+                HugeDelta d = c.x * c.x + c.y * c.y + c.z * c.z - r * r;
+
+                if (d >= Epsilon) {
+                    return CollisionType::None;
+                } else if (d > -Epsilon) {
+                    return CollisionType::Contact;
+                } else {
+                    return CollisionType::Intrusion;
+                }
+            }
+
+            case BoundingVolume::Capsule: {
+                // capsule <-> capsule collision test
+                Position c = pb - pa;
+                LargeDelta r = vb.getRadius() + va.getRadius();
+                //~ LargeDelta h = b.getHeight() + a.getHeight() - r;
+                HugeDelta d = c.x * c.x + c.z * c.z - r * r;
+
+                if (d >= Epsilon) {
+                    // out of horizontal range, no need to check vertical
+                    return CollisionType::None;
+                } else if (d > -Epsilon) {
+                    //! @todo vertical contact test
+                    return CollisionType::Contact;
+                } else {
+                    //! @todo vertical intrusion test
+                    return CollisionType::Intrusion;
+                }
+            }
         }
-
-        return CollisionType::Contact;
-    }
-
-    return CollisionType::None;
-}
-
-Physics::CollisionType Physics::checkCollision(
-    const Position &pa,
-    const Box &a,
-    const Position &pb,
-    const Sphere &b
-) {
-    //! @todo
-    return CollisionType::None;
-}
-
-Physics::CollisionType Physics::checkCollision(
-    const Position &pa,
-    const Box &a,
-    const Position &pb,
-    const Capsule &b
-) {
-    //! @todo
-    return CollisionType::None;
-}
-
-Physics::CollisionType Physics::checkCollision(
-    const Position &pa,
-    const Sphere &a,
-    const Position &pb,
-    const Box &b
-) {
-    return checkCollision(pb, b, pa, a);
-}
-
-Physics::CollisionType Physics::checkCollision(
-    const Position &pa,
-    const Sphere &a,
-    const Position &pb,
-    const Sphere &b
-) {
-    Position c = pb - pa;
-    int32_t r = b.getRadius() + a.getRadius();
-    int64_t d = c.x * c.x + c.y * c.y + c.z * c.z - r * r;
-
-    if (d >= Epsilon) {
-        return CollisionType::None;
-    } else if (d > -Epsilon) {
-        return CollisionType::Contact;
     } else {
-        return CollisionType::Intrusion;
+        if (va.getType() == BoundingVolume::AABB && vb.getType() == BoundingVolume::Sphere) {
+            //! @todo box <-> sphere collision test
+        } else if (va.getType() == BoundingVolume::Sphere && vb.getType() == BoundingVolume::AABB) {
+            //! @todo sphere <-> box collision test
+        } else if (va.getType() == BoundingVolume::AABB && vb.getType() == BoundingVolume::Capsule) {
+            //! @todo box <-> capsule collision test
+        } else if (va.getType() == BoundingVolume::Capsule && vb.getType() == BoundingVolume::AABB) {
+            //! @todo capsule <-> box collision test
+        } else if (va.getType() == BoundingVolume::Sphere && vb.getType() == BoundingVolume::Capsule) {
+            //! @todo sphere <-> capsule collision test
+        } else if (va.getType() == BoundingVolume::Capsule && vb.getType() == BoundingVolume::Sphere) {
+            //! @todo capsule <-> sphere collision test
+        }
     }
-}
 
-Physics::CollisionType Physics::checkCollision(
-    const Position &pa,
-    const Sphere &a,
-    const Position &pb,
-    const Capsule &b
-) {
-    //! @todo
+    // no collision, or no test for given bounding volumes
     return CollisionType::None;
 }
-
-Physics::CollisionType Physics::checkCollision(
-    const Position &pa,
-    const Capsule &a,
-    const Position &pb,
-    const Box &b
-) {
-    return checkCollision(pb, b, pa, a);
-}
-
-Physics::CollisionType Physics::checkCollision(
-    const Position &pa,
-    const Capsule &a,
-    const Position &pb,
-    const Sphere &b
-) {
-    return checkCollision(pb, b, pa, a);
-}
-
-Physics::CollisionType Physics::checkCollision(
-    const Position &pa,
-    const Capsule &a,
-    const Position &pb,
-    const Capsule &b
-) {
-    Position c = pb - pa;
-    int32_t r = b.getRadius() + a.getRadius();
-    //~ int32_t h = b.getHeight() + a.getHeight() - r;
-    int64_t d = c.x * c.x + c.z * c.z - r * r;
-
-    if (d >= Epsilon) {
-        // out of horizontal range
-        return CollisionType::None;
-    } else if (d > -Epsilon) {
-        //! @todo
-        return CollisionType::Contact;
-    } else {
-        //! @todo
-        return CollisionType::Intrusion;
-    }
-}
-
 
 void Physics::update(Body &b, const sf::Time &t) const {
     float s = t.asSeconds();
