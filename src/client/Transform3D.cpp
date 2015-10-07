@@ -154,6 +154,14 @@ Transform3D Transform3D::getInverse() const {
     return Transform3D();
 }
 
+Transform3D operator *(const Transform3D &a, const Transform3D &b) {
+    return Transform3D(a).combine(b);
+}
+
+sf::Vector3f operator *(const Transform3D &a, const sf::Vector3f &b) {
+    return Transform3D(a).transformPoint(b);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //  EOF
 ////////////////////////////////////////////////////////////////////////////////

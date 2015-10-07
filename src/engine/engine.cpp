@@ -47,6 +47,9 @@ static TrigHelper sTrig;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+const Angle Angle::Zero(0);
+const Angle Angle::Right(64);
+
 float Angle::asDegrees() const {
     return sTrig.deg(mValue);
 }
@@ -86,6 +89,54 @@ Angle Angle::fromRadians(float angle) {
 
 Angle Angle::fromByte(int8_t angle) {
     return Angle(angle);
+}
+
+bool operator == (const Angle &a, const Angle &b) {
+    return a.asByte() == b.asByte();
+}
+
+bool operator != (const Angle &a, const Angle &b) {
+    return a.asByte() != b.asByte();
+}
+
+bool operator < (const Angle &a, const Angle &b) {
+    return a.asByte() < b.asByte();
+}
+
+bool operator > (const Angle &a, const Angle &b) {
+    return a.asByte() > b.asByte();
+}
+
+bool operator <= (const Angle &a, const Angle &b) {
+    return a.asByte() <= b.asByte();
+}
+
+bool operator >= (const Angle &a, const Angle &b) {
+    return a.asByte() >= b.asByte();
+}
+
+Angle operator + (const Angle &a) {
+    return a;
+}
+
+Angle operator - (const Angle &a) {
+    return Angle::fromByte(-a.asByte());
+}
+
+Angle operator + (const Angle &a, const Angle &b) {
+    return Angle::fromByte(a.asByte() + b.asByte());
+}
+
+Angle operator - (const Angle &a, const Angle &b) {
+    return Angle::fromByte(a.asByte() - b.asByte());
+}
+
+Angle &operator += (Angle &a, const Angle &b) {
+    return a = a + b;
+}
+
+Angle &operator -= (Angle &a, const Angle &b) {
+    return a = a - b;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

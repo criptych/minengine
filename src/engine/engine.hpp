@@ -51,7 +51,7 @@ const long double TwoPi = 6.283185307179586476925286766559;
 class Angle {
     int8_t mValue;
 
-    Angle(int8_t value): mValue(value) {}
+    explicit Angle(int8_t value): mValue(value) {}
 
 public:
     Angle(): mValue() {}
@@ -66,10 +66,30 @@ public:
 
     void sincos(float &s, float &c) const;
 
+    static const Angle Zero;
+    static const Angle Right;
+
     static Angle fromDegrees(float angle);
     static Angle fromRadians(float angle);
     static Angle fromByte(int8_t angle);
 };
+
+bool operator == (const Angle &a, const Angle &b);
+bool operator != (const Angle &a, const Angle &b);
+bool operator <  (const Angle &a, const Angle &b);
+bool operator >  (const Angle &a, const Angle &b);
+bool operator <= (const Angle &a, const Angle &b);
+bool operator >= (const Angle &a, const Angle &b);
+
+Angle operator + (const Angle &a);
+Angle operator - (const Angle &a);
+Angle operator + (const Angle &a, const Angle &b);
+Angle operator - (const Angle &a, const Angle &b);
+
+Angle &operator += (Angle &a, const Angle &b);
+Angle &operator -= (Angle &a, const Angle &b);
+
+////////////////////////////////////////////////////////////////////////////////
 
 typedef int64_t Coord;
 typedef uint16_t Size;
