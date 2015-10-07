@@ -95,6 +95,7 @@ typedef int64_t Coord;
 typedef uint16_t Size;
 typedef int16_t Delta;
 typedef int32_t LargeDelta;
+typedef int64_t HugeDelta;
 
 typedef sf::Vector2<Angle> Orientation;
 typedef sf::Vector3<Coord> Position;
@@ -124,8 +125,8 @@ private:
 
 public:
     BoundingVolume();
-    BoundingVolume(const Dimension &dimensions);
-    BoundingVolume(Size radius);
+    explicit BoundingVolume(const Dimension &dimensions);
+    explicit BoundingVolume(Size radius);
     BoundingVolume(Size radius, Size height);
 
     Type getType() const;
@@ -145,13 +146,13 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 class Physics {
+    Velocity mGravity;
+
+public:
     static const Size Epsilon = 3; // ~1%
 
     Physics();
 
-    Velocity mGravity;
-
-public:
     enum class CollisionType {
         None,       //!< Bounding volumes do not intersect
         Contact,    //!< Bounding volume surfaces intersect ("touch")
@@ -220,7 +221,7 @@ struct Vertex {
     ): color(sf::Color::White) {
     }
 
-    Vertex(
+    explicit Vertex(
         const sf::Vector3f &position
     ): color(sf::Color::White), position(position) {
     }
@@ -334,7 +335,7 @@ class Model {
 
 public:
     Model();
-    Model(uint32_t primitive);
+    explicit Model(uint32_t primitive);
 
     template <typename I>
     Model(
@@ -608,8 +609,8 @@ class ChunkCache {
     std::map<Position, Chunk*> mChunkMap;
 
 public:
-    ChunkCache(ChunkSource *source, size_t capacity = 4096);
-    ChunkCache(ChunkSource &source, size_t capacity = 4096);
+    explicit ChunkCache(ChunkSource *source, size_t capacity = 4096);
+    explicit ChunkCache(ChunkSource &source, size_t capacity = 4096);
 
     Chunk *getChunk(const Position &pos);
 };
@@ -623,7 +624,7 @@ class World {
     uint64_t mTicksPerDay;
 
 public:
-    World(ChunkSource *upstream): mUpstream(upstream) {}
+    explicit World(ChunkSource *upstream): mUpstream(upstream) {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////

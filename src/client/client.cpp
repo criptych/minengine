@@ -27,6 +27,120 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
+class Player : public Physics::Body {
+    Camera mCamera;
+    float mEyeHeight;
+    Orientation mLookDir;
+
+    mutable Transform3D mTransform;
+    mutable bool mNeedsUpdate;
+
+public:
+    Player();
+
+    Camera &getCamera();
+    const Camera &getCamera() const;
+
+    const Transform3D &getTransform() const;
+    Transform3D getViewTransform() const;
+
+    sf::Vector3f getEyePosition() const;
+
+    //~ void setPosition(const sf::Vector3f &position);
+    //~ void setPosition(float x, float y, float z);
+    //~ const sf::Vector3f &getPosition() const;
+
+    void setLook(const Orientation &look);
+    const Orientation &getLook() const;
+
+    void look(const sf::Vector2f &look);
+
+    void move(const sf::Vector3f &offset);
+    void move(float dx, float dy, float dz);
+
+    void update(const sf::Time &delta);
+    void render() const;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+Player::Player(
+): mCamera(
+    90.0f, 16.0f/9.0f, 0.01f, 100.0f
+), mEyeHeight(
+    1.7f
+), mLookDir(
+    Angle::Zero, Angle::Zero
+), mNeedsUpdate(
+    true
+) {
+    setBounds(BoundingVolume::capsule(0.4f, 1.77f));
+}
+
+Camera &Player::getCamera() {
+    return mCamera;
+}
+
+const Camera &Player::getCamera() const {
+    return mCamera;
+}
+
+const Transform3D &Player::getTransform() const {
+    if (mNeedsUpdate) {
+        mTransform = Transform3D();
+        mTransform.rotate(mLookDir.y.asDegrees(), sf::Vector3f(1.0f, 0.0f, 0.0f));
+        mTransform.rotate(mLookDir.x.asDegrees(), sf::Vector3f(0.0f, 1.0f, 0.0f));
+        mTransform.translate(-sf::Vector3f(getEyePosition()));
+        mNeedsUpdate = false;
+    }
+    return mTransform;
+}
+
+Transform3D Player::getViewTransform() const {
+    return getTransform() * mCamera.getTransform();
+}
+
+sf::Vector3f Player::getEyePosition() const {
+    sf::Vector3f eye(getPosition());
+    eye /= 256.0f;
+    eye.y += mEyeHeight;
+    return eye;
+}
+
+void Player::setLook(const Orientation &look) {
+    mLookDir = look;
+    mNeedsUpdate = true;
+}
+
+const Orientation &Player::getLook() const {
+    return mLookDir;
+}
+
+void Player::look(const sf::Vector2f &look) {
+    mLookDir += Orientation(Angle::fromByte(look.x), Angle::fromByte(look.y));
+
+    if (mLookDir.y > Angle::Right) {
+        mLookDir.y = Angle::Right;
+    } else if (mLookDir.y < -Angle::Right) {
+        mLookDir.y = -Angle::Right;
+    }
+
+    //~ if (look.x || look.y) {
+        //~ sf::err() << "look " << look.x << ' ' << look.y << " -> " <<
+                     //~ mLookDir.x.asDegrees() << ' ' << mLookDir.y.asDegrees() << '\n';
+    //~ }
+    //~ mCamera.setLook(mLookDir);
+}
+
+void Player::move(const sf::Vector3f &move) {
+    //~ mCamera.move(move, -mLookDir.x);
+}
+
+void Player::render() const {
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 class GameWindow : protected sf::Window {
     bool mFullscreen;
     bool mMouseLocked;
@@ -43,11 +157,12 @@ class GameWindow : protected sf::Window {
     sf::Time mPlayTime;
     unsigned int mMaxTicksPerFrame;
 
-    Camera mCamera;
-    Shader mBlockShader;
+    Player mPlayer;
+    //~ Camera mCamera;
+    mutable Shader mBlockShader;
 
     sf::Vector3f mLightPos;
-    sf::Vector2f mLookDir;
+    //~ sf::Vector2f mLookDir;
     float mSpinAngle;
     float mSpinSpeed; // degrees/second
 
@@ -69,11 +184,11 @@ protected:
     void quit(bool internal);
 
     void handleEvents();
-    void handleInput(const sf::Time &delta);
 
+    void handleInput(const sf::Time &delta);
     void handleEvent(const sf::Event &event);
     void update(const sf::Time &delta);
-    void render();
+    void render() const;
 
     void setMousePosition(const sf::Vector2i &position);
     sf::Vector2i getMousePosition() const;
@@ -144,7 +259,8 @@ void GameWindow::init() {
     sf::VideoMode videoMode(960, 540);
     sf::String windowTitle(L"MinEngine Client");
     sf::Uint32 windowStyle(sf::Style::Default);
-    sf::ContextSettings contextSettings(24,8, 0, 3,3);
+    unsigned int contextAttribs = sf::ContextSettings::Core | sf::ContextSettings::Debug;
+    sf::ContextSettings contextSettings(24,8, 0, 3,3, contextAttribs);
 
     mDesktopMode = sf::VideoMode::getDesktopMode();
 
@@ -154,6 +270,14 @@ void GameWindow::init() {
 
     create(videoMode, windowTitle, windowStyle, contextSettings);
 
+    const sf::ContextSettings &usedSettings = getSettings();
+    sf::err() << "Using OpenGL " << usedSettings.majorVersion << '.' << usedSettings.minorVersion << ".\n";
+
+    mPlayer.setPosition(Position(0,0,5<<8));
+
+    sf::Vector3f eye = mPlayer.getEyePosition();
+    sf::err() << "mPlayer.getEyePosition() == " << eye.x << ',' << eye.y << ',' << eye.z << '\n';
+
     mWindowCenter = sf::Vector2i(getSize()) / 2;
 
     glewInit();
@@ -162,11 +286,6 @@ void GameWindow::init() {
     GLChecked(glDepthFunc(GL_LESS));
     GLChecked(glEnable(GL_CULL_FACE));
     GLChecked(glClearColor(0.200,0.267,0.333,0.0));
-
-    mCamera.setFOV(90.0f);
-    mCamera.setAspect(16.0f/9.0f);
-    mCamera.setZRange(0.01f, 100.0f);
-    mCamera.setPosition(0.0, 1.7, 5.0);
 
     if (!mBlockShader.loadFromFile(
         "shaders/default.330.vert", "shaders/default.330.frag"
@@ -180,7 +299,7 @@ void GameWindow::init() {
     mBlockShader.bindAttribLocation("aColor",    3);
     mBlockShader.setParameter("uResolution", sf::Vector2f(getSize()));
 
-    mCubeModel.makeBox(sf::Vector3f(0.5,0.5,0.5), sf::Vector3f(0.5,0.5,0.5));
+    mCubeModel.makeBox(sf::Vector3f(0.5f,0.5f,0.5f), sf::Vector3f(0.0f,0.0f,0.5f));
     mCube.setModel(mCubeModel);
     mCube.setShader(mBlockShader);
 
@@ -217,7 +336,7 @@ void GameWindow::handleEvent(const sf::Event &event) {
             sf::Vector2f size(getSize());
             mBlockShader.setParameter("uResolution", size);
             GLChecked(glViewport(0, 0, size.x, size.y));
-            mCamera.setAspect(size.x / size.y);
+            mPlayer.getCamera().setAspect(size.x / size.y);
             break;
         }
 
@@ -324,12 +443,12 @@ void GameWindow::handleEvent(const sf::Event &event) {
 
                 switch (event.joystickMove.axis) {
                     case sf::Joystick::X: {
-                        mCamera.move(event.joystickMove.position * 0.01f, 0, 0);
+                        //~ mPlayer.move(event.joystickMove.position * 0.01f, 0, 0);
                         break;
                     }
 
                     case sf::Joystick::Y: {
-                        mCamera.move(0, 0, event.joystickMove.position * 0.01f);
+                        //~ mPlayer.move(0, 0, event.joystickMove.position * 0.01f);
                         break;
                     }
 
@@ -402,24 +521,25 @@ void GameWindow::handleInput(const sf::Time &delta) {
     if (mMouseLocked) {
         sf::Vector2i mousePos = getMousePosition();
         sf::Vector2i mouseDelta = mousePos - mWindowCenter;
-        mLookDir += sf::Vector2f(mouseDelta);
+        mPlayer.look(sf::Vector2f(mouseDelta));
         setMousePosition(mWindowCenter);
     }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-        mLookDir.x -= 180*delta.asSeconds();
+        //~ mLookDir.x -= 180*delta.asSeconds();
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-        mLookDir.x += 180*delta.asSeconds();
+        //~ mLookDir.x += 180*delta.asSeconds();
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-        mLookDir.y -= 180*delta.asSeconds();
+        //~ mLookDir.y -= 180*delta.asSeconds();
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-        mLookDir.y += 180*delta.asSeconds();
+        //~ mLookDir.y += 180*delta.asSeconds();
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {
-        mLookDir = sf::Vector2f();
+        //~ mLookDir = sf::Vector2f();
+        mPlayer.setLook(Orientation(Angle::Zero, Angle::Zero));
     }
 
     sf::Vector3f move;
@@ -447,11 +567,13 @@ void GameWindow::handleInput(const sf::Time &delta) {
         move *= 0.25f;
     }
 
-    mLookDir.x = std::fmod(mLookDir.x + 180.0f, 360.0f) - 180.0f;
-    mLookDir.y = std::min(89.9f, std::max(-89.9f, mLookDir.y));
+    //~ mLookDir.x = std::fmod(mLookDir.x + 180.0f, 360.0f) - 180.0f;
+    //~ mLookDir.y = std::min(89.9f, std::max(-89.9f, mLookDir.y));
 
-    mCamera.setLook(mLookDir);
-    mCamera.move(move, -mLookDir.x);
+    //~ mPlayer.getCamera().setLook(mLookDir);
+    //~ mPlayer.getCamera().move(move, -mLookDir.x);
+
+    mPlayer.move(move);
 }
 
 void GameWindow::update(const sf::Time &delta) {
@@ -462,7 +584,7 @@ void GameWindow::update(const sf::Time &delta) {
     }
 }
 
-void GameWindow::render() {
+void GameWindow::render() const {
     GLChecked(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
     ////////////////////////////////////////////////////////////
@@ -484,7 +606,9 @@ void GameWindow::render() {
 
     //! camera.render();
 
-    Transform3D projectionTransform(mCamera.getTransform());
+    mPlayer.render();
+
+    Transform3D projectionTransform(mPlayer.getViewTransform());
 
     mBlockShader.setParameter("uTime", mPlayTime.asSeconds());
     mBlockShader.setParameter("uProjMatrix", projectionTransform);
@@ -494,7 +618,7 @@ void GameWindow::render() {
     sf::Vector3f spinLightPos = spinLight.transformPoint(mLightPos);
 
     mBlockShader.setParameter("uLightPos", spinLightPos);
-    mBlockShader.setParameter("uEyePos", mCamera.getPosition());
+    mBlockShader.setParameter("uEyePos", mPlayer.getEyePosition());
 
     Transform3D lightBallTransform;
     lightBallTransform.translate(spinLightPos);
@@ -507,7 +631,7 @@ void GameWindow::render() {
 
     mCube.render();
 
-    modelViewTransform.translate(sf::Vector3f(1.5f,0.0f,0.0f));
+    modelViewTransform.translate(sf::Vector3f(1.0f,0.0f,0.0f));
     mBlockShader.setParameter("uViewMatrix", modelViewTransform);
     mCube.render();
 

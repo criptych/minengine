@@ -18,8 +18,6 @@ class Camera {
     float mAspect;
     float mZNear;
     float mZFar;
-    sf::Vector3f mPosition;
-    sf::Vector2f mLook;
 
     mutable Transform3D mTransform;
     mutable bool mNeedsUpdate;
@@ -40,17 +38,6 @@ public:
     void setZFar(float zFar);
     float getZFar() const;
     void setZRange(float zNear, float zFar);
-
-    void setPosition(const sf::Vector3f &position);
-    void setPosition(float x, float y, float z);
-    const sf::Vector3f &getPosition() const;
-
-    void move(const sf::Vector3f &offset);
-    void move(const sf::Vector3f &offset, float angle);
-    void move(float dx, float dy, float dz);
-
-    void setLook(const sf::Vector2f &look);
-    const sf::Vector2f &getLook() const;
 
     const Transform3D &getTransform() const;
 

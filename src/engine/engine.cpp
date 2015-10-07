@@ -176,7 +176,7 @@ BoundingVolume::BoundingVolume(
 
 BoundingVolume::BoundingVolume(
     const Dimension &dimensions
-): mType(AABB), mDimensions() {
+): mType(AABB), mDimensions(dimensions) {
 }
 
 BoundingVolume::BoundingVolume(
@@ -243,12 +243,12 @@ Physics::CollisionType Physics::checkCollision(
                 Position maxB = pb + Position(vb.getDimensions());
 
                 if (
-                    minA.x <= maxB.x && minA.y <= maxB.y && minA.z <= maxB.z &&
-                    minB.x <= maxA.x && minB.y <= maxA.y && minB.z <= maxA.z
+                    minA.x <= maxB.x + Epsilon && minA.y <= maxB.y + Epsilon && minA.z <= maxB.z + Epsilon &&
+                    minB.x <= maxA.x + Epsilon && minB.y <= maxA.y + Epsilon && minB.z <= maxA.z + Epsilon
                 ) {
                     if (
-                        minA.x < maxB.x && minA.y < maxB.y && minA.z < maxB.z &&
-                        minB.x < maxA.x && minB.y < maxA.y && minB.z < maxA.z
+                        minA.x < maxB.x - Epsilon && minA.y < maxB.y - Epsilon && minA.z < maxB.z - Epsilon &&
+                        minB.x < maxA.x - Epsilon && minB.y < maxA.y - Epsilon && minB.z < maxA.z - Epsilon
                     ) {
                         return CollisionType::Intrusion;
                     } else {
@@ -310,6 +310,8 @@ Physics::CollisionType Physics::checkCollision(
     }
 
     // no collision, or no test for given bounding volumes
+    sf::err() << "no collision test for given bounding volumes (" <<
+        va.getType() << ", " << vb.getType() << ")\n";
     return CollisionType::None;
 }
 
@@ -802,7 +804,6 @@ ChunkCache::ChunkCache(
 }
 
 Chunk *ChunkCache::getChunk(const Position &position) {
-    /// @todo rewrite with map.find/map.insert
     auto i = mChunkMap.find(position);
     if (i != mChunkMap.end()) {
         return i->second;

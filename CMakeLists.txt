@@ -48,6 +48,11 @@ SET(SERVER_SRCS
     src/server/server.cpp
 )
 
+SET(TEST_SRCS
+    test/testmain.cpp
+    test/test_physics.cpp
+)
+
 ################################################################################
 
 INCLUDE_DIRECTORIES(src/ ${SFML_INCLUDE_DIR})
@@ -64,8 +69,8 @@ TARGET_LINK_LIBRARIES(server engine ${SFML_LIBRARIES})
 
 ################################################################################
 
-ADD_EXECUTABLE(testmain test/testmain.cpp)
-TARGET_LINK_LIBRARIES(testmain engine)
+ADD_EXECUTABLE(testmain ${TEST_SRCS})
+TARGET_LINK_LIBRARIES(testmain engine ${SFML_LIBRARIES})
 SET_TARGET_PROPERTIES(testmain PROPERTIES OUTPUT_NAME test)
 
 ################################################################################
