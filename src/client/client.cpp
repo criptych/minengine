@@ -259,7 +259,7 @@ void GameWindow::init() {
     sf::VideoMode videoMode(960, 540);
     sf::String windowTitle(L"MinEngine Client");
     sf::Uint32 windowStyle(sf::Style::Default);
-    unsigned int contextAttribs = sf::ContextSettings::Core | sf::ContextSettings::Debug;
+    unsigned int contextAttribs = sf::ContextSettings::Default;
     sf::ContextSettings contextSettings(24,8, 0, 3,3, contextAttribs);
 
     mDesktopMode = sf::VideoMode::getDesktopMode();
@@ -271,7 +271,10 @@ void GameWindow::init() {
     create(videoMode, windowTitle, windowStyle, contextSettings);
 
     const sf::ContextSettings &usedSettings = getSettings();
-    sf::err() << "Using OpenGL " << usedSettings.majorVersion << '.' << usedSettings.minorVersion << ".\n";
+    sf::err() << "Using OpenGL " << usedSettings.majorVersion << '.' << usedSettings.minorVersion << ' ' <<
+        ((usedSettings.attributeFlags & sf::ContextSettings::Core) ? "Core" : "Compat") <<
+        ((usedSettings.attributeFlags & sf::ContextSettings::Debug) ? " (Debug)" : "") <<
+        ".\n";
 
     mPlayer.setPosition(Position(0,0,5<<8));
 
