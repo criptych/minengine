@@ -79,6 +79,22 @@ SCENARIO("physics","[physics]") {
             }
         }
 
+        GIVEN("A at (0,0,0), B approaching from +XYZ") {
+            a.setPosition(Position(0,0,0));
+
+            for (int i = (1<<7)+Physics::Epsilon*2; i >= (1<<7)-Physics::Epsilon*2; i--) {
+                CAPTURE(i);
+                b.setPosition(Position(i,i,i));
+                if (i < 256 - Physics::Epsilon) {
+                    CHECK(physics.checkCollision(a, b) == Physics::CollisionType::Intrusion);
+                } else if (i > 256 + Physics::Epsilon) {
+                    CHECK(physics.checkCollision(a, b) == Physics::CollisionType::None);
+                } else {
+                    CHECK(physics.checkCollision(a, b) == Physics::CollisionType::Contact);
+                }
+            }
+        }
+
     }
 }
 

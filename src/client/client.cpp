@@ -8,6 +8,7 @@
 
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
+#include <SFML/Graphics.hpp>
 #include <SFML/OpenGL.hpp>
 #include <SFML/Audio.hpp>
 #include <SFML/Network.hpp>
@@ -27,10 +28,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Player : public Physics::Body {
+class Player {
     Camera mCamera;
     float mEyeHeight;
-    Orientation mLookDir;
+    sf::Vector3f mPosition;
+    sf::Vector2f mLookDir;
+
+    Physics::Body mBody;
 
     mutable Transform3D mTransform;
     mutable bool mNeedsUpdate;
@@ -46,17 +50,15 @@ public:
 
     sf::Vector3f getEyePosition() const;
 
-    //~ void setPosition(const sf::Vector3f &position);
-    //~ void setPosition(float x, float y, float z);
-    //~ const sf::Vector3f &getPosition() const;
-
-    void setLook(const Orientation &look);
-    const Orientation &getLook() const;
-
-    void look(const sf::Vector2f &look);
+    void setPosition(const sf::Vector3f &position);
+    const sf::Vector3f &getPosition() const;
 
     void move(const sf::Vector3f &offset);
-    void move(float dx, float dy, float dz);
+
+    void setLook(const sf::Vector2f &look);
+    const sf::Vector2f &getLook() const;
+
+    void look(const sf::Vector2f &look);
 
     void update(const sf::Time &delta);
     void render() const;
@@ -70,11 +72,10 @@ Player::Player(
 ), mEyeHeight(
     1.7f
 ), mLookDir(
-    Angle::Zero, Angle::Zero
 ), mNeedsUpdate(
     true
 ) {
-    setBounds(BoundingVolume::capsule(0.4f, 1.77f));
+    mBody.setBounds(BoundingVolume::capsule(0.4f, 1.77f));
 }
 
 Camera &Player::getCamera() {
@@ -88,52 +89,52 @@ const Camera &Player::getCamera() const {
 const Transform3D &Player::getTransform() const {
     if (mNeedsUpdate) {
         mTransform = Transform3D();
-        mTransform.rotate(mLookDir.y.asDegrees(), sf::Vector3f(1.0f, 0.0f, 0.0f));
-        mTransform.rotate(mLookDir.x.asDegrees(), sf::Vector3f(0.0f, 1.0f, 0.0f));
-        mTransform.translate(-sf::Vector3f(getEyePosition()));
+        mTransform.rotate(mLookDir.y, sf::Vector3f(1.0f, 0.0f, 0.0f));
+        mTransform.rotate(mLookDir.x, sf::Vector3f(0.0f, 1.0f, 0.0f));
+        mTransform.translate(-getEyePosition());
         mNeedsUpdate = false;
     }
     return mTransform;
 }
 
 Transform3D Player::getViewTransform() const {
-    return getTransform() * mCamera.getTransform();
+    return mCamera.getTransform() * getTransform();
+}
+
+const sf::Vector3f &Player::getPosition() const {
+    return mPosition;
+}
+
+void Player::setPosition(const sf::Vector3f &position) {
+    mPosition = position;
 }
 
 sf::Vector3f Player::getEyePosition() const {
-    sf::Vector3f eye(getPosition());
-    eye /= 256.0f;
-    eye.y += mEyeHeight;
-    return eye;
+    return sf::Vector3f(mPosition.x, mPosition.y + mEyeHeight, mPosition.z);
 }
 
-void Player::setLook(const Orientation &look) {
+void Player::setLook(const sf::Vector2f &look) {
     mLookDir = look;
     mNeedsUpdate = true;
 }
 
-const Orientation &Player::getLook() const {
+const sf::Vector2f &Player::getLook() const {
     return mLookDir;
 }
 
 void Player::look(const sf::Vector2f &look) {
-    mLookDir += Orientation(Angle::fromByte(look.x), Angle::fromByte(look.y));
+    mLookDir += look;
 
-    if (mLookDir.y > Angle::Right) {
-        mLookDir.y = Angle::Right;
-    } else if (mLookDir.y < -Angle::Right) {
-        mLookDir.y = -Angle::Right;
+    if (mLookDir.y > 90.0f) {
+        mLookDir.y = 90.0f;
+    } else if (mLookDir.y < -90.0f) {
+        mLookDir.y = -90.0f;
     }
-
-    //~ if (look.x || look.y) {
-        //~ sf::err() << "look " << look.x << ' ' << look.y << " -> " <<
-                     //~ mLookDir.x.asDegrees() << ' ' << mLookDir.y.asDegrees() << '\n';
-    //~ }
-    //~ mCamera.setLook(mLookDir);
 }
 
 void Player::move(const sf::Vector3f &move) {
-    //~ mCamera.move(move, -mLookDir.x);
+    mPosition += Transform3D().rotate(-getLook().x, sf::Vector3f(0,1,0)) * move;
+    mNeedsUpdate = true;
 }
 
 void Player::render() const {
@@ -141,7 +142,7 @@ void Player::render() const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class GameWindow : protected sf::Window {
+class GameWindow : protected sf::RenderWindow {
     bool mFullscreen;
     bool mMouseLocked;
     bool mAllowQuit;
@@ -152,6 +153,9 @@ class GameWindow : protected sf::Window {
     sf::String mWindowTitle;
     sf::Uint32 mWindowStyle;
     sf::Vector2i mWindowCenter;
+
+    sf::Font mFont;
+    sf::Text mDebugText;
 
     sf::Time mTickLength;
     sf::Time mPlayTime;
@@ -172,6 +176,8 @@ class GameWindow : protected sf::Window {
     Model mBallModel;
     ClientModel mBall;
 
+    Model mPlaneModel;
+    ClientModel mPlane;
 
 public:
     GameWindow();
@@ -188,7 +194,7 @@ protected:
     void handleInput(const sf::Time &delta);
     void handleEvent(const sf::Event &event);
     void update(const sf::Time &delta);
-    void render() const;
+    void render();
 
     void setMousePosition(const sf::Vector2i &position);
     sf::Vector2i getMousePosition() const;
@@ -260,6 +266,7 @@ void GameWindow::init() {
     sf::String windowTitle(L"MinEngine Client");
     sf::Uint32 windowStyle(sf::Style::Default);
     unsigned int contextAttribs = sf::ContextSettings::Default;
+    //~ unsigned int contextAttribs = sf::ContextSettings::Core;
     sf::ContextSettings contextSettings(24,8, 0, 3,3, contextAttribs);
 
     mDesktopMode = sf::VideoMode::getDesktopMode();
@@ -276,14 +283,18 @@ void GameWindow::init() {
         ((usedSettings.attributeFlags & sf::ContextSettings::Debug) ? " (Debug)" : "") <<
         ".\n";
 
-    mPlayer.setPosition(Position(0,0,5<<8));
+    mFont.loadFromFile("fonts/Vera.ttf");
+    mDebugText.setFont(mFont);
+    mDebugText.setCharacterSize(16);
+
+    mPlayer.setPosition(sf::Vector3f(0,0,5));
 
     sf::Vector3f eye = mPlayer.getEyePosition();
     sf::err() << "mPlayer.getEyePosition() == " << eye.x << ',' << eye.y << ',' << eye.z << '\n';
 
     mWindowCenter = sf::Vector2i(getSize()) / 2;
 
-    glewInit();
+    GLChecked(glewInit());
 
     GLChecked(glEnable(GL_DEPTH_TEST));
     GLChecked(glDepthFunc(GL_LESS));
@@ -310,6 +321,10 @@ void GameWindow::init() {
     //~ mBallModel.setPrimitive(GL_LINE_STRIP);
     mBall.setModel(mBallModel);
     mBall.setShader(mBlockShader);
+
+    mPlaneModel.makeBox(sf::Vector3f(5.0f,1.0f,5.0f));
+    mPlane.setModel(mPlaneModel);
+    mPlane.setShader(mBlockShader);
 
     setMousePosition(mWindowCenter);
 }
@@ -529,20 +544,19 @@ void GameWindow::handleInput(const sf::Time &delta) {
     }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-        //~ mLookDir.x -= 180*delta.asSeconds();
+        mPlayer.look(sf::Vector2f(-180*delta.asSeconds(),0));
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-        //~ mLookDir.x += 180*delta.asSeconds();
+        mPlayer.look(sf::Vector2f(180*delta.asSeconds(),0));
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-        //~ mLookDir.y -= 180*delta.asSeconds();
+        mPlayer.look(sf::Vector2f(0,-180*delta.asSeconds()));
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-        //~ mLookDir.y += 180*delta.asSeconds();
+        mPlayer.look(sf::Vector2f(0,180*delta.asSeconds()));
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {
-        //~ mLookDir = sf::Vector2f();
-        mPlayer.setLook(Orientation(Angle::Zero, Angle::Zero));
+        mPlayer.setLook(sf::Vector2f(0,0));
     }
 
     sf::Vector3f move;
@@ -585,9 +599,17 @@ void GameWindow::update(const sf::Time &delta) {
     if (not mPaused) {
         mSpinAngle += delta.asSeconds() * mSpinSpeed;
     }
+
+    char temp[256];
+    sf::Vector3f p = mPlayer.getPosition();
+    sf::Vector3f e = mPlayer.getEyePosition();
+    sf::Vector2f o = mPlayer.getLook();
+    snprintf(temp, sizeof(temp), "%g,%g,%g (%g,%g,%g)\n%g,%g",
+             p.x, p.y, p.z, e.x, e.y, e.z, o.x, o.y);
+    mDebugText.setString(temp);
 }
 
-void GameWindow::render() const {
+void GameWindow::render() {
     GLChecked(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
     ////////////////////////////////////////////////////////////
@@ -638,6 +660,8 @@ void GameWindow::render() const {
     mBlockShader.setParameter("uViewMatrix", modelViewTransform);
     mCube.render();
 
+    mPlane.render();
+
     ////////////////////////////////////////////////////////////
     //  end 3D
     ////////////////////////////////////////////////////////////
@@ -652,6 +676,11 @@ void GameWindow::render() const {
 
     // draw 2D overlay
 
+    pushGLStates();
+
+    draw(mDebugText);
+
+    popGLStates();
 
     ////////////////////////////////////////////////////////////
     //  end 2D
