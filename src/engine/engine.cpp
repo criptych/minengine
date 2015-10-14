@@ -612,209 +612,33 @@ void Model::makeBox() {
     makeBox(sf::Vector3f(1,1,1));
 }
 
-static void addPolarVertex(Model &model, const sf::Vector3f &center, float t, float p, float r) {
-    float ct = std::cos(t);
-    float st = std::sin(t);
-    float cp = std::cos(p);
-    float sp = std::sin(p);
-    sf::Vector3f n(sp*ct, cp, sp*st);
-    model.addVertex(Vertex(n, center + r * n));
-}
-
-/*
-
-void hacerEsfera (float radio, int divO, int divA) {
-    float px, py,pz;
-    int i,j;
-    float incO = 2*M_PI / divO;
-    float incA = M_PI /divA;
-
-    glClear(GL_COLOR_BUFFER_BIT);
-    glBegin(GL_TRIANGLE_STRIP);
-    glColor3i(1,0,0);
-
-    //Depende del polo en el que empezemos
-    for (i= 0 ; i<= divO; i++){
-        for (j = 0; j<=divA ; j++) {
-
-            if (i % 2 == 0){
-
-                pz = cos (M_PI-(incA*j))*radio;
-                py = sin (M_PI-(incA*j))*sin (incO*i)*radio;
-                px = sin (M_PI-(incA*j))*cos (incO*i)*radio;
-
-                glVertex3f (px, py, pz);
-
-                pz = cos (M_PI-(incA*j))*radio;
-                py = sin (M_PI-(incA*j))*sin (incO*(i+1))*radio;
-                px = sin (M_PI-(incA*j))*cos (incO*(i+1))*radio;
-
-                glVertex3f (px, py, pz);
-            }
-
-            else {
-                pz = cos (incA*j)*radio;
-                py = sin (M_PI-(incA*j))*sin (incO*i)*radio;
-                px = sin (M_PI-(incA*j))*cos (incO*i)*radio;
-                glVertex3f (px, py, pz);
-
-                pz = cos (incA*j)*radio;
-                py = sin (incA*j)*sin (incO*(i+1))*radio;
-                px = sin (incA*j)*cos (incO*(i+1))*radio;
-                glVertex3f (px, py, pz);
-            }
-        }
-    }
-    glEnd();
-    glFlush();
-}
-
- */
-
 void Model::makeBall(float radius, size_t step, const sf::Vector3f &center) {
     if (step < 2) {
         step = 2;
     }
     size_t rstep = 2 * step;
-    //~ size_t n = (step + 1) * rstep;
 
     float phi = 0, theta = 0, dPhi = Pi / (step), dTheta = 2.0f * Pi / rstep;
 
     clearVertices();
     setPrimitive(GLTriangleStrip);
 
-    //~ float ct, st, cp, sp;
-    //~ sf::Vector3f n;
+    sf::Vector3f n;
 
-/*
-#define VERTEX(T,P,R) ( \
-    ct = std::cos((T)), st = std::sin((T)), \
-    cp = std::cos((P)), sp = std::sin((P)), \
-    n.x = sp*ct, n.y = cp, n.z = sp*st, \
-    addVertex(Vertex(n, center + (R) * n)) )
-*/
+    for (size_t i = 0; i <= rstep; i++, theta += dTheta) {
+        for (size_t j = 0; j <= step; j++, phi += dPhi) {
 
-    //~ size_t n = step * rstep + 1;
+            n.x = std::sin ((dPhi*j))*std::cos (dTheta*i);
+            n.y = std::cos ((dPhi*j));
+            n.z = std::sin ((dPhi*j))*std::sin (dTheta*i);
+            addVertex(Vertex(n*radius, n));
 
-    //~ addPolarVertex(*this, center, 0, 0, radius);
-    //~ mVertices.back().color = sf::Color::Red;
-
-    for (size_t i = 0; i < rstep; i++, theta += dTheta) {
-        for (size_t j = 0; j < step; j++, phi += dPhi) {
-
-            sf::Vector3f p;
-
-            //~ if (i % 2 == 0){
-
-                p.z = std::cos (Pi-(dPhi*j))*radius;
-                p.y = std::sin (Pi-(dPhi*j))*std::sin (dTheta*i)*radius;
-                p.x = std::sin (Pi-(dPhi*j))*std::cos (dTheta*i)*radius;
-                addVertex(Vertex(p));
-
-                p.z = std::cos (Pi-(dPhi*j))*radius;
-                p.y = std::sin (Pi-(dPhi*j))*std::sin (dTheta*(i+1))*radius;
-                p.x = std::sin (Pi-(dPhi*j))*std::cos (dTheta*(i+1))*radius;
-                addVertex(Vertex(p));
-            //~ }
-
-            //~ else {
-                //~ p.z = std::cos (dPhi*j)*radius;
-                //~ p.y = std::sin (Pi-(dPhi*j))*std::sin (dTheta*i)*radius;
-                //~ p.x = std::sin (Pi-(dPhi*j))*std::cos (dTheta*i)*radius;
-                //~ addVertex(Vertex(p));
-
-                //~ p.z = std::cos (dPhi*j)*radius;
-                //~ p.y = std::sin (dPhi*j)*std::sin (dTheta*(i+1))*radius;
-                //~ p.x = std::sin (dPhi*j)*std::cos (dTheta*(i+1))*radius;
-                //~ addVertex(Vertex(p));
-            //~ }
-
-
-            //~ addPolarVertex(*this, center, theta, phi, radius);
-            //~ mVertices.back().color = sf::Color(255*(1.0f-t),255*t,0);
-            //~ addPolarVertex(*this, center, theta-d, phi+dPhi, radius);
-            //~ mVertices.back().color = sf::Color(255*(1.0f-t),255*t,0);
+            n.x = std::sin ((dPhi*j))*std::cos (dTheta*(i+1));
+            n.y = std::cos ((dPhi*j));
+            n.z = std::sin ((dPhi*j))*std::sin (dTheta*(i+1));
+            addVertex(Vertex(n*radius, n));
         }
     }
-
-    addPolarVertex(*this, center, 0, phi, radius);
-    mVertices.back().color = sf::Color::Green;
-
-/*
-
-    //~ addVertex(Vertex(sf::Vector3f(0,-1,0), sf::Vector3f(
-        //~ center.x, center.y-size, center.z
-    //~ )));
-
-    for (size_t j = 0; j < step; j++) {
-        //~ theta = -(j + 0.5f) * dTheta;
-
-        for (size_t i = 0; i < rstep; i++) {
-            theta = static_cast<float>(i)/static_cast<float>(rstep) -
-                0.5f * static_cast<float>(j)/static_cast<float>(step);
-            phi = static_cast<float>(j)/static_cast<float>(step);
-
-            ct = std::cos(theta-dTheta);
-            st = std::sin(theta-dTheta);
-
-            cp = std::cos(phi+dPhi);
-            sp = std::sin(phi+dPhi);
-
-            x = sp*ct; y = cp; z = sp*st;
-
-            addVertex(Vertex(sf::Vector3f(x, y, z), sf::Vector3f(
-                center.x+size*x, center.y-size*y, center.z+size*z
-            )));
-
-            ct = std::cos(theta);
-            st = std::sin(theta);
-
-            cp = std::cos(phi);
-            sp = std::sin(phi);
-
-            x = sp*ct; y = cp; z = sp*st;
-
-            addVertex(Vertex(sf::Vector3f(x, y, z), sf::Vector3f(
-                center.x+size*x, center.y-size*y, center.z+size*z
-            )));
-
-            //~ theta += dTheta;
-        }
-
-        //~ ct = std::cos(theta-0.5*dTheta);
-        //~ st = std::sin(theta-0.5*dTheta);
-
-        //~ cp = std::cos(phi+dPhi);
-        //~ sp = std::sin(phi+dPhi);
-
-        //~ x = sp*ct; y = cp; z = sp*st;
-
-        //~ addVertex(Vertex(sf::Vector3f(x, y, z), sf::Vector3f(
-            //~ center.x+size*x, center.y-size*y, center.z+size*z
-        //~ )));
-
-        //~ ct = std::cos(theta);
-        //~ st = std::sin(theta);
-
-        //~ cp = std::cos(phi);
-        //~ sp = std::sin(phi);
-
-        //~ x = sp*ct; y = cp; z = sp*st;
-
-        //~ addVertex(Vertex(sf::Vector3f(x, y, z), sf::Vector3f(
-            //~ center.x+size*x, center.y-size*y, center.z+size*z
-        //~ )));
-
-        //~ phi += dPhi;
-    }
-
-    //~ addVertex(Vertex(sf::Vector3f(0,1,0), sf::Vector3f(
-        //~ center.x, center.y+size, center.z
-    //~ )));
-
-    //~ calcNormals();
-*/
-
 }
 
 void Model::makeBall(float size, size_t step) {

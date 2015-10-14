@@ -15,19 +15,7 @@ ENDIF()
 ################################################################################
 
 FIND_PACKAGE(SFML 2.2 REQUIRED COMPONENTS system window graphics audio network)
-FIND_PACKAGE(OpenGL REQUIRED)
-
-################################################################################
-
-SET(GLEW_INCLUDE_DIR lib/glew-1.13.0/include)
-SET(GLEW_LIBRARY glew-1.13.0)
-SET(GLEW_LIBRARIES ${GLEW_LIBRARY} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY})
-
-ADD_DEFINITIONS(-DGLEW_STATIC=1)
-
-INCLUDE_DIRECTORIES(${GLEW_INCLUDE_DIR})
-
-ADD_LIBRARY(${GLEW_LIBRARY} lib/glew-1.13.0/src/glew.c)
+ADD_SUBDIRECTORY(lib/glew-1.13.0)
 
 ################################################################################
 
@@ -55,23 +43,27 @@ SET(TEST_SRCS
 
 ################################################################################
 
-INCLUDE_DIRECTORIES(src/ ${SFML_INCLUDE_DIR})
+ADD_DEFINITIONS(-DGLEW_STATIC=1)
+INCLUDE_DIRECTORIES(src ${GLEW_INCLUDE_DIR} ${SFML_INCLUDE_DIR})
 
 ADD_LIBRARY(engine ${ENGINE_SRCS})
 
 ADD_EXECUTABLE(client ${CLIENT_SRCS})
 SET_TARGET_PROPERTIES(client PROPERTIES VERSION ${PROJECT_VERSION})
 TARGET_LINK_LIBRARIES(client engine ${SFML_LIBRARIES} ${GLEW_LIBRARIES})
+ADD_CUSTOM_TARGET(run-client COMMAND client DEPENDS client)
 
 ADD_EXECUTABLE(server ${SERVER_SRCS})
 SET_TARGET_PROPERTIES(server PROPERTIES VERSION ${PROJECT_VERSION})
 TARGET_LINK_LIBRARIES(server engine ${SFML_LIBRARIES})
+ADD_CUSTOM_TARGET(run-server COMMAND server DEPENDS server)
 
 ################################################################################
 
 ADD_EXECUTABLE(testmain ${TEST_SRCS})
 TARGET_LINK_LIBRARIES(testmain engine ${SFML_LIBRARIES})
 SET_TARGET_PROPERTIES(testmain PROPERTIES OUTPUT_NAME test)
+ADD_TEST(testmain testmain)
 
 ################################################################################
 ##  EOF

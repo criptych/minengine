@@ -619,6 +619,7 @@ void GameWindow::render() {
 
     GLChecked(glEnable(GL_DEPTH_TEST));
     GLChecked(glEnable(GL_CULL_FACE));
+    //~ GLChecked(glPolygonMode(GL_BACK, GL_LINE));
 
     // draw 3D scene
 
