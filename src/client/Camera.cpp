@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "Camera.hpp"
+#include "engine/engine.hpp"
 
 #include <GL/glew.h>
 #include "GLCheck.hpp"
@@ -66,10 +67,18 @@ void Camera::setZRange(float zNear, float zFar) {
     mNeedsUpdate = true;
 }
 
-const Transform3D &Camera::getTransform() const {
+const sf::Transform3D &Camera::getTransform() const {
     if (mNeedsUpdate) {
-        mTransform = Transform3D();
-        mTransform.perspective(mFOV, mAspect, mZNear, mZFar);
+        float zn = mZNear;
+        float zf = mZFar;
+        float fh = std::tan(mFOV*Pi/360.0)*zn;
+        float fw = fh * mAspect;
+
+        mTransform = sf::Transform3D(
+            (2 * zn) / (2 * fw), 0.0f, 0.0f, 0.0f,
+            0.0f, (2 * zn) / (2 * fh), 0.0f, 0.0f,
+            0.0f, 0.0f, (zn + zf) / (zn - zf), (2 * zn * zf) / (zn - zf),
+            0.0f, 0.0f, -1.0f, 0.0f);
         mNeedsUpdate = false;
     }
     return mTransform;

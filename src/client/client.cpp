@@ -20,7 +20,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "Transform3D.hpp"
+//~ #include "Transform3D.hpp"
 #include "Transformable3D.hpp"
 #include "Shader.hpp"
 #include "Camera.hpp"
@@ -36,7 +36,7 @@ class Player {
 
     Physics::Body mBody;
 
-    mutable Transform3D mTransform;
+    mutable sf::Transform3D mTransform;
     mutable bool mNeedsUpdate;
 
 public:
@@ -45,8 +45,8 @@ public:
     Camera &getCamera();
     const Camera &getCamera() const;
 
-    const Transform3D &getTransform() const;
-    Transform3D getViewTransform() const;
+    const sf::Transform3D &getTransform() const;
+    sf::Transform3D getViewTransform() const;
 
     sf::Vector3f getEyePosition() const;
 
@@ -86,9 +86,9 @@ const Camera &Player::getCamera() const {
     return mCamera;
 }
 
-const Transform3D &Player::getTransform() const {
+const sf::Transform3D &Player::getTransform() const {
     if (mNeedsUpdate) {
-        mTransform = Transform3D();
+        mTransform = sf::Transform3D();
         mTransform.rotate(mLookDir.y, sf::Vector3f(1.0f, 0.0f, 0.0f));
         mTransform.rotate(mLookDir.x, sf::Vector3f(0.0f, 1.0f, 0.0f));
         mTransform.translate(-getEyePosition());
@@ -97,7 +97,7 @@ const Transform3D &Player::getTransform() const {
     return mTransform;
 }
 
-Transform3D Player::getViewTransform() const {
+sf::Transform3D Player::getViewTransform() const {
     return mCamera.getTransform() * getTransform();
 }
 
@@ -133,7 +133,7 @@ void Player::look(const sf::Vector2f &look) {
 }
 
 void Player::move(const sf::Vector3f &move) {
-    mPosition += Transform3D().rotate(-getLook().x, sf::Vector3f(0,1,0)) * move;
+    mPosition += sf::Transform3D().rotate(-getLook().x, sf::Vector3f(0,1,0)) * move;
     mNeedsUpdate = true;
 }
 
@@ -163,7 +163,7 @@ class GameWindow : protected sf::RenderWindow {
 
     Player mPlayer;
     //~ Camera mCamera;
-    mutable Shader mBlockShader;
+    mutable sf::Shader mBlockShader;
 
     sf::Vector3f mLightPos;
     //~ sf::Vector2f mLookDir;
@@ -301,16 +301,17 @@ void GameWindow::init() {
     GLChecked(glEnable(GL_CULL_FACE));
     GLChecked(glClearColor(0.200,0.267,0.333,0.0));
 
+    mBlockShader.setAttribLocation("aVertex",   0);
+    mBlockShader.setAttribLocation("aNormal",   1);
+    mBlockShader.setAttribLocation("aTexCoord", 2);
+    mBlockShader.setAttribLocation("aColor",    3);
+
     if (!mBlockShader.loadFromFile(
         "shaders/default.330.vert", "shaders/default.330.frag"
     )) {
         quit(true);
     }
 
-    mBlockShader.bindAttribLocation("aVertex",   0);
-    mBlockShader.bindAttribLocation("aNormal",   1);
-    mBlockShader.bindAttribLocation("aTexCoord", 2);
-    mBlockShader.bindAttribLocation("aColor",    3);
     mBlockShader.setParameter("uResolution", sf::Vector2f(getSize()));
 
     mCubeModel.makeBox(sf::Vector3f(0.5f,0.5f,0.5f), sf::Vector3f(0.0f,0.0f,0.5f));
@@ -633,24 +634,24 @@ void GameWindow::render() {
 
     mPlayer.render();
 
-    Transform3D projectionTransform(mPlayer.getViewTransform());
+    sf::Transform3D projectionTransform(mPlayer.getViewTransform());
 
     mBlockShader.setParameter("uTime", mPlayTime.asSeconds());
     mBlockShader.setParameter("uProjMatrix", projectionTransform);
 
-    Transform3D spinLight;
+    sf::Transform3D spinLight;
     spinLight.rotate(mSpinAngle, sf::Vector3f(0,0,1));
     sf::Vector3f spinLightPos = spinLight.transformPoint(mLightPos);
 
     mBlockShader.setParameter("uLightPos", spinLightPos);
     mBlockShader.setParameter("uEyePos", mPlayer.getEyePosition());
 
-    Transform3D lightBallTransform;
+    sf::Transform3D lightBallTransform;
     lightBallTransform.translate(spinLightPos);
     mBlockShader.setParameter("uViewMatrix", lightBallTransform);
     mBall.render();
 
-    Transform3D modelViewTransform;
+    sf::Transform3D modelViewTransform;
 
     mBlockShader.setParameter("uViewMatrix", modelViewTransform);
 

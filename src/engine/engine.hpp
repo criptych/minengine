@@ -871,7 +871,7 @@ struct Packet {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-
+/*
 template <typename T>
 sf::Vector3<T> cross(const sf::Vector3<T> &a, const sf::Vector3<T> &b) {
     return sf::Vector3<T>(a.y * b.z - a.z * b.y,
@@ -883,7 +883,7 @@ template <typename T>
 T dot(const sf::Vector3<T> &a, const sf::Vector3<T> &b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
-
+*/
 template <typename T>
 sf::Vector3<T> normalize(const sf::Vector3<T> &v) {
     T length = std::sqrt(dot(v, v));

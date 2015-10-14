@@ -621,6 +621,56 @@ static void addPolarVertex(Model &model, const sf::Vector3f &center, float t, fl
     model.addVertex(Vertex(n, center + r * n));
 }
 
+/*
+
+void hacerEsfera (float radio, int divO, int divA) {
+    float px, py,pz;
+    int i,j;
+    float incO = 2*M_PI / divO;
+    float incA = M_PI /divA;
+
+    glClear(GL_COLOR_BUFFER_BIT);
+    glBegin(GL_TRIANGLE_STRIP);
+    glColor3i(1,0,0);
+
+    //Depende del polo en el que empezemos
+    for (i= 0 ; i<= divO; i++){
+        for (j = 0; j<=divA ; j++) {
+
+            if (i % 2 == 0){
+
+                pz = cos (M_PI-(incA*j))*radio;
+                py = sin (M_PI-(incA*j))*sin (incO*i)*radio;
+                px = sin (M_PI-(incA*j))*cos (incO*i)*radio;
+
+                glVertex3f (px, py, pz);
+
+                pz = cos (M_PI-(incA*j))*radio;
+                py = sin (M_PI-(incA*j))*sin (incO*(i+1))*radio;
+                px = sin (M_PI-(incA*j))*cos (incO*(i+1))*radio;
+
+                glVertex3f (px, py, pz);
+            }
+
+            else {
+                pz = cos (incA*j)*radio;
+                py = sin (M_PI-(incA*j))*sin (incO*i)*radio;
+                px = sin (M_PI-(incA*j))*cos (incO*i)*radio;
+                glVertex3f (px, py, pz);
+
+                pz = cos (incA*j)*radio;
+                py = sin (incA*j)*sin (incO*(i+1))*radio;
+                px = sin (incA*j)*cos (incO*(i+1))*radio;
+                glVertex3f (px, py, pz);
+            }
+        }
+    }
+    glEnd();
+    glFlush();
+}
+
+ */
+
 void Model::makeBall(float radius, size_t step, const sf::Vector3f &center) {
     if (step < 2) {
         step = 2;
@@ -644,25 +694,46 @@ void Model::makeBall(float radius, size_t step, const sf::Vector3f &center) {
     addVertex(Vertex(n, center + (R) * n)) )
 */
 
-    size_t n = step * rstep + 1;
+    //~ size_t n = step * rstep + 1;
 
-    addPolarVertex(*this, center, 0, 0, radius);
-    mVertices.back().color = sf::Color::Red;
+    //~ addPolarVertex(*this, center, 0, 0, radius);
+    //~ mVertices.back().color = sf::Color::Red;
 
-    for (size_t j = 0; j < step; j++, phi += dPhi) {
-        float d = dTheta * 0.5f * j;
+    for (size_t i = 0; i < rstep; i++, theta += dTheta) {
+        for (size_t j = 0; j < step; j++, phi += dPhi) {
 
-        theta = -d;
+            sf::Vector3f p;
 
-        //~ addPolarVertex(*this, center, theta, phi, radius);
-        //~ addPolarVertex(*this, center, theta-d, phi+dPhi, radius);
+            //~ if (i % 2 == 0){
 
-        for (size_t i = 0; i < rstep; i++, theta += dTheta) {
-            float t = static_cast<float>(j*rstep+i+1)/static_cast<float>(n);
-            addPolarVertex(*this, center, theta, phi, radius);
-            mVertices.back().color = sf::Color(255*(1.0f-t),255*t,0);
-            addPolarVertex(*this, center, theta-d, phi+dPhi, radius);
-            mVertices.back().color = sf::Color(255*(1.0f-t),255*t,0);
+                p.z = std::cos (Pi-(dPhi*j))*radius;
+                p.y = std::sin (Pi-(dPhi*j))*std::sin (dTheta*i)*radius;
+                p.x = std::sin (Pi-(dPhi*j))*std::cos (dTheta*i)*radius;
+                addVertex(Vertex(p));
+
+                p.z = std::cos (Pi-(dPhi*j))*radius;
+                p.y = std::sin (Pi-(dPhi*j))*std::sin (dTheta*(i+1))*radius;
+                p.x = std::sin (Pi-(dPhi*j))*std::cos (dTheta*(i+1))*radius;
+                addVertex(Vertex(p));
+            //~ }
+
+            //~ else {
+                //~ p.z = std::cos (dPhi*j)*radius;
+                //~ p.y = std::sin (Pi-(dPhi*j))*std::sin (dTheta*i)*radius;
+                //~ p.x = std::sin (Pi-(dPhi*j))*std::cos (dTheta*i)*radius;
+                //~ addVertex(Vertex(p));
+
+                //~ p.z = std::cos (dPhi*j)*radius;
+                //~ p.y = std::sin (dPhi*j)*std::sin (dTheta*(i+1))*radius;
+                //~ p.x = std::sin (dPhi*j)*std::cos (dTheta*(i+1))*radius;
+                //~ addVertex(Vertex(p));
+            //~ }
+
+
+            //~ addPolarVertex(*this, center, theta, phi, radius);
+            //~ mVertices.back().color = sf::Color(255*(1.0f-t),255*t,0);
+            //~ addPolarVertex(*this, center, theta-d, phi+dPhi, radius);
+            //~ mVertices.back().color = sf::Color(255*(1.0f-t),255*t,0);
         }
     }
 

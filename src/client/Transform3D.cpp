@@ -135,7 +135,7 @@ Transform3D &Transform3D::rotate(float angle, const sf::Vector3f &axis) {
     Transform3D transform(xx * mc +  c, xy * mc - zs, xz * mc + ys, 0,
                           xy * mc + zs, yy * mc +  c, yz * mc - xs, 0,
                           xz * mc - ys, yz * mc + xs, zz * mc +  c, 0,
-                          0,        0,        0,        1);
+                          0,            0,            0,            1);
 
     return combine(transform);
 }

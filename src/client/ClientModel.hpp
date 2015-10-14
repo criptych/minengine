@@ -8,31 +8,31 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "engine/engine.hpp"
-#include "Shader.hpp"
+#include <SFML/Graphics.hpp>
 #include <GL/glew.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 
 class ClientModel {
     const Model *mModel;
-    const Shader *mShader;
+    const sf::Shader *mShader;
     mutable GLuint mVBO;
     mutable GLenum mPrimitive;
     mutable GLuint mCount;
 
 public:
-    ClientModel(const Model *model = nullptr, const Shader *shader = nullptr);
+    ClientModel(const Model *model = nullptr, const sf::Shader *shader = nullptr);
     ClientModel(const Model &model);
-    ClientModel(const Model &model, const Shader &shader);
+    ClientModel(const Model &model, const sf::Shader &shader);
     ~ClientModel();
 
     void setModel(const Model &model);
     void setModel(const Model *model);
     const Model *getModel() const;
 
-    void setShader(const Shader &shader);
-    void setShader(const Shader *shader);
-    const Shader *getShader() const;
+    void setShader(const sf::Shader &shader);
+    void setShader(const sf::Shader *shader);
+    const sf::Shader *getShader() const;
 
     void render() const;
 

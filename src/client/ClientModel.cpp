@@ -11,7 +11,7 @@
 
 ClientModel::ClientModel(
     const Model *model,
-    const Shader *shader
+    const sf::Shader *shader
 ): mModel(model), mShader(shader), mVBO(), mPrimitive(), mCount() {
 }
 
@@ -22,7 +22,7 @@ ClientModel::ClientModel(
 
 ClientModel::ClientModel(
     const Model &model,
-    const Shader &shader
+    const sf::Shader &shader
 ): mModel(&model), mShader(&shader), mVBO(), mPrimitive(), mCount() {
 }
 
@@ -43,15 +43,15 @@ const Model *ClientModel::getModel() const {
     return mModel;
 }
 
-void ClientModel::setShader(const Shader *shader) {
+void ClientModel::setShader(const sf::Shader *shader) {
     mShader = shader;
 }
 
-void ClientModel::setShader(const Shader &shader) {
+void ClientModel::setShader(const sf::Shader &shader) {
     setShader(&shader);
 }
 
-const Shader *ClientModel::getShader() const {
+const sf::Shader *ClientModel::getShader() const {
     return mShader;
 }
 
@@ -65,7 +65,7 @@ void ClientModel::render() const {
         }
 
         if (mShader) {
-            Shader::bind(mShader);
+            sf::Shader::bind(mShader);
         }
 
         GLChecked(glBindBuffer(GL_ARRAY_BUFFER, mVBO));
@@ -102,7 +102,7 @@ void ClientModel::render() const {
         GLChecked(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
         if (mShader) {
-            Shader::bind(nullptr);
+            sf::Shader::bind(nullptr);
         }
     }
 }
