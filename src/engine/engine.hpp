@@ -392,6 +392,8 @@ public:
     void makeBox(const sf::Vector3f &size);
     void makeBox();
 
+    void makeBall(float radius, size_t step, size_t rstep, const sf::Vector3f &center);
+    void makeBall(float radius, size_t step, size_t rstep);
     void makeBall(float radius, size_t step, const sf::Vector3f &center);
     void makeBall(float radius, size_t step);
 };

@@ -612,11 +612,13 @@ void Model::makeBox() {
     makeBox(sf::Vector3f(1,1,1));
 }
 
-void Model::makeBall(float radius, size_t step, const sf::Vector3f &center) {
+void Model::makeBall(float radius, size_t step, size_t rstep, const sf::Vector3f &center) {
     if (step < 2) {
         step = 2;
     }
-    size_t rstep = 2 * step;
+    if (rstep < 3) {
+        rstep = 2 * step;
+    }
 
     float phi = 0, theta = 0, dPhi = Pi / (step), dTheta = 2.0f * Pi / rstep;
 
@@ -639,6 +641,14 @@ void Model::makeBall(float radius, size_t step, const sf::Vector3f &center) {
             addVertex(Vertex(n*radius, n));
         }
     }
+}
+
+void Model::makeBall(float size, size_t step, size_t rstep) {
+    makeBall(size, step, rstep, sf::Vector3f());
+}
+
+void Model::makeBall(float size, size_t step, const sf::Vector3f &center) {
+    makeBall(size, step, 2 * step, center);
 }
 
 void Model::makeBall(float size, size_t step) {

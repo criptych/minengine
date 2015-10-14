@@ -318,7 +318,7 @@ void GameWindow::init() {
     mCube.setModel(mCubeModel);
     mCube.setShader(mBlockShader);
 
-    mBallModel.makeBall(0.5, 6);
+    mBallModel.makeBall(0.5, 12);
     //~ mBallModel.setPrimitive(GL_LINE_STRIP);
     mBall.setModel(mBallModel);
     mBall.setShader(mBlockShader);
