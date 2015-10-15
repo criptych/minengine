@@ -361,16 +361,16 @@ uint32_t Model::getPrimitive() const {
     return mPrimitive;
 }
 
+void Model::setPrimitive(uint32_t primitive) {
+    mPrimitive = primitive;
+}
+
 const std::vector<Vertex> &Model::getVertices() const {
     return mVertices;
 }
 
 std::vector<Vertex> &Model::getVertices() {
     return mVertices;
-}
-
-void Model::setPrimitive(uint32_t primitive) {
-    mPrimitive = primitive;
 }
 
 void Model::clearVertices() {
@@ -385,8 +385,54 @@ void Model::addVertex(const Vertex &vertex) {
     mVertices.push_back(vertex);
 }
 
+void Model::addTriangle(const Vertex &a, const Vertex &b, const Vertex &c) {
+    addVertex(a);
+    addVertex(b);
+    addVertex(c);
+}
+
+void Model::addQuad(const Vertex &a, const Vertex &b, const Vertex &c, const Vertex &d) {
+    addTriangle(a, b, c);
+    addTriangle(c, d, a);
+}
+
 void Model::addVertices(const Vertex *verts, size_t count) {
     mVertices.insert(mVertices.end(), verts, verts + count);
+}
+
+const std::vector<uint16_t> &Model::getIndices() const {
+    return mIndices;
+}
+
+std::vector<uint16_t> &Model::getIndices() {
+    return mIndices;
+}
+
+void Model::clearIndices() {
+    mIndices.clear();
+}
+
+void Model::reserveIndices(size_t count) {
+    mIndices.reserve(count);
+}
+
+void Model::addIndex(uint16_t vertex) {
+    mIndices.push_back(vertex);
+}
+
+void Model::addTriangle(uint16_t a, uint16_t b, uint16_t c) {
+    addIndex(a);
+    addIndex(b);
+    addIndex(c);
+}
+
+void Model::addQuad(uint16_t a, uint16_t b, uint16_t c, uint16_t d) {
+    addTriangle(a, b, c);
+    addTriangle(c, d, a);
+}
+
+void Model::addIndices(const uint16_t *verts, size_t count) {
+    mIndices.insert(mIndices.end(), verts, verts + count);
 }
 
 void Model::setColor(const sf::Color &color) {
@@ -529,6 +575,7 @@ void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center) {
     sf::Vector3f mn = center - size;
 
     clearVertices();
+    clearIndices();
 
     switch (mPrimitive) {
         default: {
@@ -537,91 +584,56 @@ void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center) {
         }
 
         case GLTriangles: {
-            reserveVertices(36);
+            reserveIndices(36);
 
-            addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
-            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
-            addVertex(Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z));
-            addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
-            addVertex(Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z));
-            addVertex(Vertex(0x0000,0x0000, mx.x,mn.y,mn.z));
+            addQuad(0, 1, 2, 3);
+            addQuad(4, 5, 6, 7);
+            addQuad(8, 9, 10, 11);
+            addQuad(12, 13, 14, 15);
+            addQuad(16, 17, 18, 19);
+            addQuad(20, 21, 22, 23);
 
-            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
-            addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
-            addVertex(Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z));
-            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
-            addVertex(Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z));
-            addVertex(Vertex(0x7fff,0x0000, mn.x,mx.y,mn.z));
-
-            addVertex(Vertex(0x0000,0x0000, mn.x,mx.y,mn.z));
-            addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
-            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
-            addVertex(Vertex(0x0000,0x0000, mn.x,mx.y,mn.z));
-            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
-            addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
-
-            addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
-            addVertex(Vertex(0x7fff,0x7fff, mx.x,mn.y,mx.z));
-            addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
-            addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
-            addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
-            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
-
-            addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z));
-            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
-            addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
-            addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z));
-            addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
-            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mx.z));
-
-            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
-            addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mn.z));
-            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z));
-            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
-            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z));
-            addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
-
-            break;
+            // continue
         }
 
         case GLQuads: {
             reserveVertices(24);
 
-            addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
-            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
-            addVertex(Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z));
-            addVertex(Vertex(0x0000,0x0000, mx.x,mn.y,mn.z));
+            addVertex(Vertex(0x7fff,0x0000,  1, 0, 0, mx.x,mx.y,mn.z));
+            addVertex(Vertex(0x7fff,0x7fff,  1, 0, 0, mx.x,mx.y,mx.z));
+            addVertex(Vertex(0x0000,0x7fff,  1, 0, 0, mx.x,mn.y,mx.z));
+            addVertex(Vertex(0x0000,0x0000,  1, 0, 0, mx.x,mn.y,mn.z));
 
-            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
-            addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
-            addVertex(Vertex(0x7fff,0x7fff, mn.x,mx.y,mx.z));
-            addVertex(Vertex(0x7fff,0x0000, mn.x,mx.y,mn.z));
+            addVertex(Vertex(0x0000,0x0000, -1, 0, 0, mn.x,mn.y,mn.z));
+            addVertex(Vertex(0x0000,0x7fff, -1, 0, 0, mn.x,mn.y,mx.z));
+            addVertex(Vertex(0x7fff,0x7fff, -1, 0, 0, mn.x,mx.y,mx.z));
+            addVertex(Vertex(0x7fff,0x0000, -1, 0, 0, mn.x,mx.y,mn.z));
 
-            addVertex(Vertex(0x0000,0x0000, mn.x,mx.y,mn.z));
-            addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
-            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
-            addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
+            addVertex(Vertex(0x0000,0x0000,  0, 1, 0, mn.x,mx.y,mn.z));
+            addVertex(Vertex(0x0000,0x7fff,  0, 1, 0, mn.x,mx.y,mx.z));
+            addVertex(Vertex(0x7fff,0x7fff,  0, 1, 0, mx.x,mx.y,mx.z));
+            addVertex(Vertex(0x7fff,0x0000,  0, 1, 0, mx.x,mx.y,mn.z));
 
-            addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
-            addVertex(Vertex(0x7fff,0x7fff, mx.x,mn.y,mx.z));
-            addVertex(Vertex(0x0000,0x7fff, mn.x,mn.y,mx.z));
-            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
+            addVertex(Vertex(0x7fff,0x0000,  0,-1, 0, mx.x,mn.y,mn.z));
+            addVertex(Vertex(0x7fff,0x7fff,  0,-1, 0, mx.x,mn.y,mx.z));
+            addVertex(Vertex(0x0000,0x7fff,  0,-1, 0, mn.x,mn.y,mx.z));
+            addVertex(Vertex(0x0000,0x0000,  0,-1, 0, mn.x,mn.y,mn.z));
 
-            addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mx.z));
-            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
-            addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mx.z));
-            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mx.z));
+            addVertex(Vertex(0x7fff,0x0000,  0, 0, 1, mx.x,mn.y,mx.z));
+            addVertex(Vertex(0x7fff,0x7fff,  0, 0, 1, mx.x,mx.y,mx.z));
+            addVertex(Vertex(0x0000,0x7fff,  0, 0, 1, mn.x,mx.y,mx.z));
+            addVertex(Vertex(0x0000,0x0000,  0, 0, 1, mn.x,mn.y,mx.z));
 
-            addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
-            addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mn.z));
-            addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z));
-            addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
+            addVertex(Vertex(0x0000,0x0000,  0, 0,-1, mn.x,mn.y,mn.z));
+            addVertex(Vertex(0x0000,0x7fff,  0, 0,-1, mn.x,mx.y,mn.z));
+            addVertex(Vertex(0x7fff,0x7fff,  0, 0,-1, mx.x,mx.y,mn.z));
+            addVertex(Vertex(0x7fff,0x0000,  0, 0,-1, mx.x,mn.y,mn.z));
 
             break;
         }
     }
 
-    calcNormals();
+    //~ calcNormals();
 }
 
 void Model::makeBox(const sf::Vector3f &size) {
@@ -645,6 +657,8 @@ void Model::makeBall(float radius, size_t step, size_t rstep, const sf::Vector3f
     setPrimitive(GLTriangleStrip);
     clearVertices();
     reserveVertices((step + 1) * (rstep + 1) * 2);
+    //~ clearIndices();
+    //~ reserveIndices((step + 1) * (rstep + 1) * 2);
 
     sf::Vector3f n;
     size_t i, j;

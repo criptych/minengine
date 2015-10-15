@@ -287,6 +287,7 @@ void GameWindow::init() {
     mDebugText.setFont(mFont);
     mDebugText.setCharacterSize(16);
 
+    mPlayer.getCamera().setFOV(45.0f);
     mPlayer.setPosition(sf::Vector3f(0,0,5));
 
     sf::Vector3f eye = mPlayer.getEyePosition();
@@ -624,7 +625,7 @@ void GameWindow::render() {
 
     GLChecked(glEnable(GL_DEPTH_TEST));
     GLChecked(glEnable(GL_CULL_FACE));
-    //~ GLChecked(glPolygonMode(GL_BACK, GL_LINE));
+    //~ GLChecked(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
 
     // draw 3D scene
 
@@ -679,6 +680,7 @@ void GameWindow::render() {
 
     GLChecked(glDisable(GL_DEPTH_TEST));
     GLChecked(glDisable(GL_CULL_FACE));
+    GLChecked(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
     // draw 2D overlay
 

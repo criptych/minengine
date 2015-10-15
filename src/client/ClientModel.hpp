@@ -17,6 +17,7 @@ class ClientModel {
     const Model *mModel;
     const sf::Shader *mShader;
     mutable GLuint mVBO;
+    mutable GLuint mIBO;
     mutable GLenum mPrimitive;
     mutable GLuint mCount;
 
