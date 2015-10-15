@@ -315,7 +315,7 @@ void GameWindow::init() {
     mBlockShader.setParameter("uResolution", sf::Vector2f(getSize()));
 
     mCubeModel.makeBox(sf::Vector3f(0.5f,0.5f,0.5f), sf::Vector3f(0.0f,0.5f,0.0f));
-    mCubeModel.setColor(sf::Color(0x33,0x44,0x55));
+    mCubeModel.setColor(sf::Color(0x66,0x88,0xaa));
     mCube.setModel(mCubeModel);
     mCube.setShader(mBlockShader);
 
@@ -324,7 +324,7 @@ void GameWindow::init() {
     mBall.setModel(mBallModel);
     mBall.setShader(mBlockShader);
 
-    mPlaneModel.makeBox(sf::Vector3f(5.0f,0.01f,5.0f), sf::Vector3f(0,-0.5f,0));
+    mPlaneModel.makeBox(sf::Vector3f(50.0f,0.00f,50.0f), sf::Vector3f(0,-0.01f,0));
     mPlaneModel.setColor(sf::Color::Green);
     mPlane.setModel(mPlaneModel);
     mPlane.setShader(mBlockShader);
@@ -586,6 +586,9 @@ void GameWindow::handleInput(const sf::Time &delta) {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
         move *= 0.25f;
     }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
+        move *= 2.0f;
+    }
 
     //~ mLookDir.x = std::fmod(mLookDir.x + 180.0f, 360.0f) - 180.0f;
     //~ mLookDir.y = std::min(89.9f, std::max(-89.9f, mLookDir.y));
@@ -620,8 +623,8 @@ void GameWindow::render() {
     ////////////////////////////////////////////////////////////
 
     GLChecked(glEnable(GL_DEPTH_TEST));
-    //~ GLChecked(glEnable(GL_CULL_FACE));
-    GLChecked(glPolygonMode(GL_BACK, GL_LINE));
+    GLChecked(glEnable(GL_CULL_FACE));
+    //~ GLChecked(glPolygonMode(GL_BACK, GL_LINE));
 
     // draw 3D scene
 
