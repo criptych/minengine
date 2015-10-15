@@ -314,16 +314,18 @@ void GameWindow::init() {
 
     mBlockShader.setParameter("uResolution", sf::Vector2f(getSize()));
 
-    mCubeModel.makeBox(sf::Vector3f(0.5f,0.5f,0.5f), sf::Vector3f(0.0f,0.0f,0.5f));
+    mCubeModel.makeBox(sf::Vector3f(0.5f,0.5f,0.5f), sf::Vector3f(0.0f,0.5f,0.0f));
+    mCubeModel.setColor(sf::Color(0x33,0x44,0x55));
     mCube.setModel(mCubeModel);
     mCube.setShader(mBlockShader);
 
-    mBallModel.makeBall(0.5, 12);
+    mBallModel.makeBall(0.5f, 12);
     //~ mBallModel.setPrimitive(GL_LINE_STRIP);
     mBall.setModel(mBallModel);
     mBall.setShader(mBlockShader);
 
-    mPlaneModel.makeBox(sf::Vector3f(5.0f,1.0f,5.0f));
+    mPlaneModel.makeBox(sf::Vector3f(5.0f,0.01f,5.0f), sf::Vector3f(0,-0.5f,0));
+    mPlaneModel.setColor(sf::Color::Green);
     mPlane.setModel(mPlaneModel);
     mPlane.setShader(mBlockShader);
 
@@ -618,8 +620,8 @@ void GameWindow::render() {
     ////////////////////////////////////////////////////////////
 
     GLChecked(glEnable(GL_DEPTH_TEST));
-    GLChecked(glEnable(GL_CULL_FACE));
-    //~ GLChecked(glPolygonMode(GL_BACK, GL_LINE));
+    //~ GLChecked(glEnable(GL_CULL_FACE));
+    GLChecked(glPolygonMode(GL_BACK, GL_LINE));
 
     // draw 3D scene
 
@@ -656,13 +658,12 @@ void GameWindow::render() {
 
     mBlockShader.setParameter("uViewMatrix", modelViewTransform);
 
-    mCube.render();
+    mPlane.render();
 
+    mCube.render();
     modelViewTransform.translate(sf::Vector3f(1.0f,0.0f,0.0f));
     mBlockShader.setParameter("uViewMatrix", modelViewTransform);
     mCube.render();
-
-    mPlane.render();
 
     ////////////////////////////////////////////////////////////
     //  end 3D

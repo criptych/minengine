@@ -33,7 +33,7 @@ void main () {
     float specFactor = max(0, dot(normal, normalize(eyeDir+lightDir)));
 
     vec4 diffTexCol = vec4(1.0,1.0,1.0,1.0); //texture2D(uDiffMap, vTexCoord);
-    vec4 specTexCol = vec4(1.0,1.0,1.0,0.3); //texture2D(uSpecMap, vTexCoord);
+    vec4 specTexCol = vec4(1.0,1.0,1.0,0.2); //texture2D(uSpecMap, vTexCoord);
     vec4 glowTexCol = vec4(0.0,0.0,0.0,1.0); //texture2D(uGlowMap, vTexCoord);
 
     vec4 ambtColor = uLightAmbt * diffTexCol * vColor;

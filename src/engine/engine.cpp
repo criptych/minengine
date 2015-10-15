@@ -377,8 +377,22 @@ void Model::clearVertices() {
     mVertices.clear();
 }
 
+void Model::reserveVertices(size_t count) {
+    mVertices.reserve(count);
+}
+
 void Model::addVertex(const Vertex &vertex) {
     mVertices.push_back(vertex);
+}
+
+void Model::addVertices(const Vertex *verts, size_t count) {
+    mVertices.insert(mVertices.end(), verts, verts + count);
+}
+
+void Model::setColor(const sf::Color &color) {
+    for (Vertex &v : mVertices) {
+        v.color = color;
+    }
 }
 
 void Model::calcNormals(bool smooth) {
@@ -393,7 +407,7 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
         return;
     }
 
-    sf::err() << "start == " << start << ", end == " << end << '\n';
+    //~ sf::err() << "start == " << start << ", end == " << end << '\n';
 
     switch (mPrimitive) {
         case GLTriangles: {
@@ -523,6 +537,8 @@ void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center) {
         }
 
         case GLTriangles: {
+            reserveVertices(36);
+
             addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
             addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
             addVertex(Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z));
@@ -564,10 +580,13 @@ void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center) {
             addVertex(Vertex(0x0000,0x0000, mn.x,mn.y,mn.z));
             addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z));
             addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
+
             break;
         }
 
         case GLQuads: {
+            reserveVertices(24);
+
             addVertex(Vertex(0x7fff,0x0000, mx.x,mx.y,mn.z));
             addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mx.z));
             addVertex(Vertex(0x0000,0x7fff, mx.x,mn.y,mx.z));
@@ -597,6 +616,7 @@ void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center) {
             addVertex(Vertex(0x0000,0x7fff, mn.x,mx.y,mn.z));
             addVertex(Vertex(0x7fff,0x7fff, mx.x,mx.y,mn.z));
             addVertex(Vertex(0x7fff,0x0000, mx.x,mn.y,mn.z));
+
             break;
         }
     }
@@ -605,7 +625,7 @@ void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center) {
 }
 
 void Model::makeBox(const sf::Vector3f &size) {
-    makeBox(sf::Vector3f(), size);
+    makeBox(size, sf::Vector3f());
 }
 
 void Model::makeBox() {
@@ -622,37 +642,39 @@ void Model::makeBall(float radius, size_t step, size_t rstep, const sf::Vector3f
 
     float phi = 0, theta = 0, dPhi = Pi / (step), dTheta = 2.0f * Pi / rstep;
 
-    clearVertices();
     setPrimitive(GLTriangleStrip);
+    clearVertices();
+    reserveVertices((step + 1) * (rstep + 1) * 2);
 
     sf::Vector3f n;
+    size_t i, j;
 
-    for (size_t i = 0; i <= rstep; i++, theta += dTheta) {
-        for (size_t j = 0; j <= step; j++, phi += dPhi) {
+    for (i = 0; i <= rstep; i++, theta += dTheta) {
+        for (j = 0, phi = 0; j <= step; j++, phi += dPhi) {
 
-            n.x = std::sin ((dPhi*j))*std::cos (dTheta*i);
-            n.y = std::cos ((dPhi*j));
-            n.z = std::sin ((dPhi*j))*std::sin (dTheta*i);
-            addVertex(Vertex(n*radius, n));
+            n.x = std::sin(phi)*std::cos(theta);
+            n.y = std::cos(phi);
+            n.z = std::sin(phi)*std::sin(theta);
+            addVertex(Vertex(n, n*radius));
 
-            n.x = std::sin ((dPhi*j))*std::cos (dTheta*(i+1));
-            n.y = std::cos ((dPhi*j));
-            n.z = std::sin ((dPhi*j))*std::sin (dTheta*(i+1));
-            addVertex(Vertex(n*radius, n));
+            n.x = std::sin(phi)*std::cos(theta+dTheta);
+            n.y = std::cos(phi);
+            n.z = std::sin(phi)*std::sin(theta+dTheta);
+            addVertex(Vertex(n, n*radius));
         }
     }
 }
 
-void Model::makeBall(float size, size_t step, size_t rstep) {
-    makeBall(size, step, rstep, sf::Vector3f());
+void Model::makeBall(float radius, size_t step, size_t rstep) {
+    makeBall(radius, step, rstep, sf::Vector3f());
 }
 
-void Model::makeBall(float size, size_t step, const sf::Vector3f &center) {
-    makeBall(size, step, 2 * step, center);
+void Model::makeBall(float radius, size_t step, const sf::Vector3f &center) {
+    makeBall(radius, step, 2 * step, center);
 }
 
-void Model::makeBall(float size, size_t step) {
-    makeBall(size, step, sf::Vector3f());
+void Model::makeBall(float radius, size_t step) {
+    makeBall(radius, step, sf::Vector3f());
 }
 
 ////////////////////////////////////////////////////////////////////////////////

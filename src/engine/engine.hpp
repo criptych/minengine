@@ -362,6 +362,7 @@ public:
     void setPrimitive(uint32_t primitive);
 
     void clearVertices();
+    void reserveVertices(size_t count);
     void addVertex(const Vertex &vertex);
 
     void addVertices(const Vertex *verts, size_t count);
@@ -371,9 +372,7 @@ public:
         const I &start,
         const I &end
     ) {
-        for (I it = start; it != end; it++) {
-            addVertex(*it);
-        }
+        mVertices.insert(mVertices.end(), start, end);
     }
 
     template <typename A>
@@ -384,6 +383,8 @@ public:
             addVertex(v);
         }
     }
+
+    void setColor(const sf::Color &color);
 
     void calcNormals(bool smooth = false);
     void calcNormals(size_t start, size_t end, bool smooth = false);
