@@ -148,6 +148,8 @@ class GameWindow : protected sf::RenderWindow {
     bool mAllowQuit;
     bool mPaused;
 
+    int mViewMode;
+
     sf::VideoMode mDesktopMode;
     sf::VideoMode mWindowMode;
     sf::String mWindowTitle;
@@ -211,6 +213,8 @@ GameWindow::GameWindow(
     true
 ), mPaused(
     false
+), mViewMode(
+    0
 ), mTickLength(
     sf::microseconds(20000) // 50000
 ), mMaxTicksPerFrame(
@@ -287,7 +291,7 @@ void GameWindow::init() {
     mDebugText.setFont(mFont);
     mDebugText.setCharacterSize(16);
 
-    mPlayer.getCamera().setFOV(45.0f);
+    mPlayer.getCamera().setFOV(60.0f);
     mPlayer.setPosition(sf::Vector3f(0,0,5));
 
     sf::Vector3f eye = mPlayer.getEyePosition();
@@ -316,7 +320,11 @@ void GameWindow::init() {
     mBlockShader.setParameter("uResolution", sf::Vector2f(getSize()));
 
     mCubeModel.makeBox(sf::Vector3f(0.5f,0.5f,0.5f), sf::Vector3f(0.0f,0.5f,0.0f));
-    mCubeModel.setColor(sf::Color(0x66,0x88,0xaa));
+    mCubeModel.setColor(sf::Color(0xaa,0x88,0x66));
+    for (Vertex &v : mCubeModel.getVertices()) {
+        sf::Vector3f p = v.position;
+        v.normal = normalize(p);
+    }
     mCube.setModel(mCubeModel);
     mCube.setShader(mBlockShader);
 
@@ -392,6 +400,11 @@ void GameWindow::handleEvent(const sf::Event &event) {
 
                 case sf::Keyboard::Space: {
                     mPaused = not mPaused;
+                    break;
+                }
+
+                case sf::Keyboard::F1: {
+                    ++mViewMode %= 3;
                     break;
                 }
 
@@ -624,8 +637,26 @@ void GameWindow::render() {
     ////////////////////////////////////////////////////////////
 
     GLChecked(glEnable(GL_DEPTH_TEST));
-    GLChecked(glEnable(GL_CULL_FACE));
-    //~ GLChecked(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+
+    switch (mViewMode) {
+        case 0: {
+            // normal
+            GLChecked(glEnable(GL_CULL_FACE));
+            break;
+        }
+
+        case 1: {
+            // wireframe from back
+            GLChecked(glPolygonMode(GL_BACK, GL_LINE));
+            break;
+        }
+
+        case 2: {
+            // wireframe
+            GLChecked(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+            break;
+        }
+    }
 
     // draw 3D scene
 

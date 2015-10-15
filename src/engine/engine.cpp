@@ -567,7 +567,7 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
         }
     }
 
-    sf::err() << std::flush;
+    //~ sf::err() << std::flush;
 }
 
 void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center) {
@@ -656,9 +656,9 @@ void Model::makeBall(float radius, size_t step, size_t rstep, const sf::Vector3f
 
     setPrimitive(GLTriangleStrip);
     clearVertices();
-    reserveVertices((step + 1) * (rstep + 1) * 2);
-    //~ clearIndices();
-    //~ reserveIndices((step + 1) * (rstep + 1) * 2);
+    reserveVertices((step + 1) * (rstep + 1));
+    clearIndices();
+    reserveIndices((step + 1) * (rstep + 1) * 2);
 
     sf::Vector3f n;
     size_t i, j;
@@ -671,10 +671,8 @@ void Model::makeBall(float radius, size_t step, size_t rstep, const sf::Vector3f
             n.z = std::sin(phi)*std::sin(theta);
             addVertex(Vertex(n, n*radius));
 
-            n.x = std::sin(phi)*std::cos(theta+dTheta);
-            n.y = std::cos(phi);
-            n.z = std::sin(phi)*std::sin(theta+dTheta);
-            addVertex(Vertex(n, n*radius));
+            addIndex(i * (step+1) + j);
+            addIndex(((i+1)%(rstep+1)) * (step+1) + j);
         }
     }
 }

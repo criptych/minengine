@@ -131,6 +131,9 @@ void ClientModel::createVBO() const {
         size_t numVerts = mModel->getVertices().size();
         size_t numIndex = mModel->getIndices().size();
 
+        sf::err() << ", numVerts = " << numVerts;
+        sf::err() << ", numIndex = " << numIndex;
+
         mCount = numVerts;
 
         if (mCount == 0) {
@@ -155,7 +158,7 @@ void ClientModel::createVBO() const {
                 }
             }
 
-            size_t size = sizeof(uint16_t) * mCount;
+            size_t size = sizeof(uint16_t) * numIndex;
             const void *data = mModel->getIndices().data();
             GLChecked(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIBO));
             GLChecked(glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
@@ -166,7 +169,7 @@ void ClientModel::createVBO() const {
         sf::err() << ", mCount = " << mCount;
         sf::err() << std::flush;
 
-        size_t size = sizeof(Vertex) * mCount;
+        size_t size = sizeof(Vertex) * numVerts;
         const void *data = mModel->getVertices().data();
         sf::err() << ", size == " << size;
         sf::err() << std::flush;
@@ -174,7 +177,7 @@ void ClientModel::createVBO() const {
         GLChecked(glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
         GLChecked(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
-        //~ sf::err() << std::endl;
+        sf::err() << std::endl;
     }
 }
 
