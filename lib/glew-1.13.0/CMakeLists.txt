@@ -1,3 +1,7 @@
+################################################################################
+##
+################################################################################
+
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 
 PROJECT(GLEW VERSION 1.13.0 LANGUAGES C)
@@ -11,4 +15,8 @@ SET(GLEW_LIBRARIES ${GLEW_LIBRARY} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} CA
 INCLUDE_DIRECTORIES(${GLEW_INCLUDE_DIR})
 ADD_DEFINITIONS(-DGLEW_STATIC=1)
 ADD_LIBRARY(${GLEW_LIBRARY} STATIC src/glew.c)
+
+################################################################################
+##  EOF
+################################################################################
 
