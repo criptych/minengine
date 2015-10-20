@@ -917,7 +917,7 @@ template <typename T>
 T dot(const sf::Vector3<T> &a, const sf::Vector3<T> &b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
-*/
+
 template <typename T>
 sf::Vector3<T> normalize(const sf::Vector3<T> &v) {
     T length = std::sqrt(dot(v, v));
@@ -928,6 +928,7 @@ sf::Vector3<T> normalize(const sf::Vector3<T> &v) {
         return v / length;
     }
 }
+*/
 
 inline float quadratic(float t) {
     if (t >= 0.5f) {
