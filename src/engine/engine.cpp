@@ -570,34 +570,27 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
     //~ sf::err() << std::flush;
 }
 
-void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center) {
+void Model::addBox(const sf::Vector3f &size, const sf::Vector3f &center) {
     sf::Vector3f mx = center + size;
     sf::Vector3f mn = center - size;
 
-    clearVertices();
-    clearIndices();
-
     switch (mPrimitive) {
-        default: {
-            mPrimitive = GLTriangles;
-            // continue
-        }
-
         case GLTriangles: {
-            reserveIndices(36);
+            reserveIndices(mIndices.size() + 36);
 
-            addQuad(0, 1, 2, 3);
-            addQuad(4, 5, 6, 7);
-            addQuad(8, 9, 10, 11);
-            addQuad(12, 13, 14, 15);
-            addQuad(16, 17, 18, 19);
-            addQuad(20, 21, 22, 23);
+            size_t n = mVertices.size();
+            addQuad(n+ 0, n+ 1, n+ 2, n+ 3);
+            addQuad(n+ 4, n+ 5, n+ 6, n+ 7);
+            addQuad(n+ 8, n+ 9, n+10, n+11);
+            addQuad(n+12, n+13, n+14, n+15);
+            addQuad(n+16, n+17, n+18, n+19);
+            addQuad(n+20, n+21, n+22, n+23);
 
             // continue
         }
 
         case GLQuads: {
-            reserveVertices(24);
+            reserveVertices(mVertices.size() + 24);
 
             addVertex(Vertex(0x7fff,0x0000,  1, 0, 0, mx.x,mx.y,mn.z));
             addVertex(Vertex(0x7fff,0x7fff,  1, 0, 0, mx.x,mx.y,mx.z));
@@ -632,8 +625,21 @@ void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center) {
             break;
         }
     }
+}
 
-    //~ calcNormals();
+void Model::addBox(const sf::Vector3f &size) {
+    addBox(size, sf::Vector3f());
+}
+
+void Model::addBox() {
+    addBox(sf::Vector3f(1,1,1));
+}
+
+void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center) {
+    clearVertices();
+    clearIndices();
+    setPrimitive(GLTriangles);
+    addBox(size, center);
 }
 
 void Model::makeBox(const sf::Vector3f &size) {
@@ -644,7 +650,7 @@ void Model::makeBox() {
     makeBox(sf::Vector3f(1,1,1));
 }
 
-void Model::makeBall(float radius, size_t step, size_t rstep, const sf::Vector3f &center) {
+void Model::addBall(float radius, size_t step, size_t rstep, const sf::Vector3f &center) {
     if (step < 2) {
         step = 2;
     }
@@ -654,27 +660,47 @@ void Model::makeBall(float radius, size_t step, size_t rstep, const sf::Vector3f
 
     float phi = 0, theta = 0, dPhi = Pi / (step), dTheta = 2.0f * Pi / rstep;
 
-    setPrimitive(GLTriangleStrip);
-    clearVertices();
-    reserveVertices((step + 1) * (rstep + 1));
-    clearIndices();
-    reserveIndices((step + 1) * (rstep + 1) * 2);
+    step += 1;
+    rstep += 1;
+
+    reserveVertices(mVertices.size() + (step) * (rstep));
+    reserveIndices(mIndices.size() + (step) * (rstep) * 2);
 
     sf::Vector3f n;
-    size_t i, j;
+    size_t i, j, k = mVertices.size();
 
-    for (i = 0; i <= rstep; i++, theta += dTheta) {
-        for (j = 0, phi = 0; j <= step; j++, phi += dPhi) {
+    for (i = 0; i < rstep; i++, theta += dTheta) {
+        for (j = 0, phi = 0; j < step; j++, phi += dPhi) {
 
             n.x = std::sin(phi)*std::cos(theta);
             n.y = std::cos(phi);
             n.z = std::sin(phi)*std::sin(theta);
             addVertex(Vertex(n, n*radius));
 
-            addIndex(i * (step+1) + j);
-            addIndex(((i+1)%(rstep+1)) * (step+1) + j);
+            size_t p = (i + 1) % rstep;
+            size_t q = (j + 1) % step;
+            addQuad(k+(i*step)+j, k+(p*step)+j, k+(p*step)+q, k+(i*step)+q);
         }
     }
+}
+
+void Model::addBall(float radius, size_t step, size_t rstep) {
+    addBall(radius, step, rstep, sf::Vector3f());
+}
+
+void Model::addBall(float radius, size_t step, const sf::Vector3f &center) {
+    addBall(radius, step, 2 * step, center);
+}
+
+void Model::addBall(float radius, size_t step) {
+    addBall(radius, step, sf::Vector3f());
+}
+
+void Model::makeBall(float radius, size_t step, size_t rstep, const sf::Vector3f &center) {
+    clearVertices();
+    clearIndices();
+    setPrimitive(GLTriangles);
+    addBall(radius, step, rstep, center);
 }
 
 void Model::makeBall(float radius, size_t step, size_t rstep) {

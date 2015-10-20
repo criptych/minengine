@@ -140,6 +140,18 @@ void Player::render() const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+class ChunkRenderer {
+public:
+    void render(sf::RenderTarget &target, const Chunk &chunk);
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ChunkRenderer::render(sf::RenderTarget &target, const Chunk &chunk) {
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 class GameWindow : protected sf::RenderWindow {
     bool mFullscreen;
     bool mMouseLocked;
@@ -161,23 +173,34 @@ class GameWindow : protected sf::RenderWindow {
     sf::Time mPlayTime;
     unsigned int mMaxTicksPerFrame;
 
+    float mTicksPerSecond;
+    float mFramesPerSecond;
+
     Player mPlayer;
-    //~ Camera mCamera;
     mutable sf::Shader mBlockShader;
 
     sf::Vector3f mLightPos;
-    //~ sf::Vector2f mLookDir;
     float mSpinAngle;
     float mSpinSpeed; // degrees/second
 
-    Model mCubeModel;
-    ClientModel mCube;
+    sf::Texture mDiffMap;
+    sf::Texture mSpecMap;
+    sf::Texture mGlowMap;
+    sf::Texture mBumpMap;
+
+    //~ Model mCubeModel;
+    //~ ClientModel mCube;
 
     Model mBallModel;
     ClientModel mBall;
 
     Model mPlaneModel;
     ClientModel mPlane;
+
+    ChunkData mTestChunkData;
+    Chunk mTestChunk;
+
+    ChunkRenderer mChunkRenderer;
 
 public:
     GameWindow();
@@ -218,16 +241,25 @@ GameWindow::GameWindow(
 ), mMaxTicksPerFrame(
     5
 ), mLightPos(
-    1, 10, 5
+    0, 5, 10
 ), mSpinAngle(
 ), mSpinSpeed(
-    45
+    12
+), mTestChunkData(
+), mTestChunk(
+    Position(),
+    &mTestChunkData
 ) {
 }
 
 void GameWindow::run() {
     sf::Clock clock;
-    sf::Time tickCount;
+    sf::Time tickAccum;
+
+    size_t tickCount = 0;
+    size_t frameCount = 0;
+    sf::Time fpsAccum;
+    sf::Time fpsInterval(sf::microseconds(1000000));
 
     init();
 
@@ -238,20 +270,31 @@ void GameWindow::run() {
 
         handleInput(delta);
 
-        tickCount += delta;
+        tickAccum += delta;
+        fpsAccum += delta;
 
         unsigned int frameTicks = mMaxTicksPerFrame;
 
-        while (tickCount >= mTickLength) {
-            tickCount -= mTickLength;
+        while (tickAccum >= mTickLength) {
+            tickAccum -= mTickLength;
 
             if (frameTicks > 0) {
                 update(mTickLength);
+                tickCount += 1;
                 frameTicks -= 1;
             }
         }
 
         render();
+
+        frameCount += 1;
+
+        if (fpsAccum >= fpsInterval) {
+            mTicksPerSecond = float(tickCount) / fpsAccum.asSeconds();
+            mFramesPerSecond = float(frameCount) / fpsAccum.asSeconds();
+            tickCount = frameCount = 0;
+            fpsAccum = sf::Time::Zero;
+        }
 
         display();
     }
@@ -315,19 +358,53 @@ void GameWindow::init() {
         quit(true);
     }
 
+    mDiffMap.loadFromFile("textures/Scifi_Hex_Wall_Albedo.jpg");
+    mDiffMap.setSmooth(true);
+
+    //~ mSpecMap.loadFromFile("textures/Scifi_Hex_Wall_specular.jpg");
+    mSpecMap.setSmooth(true);
+
+    sf::Image specMap, glossMap;
+    specMap.loadFromFile("textures/Scifi_Hex_Wall_specular.jpg");
+    glossMap.loadFromFile("textures/Scifi_Hex_Wall_glossiness.jpg");
+
+    if (glossMap.getSize() == specMap.getSize()) {
+        sf::err() << "copy gloss map...\n";
+        sf::Vector2u size(glossMap.getSize()), p;
+        for (p.y = 0; p.y < size.y; p.y++) {
+            for (p.x = 0; p.x < size.x; p.x++) {
+                sf::Color c = specMap.getPixel(p.x, p.y);
+                c.a = glossMap.getPixel(p.x, p.y).r;
+                specMap.setPixel(p.x, p.y, c);
+            }
+        }
+    }
+
+    mSpecMap.loadFromImage(specMap);
+
+    //~ mGlowMap.loadFromFile("textures/Scifi_Hex_Wall_glossiness.jpg");
+    mGlowMap.setSmooth(true);
+
+    mBumpMap.loadFromFile("textures/Scifi_Hex_Wall_normal.jpg");
+    mBumpMap.setSmooth(true);
+
     mBlockShader.setParameter("uResolution", sf::Vector2f(getSize()));
+    mBlockShader.setParameter("uDiffMap", mDiffMap);
+    mBlockShader.setParameter("uSpecMap", mSpecMap);
+    mBlockShader.setParameter("uGlowMap", mGlowMap);
+    mBlockShader.setParameter("uBumpMap", mBumpMap);
 
-    mCubeModel.makeBox(sf::Vector3f(0.5f,0.5f,0.5f), sf::Vector3f(0.0f,0.5f,0.0f));
-    mCubeModel.setColor(sf::Color(0xaa,0x88,0x66));
-    mCube.setModel(mCubeModel);
-    mCube.setShader(mBlockShader);
+    //~ mCubeModel.makeBox(sf::Vector3f(0.5f,0.5f,0.5f), sf::Vector3f(0.0f,0.5f,0.0f));
+    //~ mCubeModel.setColor(sf::Color(0xaa,0x88,0x66));
+    //~ mCube.setModel(mCubeModel);
+    //~ mCube.setShader(mBlockShader);
 
-    mBallModel.makeBall(0.1f, 6, 10);
+    mBallModel.makeBall(0.5f, 6, 10);
     mBall.setModel(mBallModel);
     mBall.setShader(mBlockShader);
 
     mPlaneModel.makeBox(sf::Vector3f(50.0f,0.00f,50.0f));
-    mPlaneModel.setColor(sf::Color::Green);
+    //~ mPlaneModel.setColor(sf::Color::Green);
     mPlane.setModel(mPlaneModel);
     mPlane.setShader(mBlockShader);
 
@@ -612,17 +689,18 @@ void GameWindow::update(const sf::Time &delta) {
     if (not mPaused) {
         mSpinAngle += delta.asSeconds() * mSpinSpeed;
     }
+}
 
+void GameWindow::render() {
     char temp[256];
     sf::Vector3f p = mPlayer.getPosition();
     sf::Vector3f e = mPlayer.getEyePosition();
     sf::Vector2f o = mPlayer.getLook();
-    snprintf(temp, sizeof(temp), "%g,%g,%g (%g,%g,%g)\n%g,%g",
+    snprintf(temp, sizeof(temp), "%.2ffps (%.2ftps)\n%g,%g,%g (%g,%g,%g)\n%g,%g",
+             mFramesPerSecond, mTicksPerSecond,
              p.x, p.y, p.z, e.x, e.y, e.z, o.x, o.y);
     mDebugText.setString(temp);
-}
 
-void GameWindow::render() {
     GLChecked(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
     ////////////////////////////////////////////////////////////
@@ -671,7 +749,7 @@ void GameWindow::render() {
     mBlockShader.setParameter("uProjMatrix", projectionTransform);
 
     sf::Transform3D spinLight;
-    spinLight.rotate(mSpinAngle, sf::Vector3f(0,0,1));
+    spinLight.rotate(mSpinAngle, sf::Vector3f(0,1,0));
     sf::Vector3f spinLightPos = spinLight.transformPoint(mLightPos);
 
     mBlockShader.setParameter("uLightPos", spinLightPos);
@@ -688,10 +766,10 @@ void GameWindow::render() {
 
     mPlane.render();
 
-    mCube.render();
-    modelViewTransform.translate(sf::Vector3f(1.0f,0.0f,0.0f));
-    mBlockShader.setParameter("uViewMatrix", modelViewTransform);
-    mCube.render();
+    //~ mCube.render();
+    //~ modelViewTransform.translate(sf::Vector3f(1.0f,0.0f,0.0f));
+    //~ mBlockShader.setParameter("uViewMatrix", modelViewTransform);
+    //~ mCube.render();
 
     ////////////////////////////////////////////////////////////
     //  end 3D

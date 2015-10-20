@@ -127,14 +127,14 @@ void ClientModel::createVBO() const {
         size_t numVerts = mModel->getVertices().size();
         size_t numIndex = mModel->getIndices().size();
 
-        sf::err() << ", numVerts = " << numVerts;
-        sf::err() << ", numIndex = " << numIndex;
-
         mCount = numVerts;
 
         if (mCount == 0) {
             return;
         }
+
+        sf::err() << "numVerts = " << numVerts;
+        sf::err() << ", numIndex = " << numIndex;
 
         if (!mVBO) {
             GLChecked(glGenBuffers(1, &mVBO));

@@ -420,9 +420,18 @@ public:
     void calcNormals(bool smooth = false);
     void calcNormals(size_t start, size_t end, bool smooth = false);
 
+    void addBox(const sf::Vector3f &size, const sf::Vector3f &center);
+    void addBox(const sf::Vector3f &size);
+    void addBox();
+
     void makeBox(const sf::Vector3f &size, const sf::Vector3f &center);
     void makeBox(const sf::Vector3f &size);
     void makeBox();
+
+    void addBall(float radius, size_t step, size_t rstep, const sf::Vector3f &center);
+    void addBall(float radius, size_t step, size_t rstep);
+    void addBall(float radius, size_t step, const sf::Vector3f &center);
+    void addBall(float radius, size_t step);
 
     void makeBall(float radius, size_t step, size_t rstep, const sf::Vector3f &center);
     void makeBall(float radius, size_t step, size_t rstep);

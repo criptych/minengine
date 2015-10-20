@@ -8,14 +8,18 @@ uniform vec2 uResolution = vec2(1);
 
 uniform vec3 uEyePos = vec3(0,0,5);
 
+uniform vec3 uLightDir  = vec3(0,1,0);
 uniform vec3 uLightPos  = vec3(-4,4,4);
-uniform vec4 uLightAmbt = vec4(0.8, 0.8, 0.8, 1.0);
-uniform vec4 uLightDiff = vec4(0.2, 0.2, 0.2, 1.0);
-uniform vec4 uLightSpec = vec4(1.0, 1.0, 1.0, 1.0);
+uniform vec3 uLightAmbt = vec3(0.8, 0.8, 0.8);
+uniform vec3 uLightDiff = vec3(0.2, 0.2, 0.2);
+uniform vec3 uLightSpec = vec3(1.0, 1.0, 1.0);
 
 uniform sampler2D uDiffMap; // surface color (albedo)
 uniform sampler2D uSpecMap; // specular reflection
 uniform sampler2D uGlowMap; // emission color
+uniform sampler2D uBumpMap; // normal and height
+uniform float uSpecPow = 100.0; // shininess
+uniform vec2 uBumpScaleBias = vec2(0.10, 0.05);
 
 in vec3 vVertex;
 in vec3 vNormal;
@@ -24,28 +28,79 @@ in vec4 vColor;
 
 out vec4 fColor;
 
+////////////////////////////////////////////////////////////////////////////////
+// source: http://www.thetenthplanet.de/archives/1180
+////////////////////////////////////////////////////////////////////////////////
+
+mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
+{
+    // get edge vectors of the pixel triangle
+    vec3 dp1 = dFdx( p );
+    vec3 dp2 = dFdy( p );
+    vec2 duv1 = dFdx( uv );
+    vec2 duv2 = dFdy( uv );
+
+    // solve the linear system
+    vec3 dp2perp = cross( dp2, N );
+    vec3 dp1perp = cross( N, dp1 );
+    vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+    vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+
+    // construct a scale-invariant frame
+    float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
+    return mat3( T * invmax, B * invmax, N );
+}
+
+vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
+{
+    // assume N, the interpolated vertex normal and
+    // V, the view vector (vertex to eye)
+    vec3 map = texture2D( uBumpMap, texcoord ).xyz;/*
+#ifdef WITH_NORMALMAP_UNSIGNED
+    map = map * 255./127. - 128./127.;
+#endif
+#ifdef WITH_NORMALMAP_2CHANNEL
+    map.z = sqrt( 1. - dot( map.xy, map.xy ) );
+#endif
+#ifdef WITH_NORMALMAP_GREEN_UP
+    map.y = -map.y;
+#endif*/
+    mat3 TBN = cotangent_frame( N, -V, texcoord );
+    return normalize( TBN * map );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void main () {
     vec3 normal = vNormal;
     vec3 lightDir = uLightPos - vVertex;
     vec3 eyeDir = uEyePos - vVertex;
 
-    float diffFactor = max(0, dot(normal, normalize(lightDir)));
-    float specFactor = max(0, dot(normal, normalize(eyeDir+lightDir)));
+    vec4 bumpTexVal = texture2D(uBumpMap, vTexCoord); //vec4(1.0,1.0,1.0,1.0);
+    //~ normal = normalize(normal + (bumpTexVal.xzy * 2 - 1));
+    normal = perturb_normal( normal, eyeDir, vTexCoord );
 
-    vec4 diffTexCol = vec4(1.0,1.0,1.0,1.0); //texture2D(uDiffMap, vTexCoord);
-    vec4 specTexCol = vec4(1.0,1.0,1.0,0.2); //texture2D(uSpecMap, vTexCoord);
-    vec4 glowTexCol = vec4(0.0,0.0,0.0,1.0); //texture2D(uGlowMap, vTexCoord);
 
-    vec4 ambtColor = uLightAmbt * diffTexCol * vColor;
-    vec4 diffColor = uLightDiff * diffTexCol * vColor;
-    vec4 specColor = uLightSpec * specTexCol;
-    float specPower = pow(10.0, 10.0*specTexCol.a);
-    vec4 glowColor = glowTexCol * glowTexCol.a;
+    vec2 texCoord = vTexCoord;
+    //~ vec2 texCoord = vTexCoord + dot(vec2(bumpTexVal.w, -1), uBumpScaleBias) * eyeDir.xy;
 
-    fColor  = ambtColor;
-    fColor += diffColor * diffFactor;
-    fColor += specColor * pow(specFactor, specPower);
-    fColor += glowColor;
+    float diffFactor = max(0, dot(normal, normalize(lightDir)/*uLightDir*/));
+    float specFactor = max(0, dot(normal, normalize(eyeDir+lightDir/*uLightDir*/)));
+
+    vec4 diffTexCol = texture2D(uDiffMap, texCoord); //vec4(1.0,1.0,1.0,1.0);
+    vec4 specTexCol = texture2D(uSpecMap, texCoord); //vec4(1.0,1.0,1.0,0.2);
+    vec4 glowTexCol = texture2D(uGlowMap, texCoord); //vec4(0.0,0.0,0.0,1.0);
+
+    vec3 ambtColor = uLightAmbt * diffTexCol.rgb * vColor.rgb;
+    vec3 diffColor = uLightDiff * diffTexCol.rgb * vColor.rgb;
+    vec3 specColor = uLightSpec * specTexCol.rgb;
+    float specPower = uSpecPow * specTexCol.a;
+    vec3 glowColor = glowTexCol.rgb * glowTexCol.a;
+
+    fColor.rgb  = ambtColor;
+    fColor.rgb += diffColor * diffFactor;
+    fColor.rgb += specColor * pow(specFactor, specPower);
+    fColor.rgb += glowColor;
     fColor.a = vColor.a * diffTexCol.a;
 
     //~ fColor.rgb = 0.5 + 0.5 * normal;
