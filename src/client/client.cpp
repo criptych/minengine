@@ -20,9 +20,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-//~ #include "Transform3D.hpp"
 #include "Transformable3D.hpp"
-#include "Shader.hpp"
 #include "Camera.hpp"
 #include "ClientModel.hpp"
 
@@ -220,7 +218,7 @@ GameWindow::GameWindow(
 ), mMaxTicksPerFrame(
     5
 ), mLightPos(
-    1, 5, 5
+    1, 10, 5
 ), mSpinAngle(
 ), mSpinSpeed(
     45
@@ -291,7 +289,7 @@ void GameWindow::init() {
     mDebugText.setFont(mFont);
     mDebugText.setCharacterSize(16);
 
-    mPlayer.getCamera().setFOV(60.0f);
+    mPlayer.getCamera().setFOV(75.0f);
     mPlayer.setPosition(sf::Vector3f(0,0,5));
 
     sf::Vector3f eye = mPlayer.getEyePosition();
@@ -321,19 +319,14 @@ void GameWindow::init() {
 
     mCubeModel.makeBox(sf::Vector3f(0.5f,0.5f,0.5f), sf::Vector3f(0.0f,0.5f,0.0f));
     mCubeModel.setColor(sf::Color(0xaa,0x88,0x66));
-    for (Vertex &v : mCubeModel.getVertices()) {
-        sf::Vector3f p = v.position;
-        v.normal = normalize(p);
-    }
     mCube.setModel(mCubeModel);
     mCube.setShader(mBlockShader);
 
-    mBallModel.makeBall(0.5f, 12);
-    //~ mBallModel.setPrimitive(GL_LINE_STRIP);
+    mBallModel.makeBall(0.1f, 6, 10);
     mBall.setModel(mBallModel);
     mBall.setShader(mBlockShader);
 
-    mPlaneModel.makeBox(sf::Vector3f(50.0f,0.00f,50.0f), sf::Vector3f(0,-0.01f,0));
+    mPlaneModel.makeBox(sf::Vector3f(50.0f,0.00f,50.0f));
     mPlaneModel.setColor(sf::Color::Green);
     mPlane.setModel(mPlaneModel);
     mPlane.setShader(mBlockShader);

@@ -9,16 +9,16 @@
 Transformable3D::Transformable3D(): mNeedsUpdate(true) {
 }
 
-const Transform3D &Transformable3D::getTransform() const {
+const sf::Transform3D &Transformable3D::getTransform() const {
     if (mNeedsUpdate) {
-        mTransform = Transform3D();
+        mTransform = sf::Transform3D();
 
         mNeedsUpdate = false;
     }
     return mTransform;
 }
 
-const Transform3D &Transformable3D::getInverseTransform() const {
+const sf::Transform3D &Transformable3D::getInverseTransform() const {
     if (mInverseNeedsUpdate) {
         mInverseTransform = mTransform.getInverse();
 

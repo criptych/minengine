@@ -124,10 +124,6 @@ void ClientModel::render() const {
 
 void ClientModel::createVBO() const {
     if (mModel) {
-
-        sf::err() << "glGenBuffers(VBO) -> " << mVBO;
-        sf::err() << std::flush;
-
         size_t numVerts = mModel->getVertices().size();
         size_t numIndex = mModel->getIndices().size();
 
@@ -148,6 +144,9 @@ void ClientModel::createVBO() const {
             }
         }
 
+        sf::err() << "glGenBuffers(VBO) -> " << mVBO;
+        sf::err() << std::flush;
+
         if (numIndex > 0) {
             mCount = numIndex;
 
@@ -157,6 +156,9 @@ void ClientModel::createVBO() const {
                     return;
                 }
             }
+
+            sf::err() << ", glGenBuffers(IBO) -> " << mIBO;
+            sf::err() << std::flush;
 
             size_t size = sizeof(uint16_t) * numIndex;
             const void *data = mModel->getIndices().data();

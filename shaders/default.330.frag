@@ -25,7 +25,7 @@ in vec4 vColor;
 out vec4 fColor;
 
 void main () {
-    vec3 normal = normalize(vNormal);
+    vec3 normal = vNormal;
     vec3 lightDir = uLightPos - vVertex;
     vec3 eyeDir = uEyePos - vVertex;
 

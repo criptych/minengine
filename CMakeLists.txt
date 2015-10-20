@@ -27,8 +27,6 @@ SET(CLIENT_SRCS
     src/client/client.cpp
     src/client/Camera.cpp
     src/client/ClientModel.cpp
-    src/client/Shader.cpp
-    src/client/Transform3D.cpp
     src/client/Transformable3D.cpp
 )
 
