@@ -188,6 +188,10 @@ class GameWindow : protected sf::RenderWindow {
     sf::Texture mGlowMap;
     sf::Texture mBumpMap;
 
+    sf::Texture mWhiteTex;
+    sf::Texture mBlackTex;
+    sf::Texture mClearTex;
+
     //~ Model mCubeModel;
     //~ ClientModel mCube;
 
@@ -241,7 +245,7 @@ GameWindow::GameWindow(
 ), mMaxTicksPerFrame(
     5
 ), mLightPos(
-    0, 5, 10
+    0, 2, 10
 ), mSpinAngle(
 ), mSpinSpeed(
     12
@@ -306,13 +310,33 @@ void GameWindow::quit() {
     quit(false);
 }
 
+static void mergeImages(const std::string &rgbFN, const std::string &alphaFN, sf::Texture &texture) {
+    sf::Image rgbImage, alphaImage;
+    rgbImage.loadFromFile(rgbFN);
+    alphaImage.loadFromFile(alphaFN);
+
+    if (rgbImage.getSize() == alphaImage.getSize()) {
+        sf::err() << "merging \"" << rgbFN << "\" and \"" << alphaFN << "\"...\n";
+        sf::Vector2u size(rgbImage.getSize()), p;
+        for (p.y = 0; p.y < size.y; p.y++) {
+            for (p.x = 0; p.x < size.x; p.x++) {
+                sf::Color c = alphaImage.getPixel(p.x, p.y);
+                c.a = rgbImage.getPixel(p.x, p.y).r;
+                alphaImage.setPixel(p.x, p.y, c);
+            }
+        }
+    }
+
+    texture.loadFromImage(alphaImage);
+}
+
 void GameWindow::init() {
     sf::VideoMode videoMode(960, 540);
     sf::String windowTitle(L"MinEngine Client");
     sf::Uint32 windowStyle(sf::Style::Default);
     unsigned int contextAttribs = sf::ContextSettings::Default;
     //~ unsigned int contextAttribs = sf::ContextSettings::Core;
-    sf::ContextSettings contextSettings(24,8, 0, 3,3, contextAttribs);
+    sf::ContextSettings contextSettings(24,8, 8, 3,3, contextAttribs);
 
     mDesktopMode = sf::VideoMode::getDesktopMode();
 
@@ -328,12 +352,12 @@ void GameWindow::init() {
         ((usedSettings.attributeFlags & sf::ContextSettings::Debug) ? " (Debug)" : "") <<
         ".\n";
 
-    mFont.loadFromFile("fonts/Vera.ttf");
+    mFont.loadFromFile("fonts/VeraMono.ttf");
     mDebugText.setFont(mFont);
     mDebugText.setCharacterSize(16);
 
     mPlayer.getCamera().setFOV(75.0f);
-    mPlayer.setPosition(sf::Vector3f(0,0,5));
+    mPlayer.setPosition(sf::Vector3f(0,0,0));
 
     sf::Vector3f eye = mPlayer.getEyePosition();
     sf::err() << "mPlayer.getEyePosition() == " << eye.x << ',' << eye.y << ',' << eye.z << '\n';
@@ -358,35 +382,34 @@ void GameWindow::init() {
         quit(true);
     }
 
+    sf::Image white;
+    white.create(16, 16, sf::Color::White);
+    mWhiteTex.loadFromImage(white);
+
+    sf::Image black;
+    black.create(16, 16, sf::Color::Black);
+    mBlackTex.loadFromImage(black);
+
+    sf::Image clear;
+    clear.create(16, 16, sf::Color::Transparent);
+    mClearTex.loadFromImage(clear);
+
     mDiffMap.loadFromFile("textures/Scifi_Hex_Wall_Albedo.jpg");
     mDiffMap.setSmooth(true);
+    mDiffMap.setRepeated(true);
 
     //~ mSpecMap.loadFromFile("textures/Scifi_Hex_Wall_specular.jpg");
+    mergeImages("textures/Scifi_Hex_Wall_specular.jpg", "textures/Scifi_Hex_Wall_glossiness.jpg", mSpecMap);
     mSpecMap.setSmooth(true);
+    mSpecMap.setRepeated(true);
 
-    sf::Image specMap, glossMap;
-    specMap.loadFromFile("textures/Scifi_Hex_Wall_specular.jpg");
-    glossMap.loadFromFile("textures/Scifi_Hex_Wall_glossiness.jpg");
-
-    if (glossMap.getSize() == specMap.getSize()) {
-        sf::err() << "copy gloss map...\n";
-        sf::Vector2u size(glossMap.getSize()), p;
-        for (p.y = 0; p.y < size.y; p.y++) {
-            for (p.x = 0; p.x < size.x; p.x++) {
-                sf::Color c = specMap.getPixel(p.x, p.y);
-                c.a = glossMap.getPixel(p.x, p.y).r;
-                specMap.setPixel(p.x, p.y, c);
-            }
-        }
-    }
-
-    mSpecMap.loadFromImage(specMap);
-
-    //~ mGlowMap.loadFromFile("textures/Scifi_Hex_Wall_glossiness.jpg");
     mGlowMap.setSmooth(true);
+    mGlowMap.setRepeated(true);
 
-    mBumpMap.loadFromFile("textures/Scifi_Hex_Wall_normal.jpg");
+    //~ mBumpMap.loadFromFile("textures/Scifi_Hex_Wall_normal.jpg");
+    mergeImages("textures/Scifi_Hex_Wall_normal.jpg", "textures/Scifi_Hex_Wall_Displacement.jpg", mBumpMap);
     mBumpMap.setSmooth(true);
+    mBumpMap.setRepeated(true);
 
     mBlockShader.setParameter("uResolution", sf::Vector2f(getSize()));
     mBlockShader.setParameter("uDiffMap", mDiffMap);
@@ -399,11 +422,33 @@ void GameWindow::init() {
     //~ mCube.setModel(mCubeModel);
     //~ mCube.setShader(mBlockShader);
 
-    mBallModel.makeBall(0.5f, 6, 10);
+    mBallModel.makeBall(0.5f, 8, 16);
     mBall.setModel(mBallModel);
     mBall.setShader(mBlockShader);
 
-    mPlaneModel.makeBox(sf::Vector3f(50.0f,0.00f,50.0f));
+    mPlaneModel.setPrimitive(GL_TRIANGLES);
+    //~ mPlaneModel.makeBox(sf::Vector3f(50.0f,0.00f,50.0f));
+
+    sf::Vector3f size(2, 0, 2), pos(0, 0, 0);
+
+    sf::Vector3f field(50.0, 0, 50.0);
+    sf::Vector3f max(field.x - size.x, 0, field.z - size.z);
+    sf::Vector3f min(-max);
+
+    size_t n = (2 * field.x) / (max.x - min.x);
+    size_t m = (2 * field.z) / (max.z - min.z);
+    mPlaneModel.reserveVertices(24 * n * m);
+    mPlaneModel.reserveIndices(36 * n * m);
+
+    sf::err() << "min = <" << min.x << ',' << min.y << ',' << min.z << ">\n";
+    sf::err() << "max = <" << max.x << ',' << max.y << ',' << max.z << ">\n";
+
+    for (pos.z = min.z; pos.z <= max.z; pos.z += size.z * 2) {
+        for (pos.x = min.x; pos.x <= max.x; pos.x += size.x * 2) {
+            mPlaneModel.addBox(size, pos);
+        }
+    }
+
     //~ mPlaneModel.setColor(sf::Color::Green);
     mPlane.setModel(mPlaneModel);
     mPlane.setShader(mBlockShader);
@@ -696,7 +741,10 @@ void GameWindow::render() {
     sf::Vector3f p = mPlayer.getPosition();
     sf::Vector3f e = mPlayer.getEyePosition();
     sf::Vector2f o = mPlayer.getLook();
-    snprintf(temp, sizeof(temp), "%.2ffps (%.2ftps)\n%g,%g,%g (%g,%g,%g)\n%g,%g",
+    snprintf(temp, sizeof(temp),
+             "%.2ffps (%.2ftps)\n"
+             "%8.4f,%8.4f,%8.4f (%8.4f,%8.4f,%8.4f)\n"
+             "%8.4f,%8.4f",
              mFramesPerSecond, mTicksPerSecond,
              p.x, p.y, p.z, e.x, e.y, e.z, o.x, o.y);
     mDebugText.setString(temp);
@@ -758,12 +806,20 @@ void GameWindow::render() {
     sf::Transform3D lightBallTransform;
     lightBallTransform.translate(spinLightPos);
     mBlockShader.setParameter("uViewMatrix", lightBallTransform);
+
+    mBlockShader.setParameter("uDiffMap", mWhiteTex);
+    mBlockShader.setParameter("uSpecMap", mWhiteTex);
+    mBlockShader.setParameter("uGlowMap", mClearTex);
+    mBlockShader.setParameter("uBumpMap", mClearTex);
     mBall.render();
 
     sf::Transform3D modelViewTransform;
-
     mBlockShader.setParameter("uViewMatrix", modelViewTransform);
 
+    mBlockShader.setParameter("uDiffMap", mDiffMap);
+    mBlockShader.setParameter("uSpecMap", mSpecMap);
+    mBlockShader.setParameter("uGlowMap", mGlowMap);
+    mBlockShader.setParameter("uBumpMap", mBumpMap);
     mPlane.render();
 
     //~ mCube.render();
