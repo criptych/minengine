@@ -175,6 +175,7 @@ class GameWindow : protected sf::RenderWindow {
 
     float mTicksPerSecond;
     float mFramesPerSecond;
+    sf::Time mFrameLength;
 
     Player mPlayer;
     mutable sf::Shader mBlockShader;
@@ -240,6 +241,12 @@ GameWindow::GameWindow(
     false
 ), mViewMode(
     0
+), mWindowMode(
+    1280, 720
+), mWindowTitle(
+    L"MinEngine Client"
+), mWindowStyle(
+    sf::Style::Default
 ), mTickLength(
     sf::microseconds(20000) // 50000
 ), mMaxTicksPerFrame(
@@ -267,6 +274,8 @@ void GameWindow::run() {
 
     init();
 
+    mFrameLength = sf::Time::Zero;
+
     while (isOpen()) {
         handleEvents();
 
@@ -290,6 +299,9 @@ void GameWindow::run() {
         }
 
         render();
+
+        sf::Time frameLength = clock.getElapsedTime();
+        mFrameLength = 0.2f * mFrameLength + 0.8f * frameLength;
 
         frameCount += 1;
 
@@ -331,9 +343,6 @@ static void mergeImages(const std::string &rgbFN, const std::string &alphaFN, sf
 }
 
 void GameWindow::init() {
-    sf::VideoMode videoMode(960, 540);
-    sf::String windowTitle(L"MinEngine Client");
-    sf::Uint32 windowStyle(sf::Style::Default);
     unsigned int contextAttribs = sf::ContextSettings::Default;
     //~ unsigned int contextAttribs = sf::ContextSettings::Core;
     sf::ContextSettings contextSettings(24,8, 8, 3,3, contextAttribs);
@@ -344,7 +353,7 @@ void GameWindow::init() {
                  mDesktopMode.width, mDesktopMode.height,
                  mDesktopMode.bitsPerPixel);
 
-    create(videoMode, windowTitle, windowStyle, contextSettings);
+    create(mWindowMode, mWindowTitle, mWindowStyle, contextSettings);
 
     const sf::ContextSettings &usedSettings = getSettings();
     sf::err() << "Using OpenGL " << usedSettings.majorVersion << '.' << usedSettings.minorVersion << ' ' <<
@@ -742,10 +751,10 @@ void GameWindow::render() {
     sf::Vector3f e = mPlayer.getEyePosition();
     sf::Vector2f o = mPlayer.getLook();
     snprintf(temp, sizeof(temp),
-             "%.2ffps (%.2ftps)\n"
+             "%.2ffps (%lldus/f) / %.2ftps\n"
              "%8.4f,%8.4f,%8.4f (%8.4f,%8.4f,%8.4f)\n"
              "%8.4f,%8.4f",
-             mFramesPerSecond, mTicksPerSecond,
+             mFramesPerSecond, mFrameLength.asMicroseconds(), mTicksPerSecond,
              p.x, p.y, p.z, e.x, e.y, e.z, o.x, o.y);
     mDebugText.setString(temp);
 

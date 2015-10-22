@@ -92,8 +92,8 @@ void main () {
     vec3 halfVec = normalize(eyeDir + lightDir);
 
     float diffFactor = max(0, dot(normal, lightDir));
-    //~ float specFactor = max(0, dot(normal, halfVec)); // Blinn-Phong
-    float specFactor = max(0, dot(eyeDir, reflect(lightDir, normal))); // True Phong
+    float specFactor = max(0, dot(normal, halfVec)); // Blinn-Phong
+    //~ float specFactor = max(0, dot(eyeDir, reflect(lightDir, normal))); // True Phong
     //~ float diffFactor = max(0, dot(normal, uLightDir));
     //~ float specFactor = max(0, dot(normal, normalize(eyeDir+uLightDir)));
 
