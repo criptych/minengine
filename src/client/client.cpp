@@ -688,61 +688,57 @@ void GameWindow::handleEvent(const sf::Event &event) {
 }
 
 void GameWindow::handleInput(const sf::Time &delta) {
-    if (mMouseLocked) {
-        sf::Vector2i mousePos = getMousePosition();
-        sf::Vector2i mouseDelta = mousePos - mWindowCenter;
-        mPlayer.look(sf::Vector2f(mouseDelta));
-        setMousePosition(mWindowCenter);
-    }
+    if (hasFocus()) {
+        if (mMouseLocked) {
+            sf::Vector2i mousePos = getMousePosition();
+            sf::Vector2i mouseDelta = mousePos - mWindowCenter;
+            mPlayer.look(sf::Vector2f(mouseDelta));
+            setMousePosition(mWindowCenter);
+        }
 
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-        mPlayer.look(sf::Vector2f(-180*delta.asSeconds(),0));
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-        mPlayer.look(sf::Vector2f(180*delta.asSeconds(),0));
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-        mPlayer.look(sf::Vector2f(0,-180*delta.asSeconds()));
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-        mPlayer.look(sf::Vector2f(0,180*delta.asSeconds()));
-    }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
+            mPlayer.look(sf::Vector2f(-180*delta.asSeconds(),0));
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
+            mPlayer.look(sf::Vector2f(180*delta.asSeconds(),0));
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
+            mPlayer.look(sf::Vector2f(0,-180*delta.asSeconds()));
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
+            mPlayer.look(sf::Vector2f(0,180*delta.asSeconds()));
+        }
 
-    sf::Vector3f move;
+        sf::Vector3f move;
 
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-        move.z -= 2*delta.asSeconds();
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-        move.z += 2*delta.asSeconds();
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-        move.x -= 2*delta.asSeconds();
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-        move.x += 2*delta.asSeconds();
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z)) {
-        move.y -= 2*delta.asSeconds();
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) {
-        move.y += 2*delta.asSeconds();
-    }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+            move.z -= 2*delta.asSeconds();
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+            move.z += 2*delta.asSeconds();
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+            move.x -= 2*delta.asSeconds();
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+            move.x += 2*delta.asSeconds();
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z)) {
+            move.y -= 2*delta.asSeconds();
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) {
+            move.y += 2*delta.asSeconds();
+        }
 
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-        move *= 0.25f;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+            move *= 0.25f;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
+            move *= 2.0f;
+        }
+
+        mPlayer.move(move);
     }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
-        move *= 2.0f;
-    }
-
-    //~ mLookDir.x = std::fmod(mLookDir.x + 180.0f, 360.0f) - 180.0f;
-    //~ mLookDir.y = std::min(89.9f, std::max(-89.9f, mLookDir.y));
-
-    //~ mPlayer.getCamera().setLook(mLookDir);
-    //~ mPlayer.getCamera().move(move, -mLookDir.x);
-
-    mPlayer.move(move);
 }
 
 void GameWindow::update(const sf::Time &delta) {
