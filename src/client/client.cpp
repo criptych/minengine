@@ -217,6 +217,8 @@ protected:
     void init();
     void quit(bool internal);
 
+    bool loadShaders();
+
     void handleEvents();
 
     void handleInput(const sf::Time &delta);
@@ -380,14 +382,7 @@ void GameWindow::init() {
     GLChecked(glEnable(GL_CULL_FACE));
     GLChecked(glClearColor(0.200,0.267,0.333,0.0));
 
-    mBlockShader.setAttribLocation("aVertex",   0);
-    mBlockShader.setAttribLocation("aNormal",   1);
-    mBlockShader.setAttribLocation("aTexCoord", 2);
-    mBlockShader.setAttribLocation("aColor",    3);
-
-    if (!mBlockShader.loadFromFile(
-        "shaders/default.330.vert", "shaders/default.330.frag"
-    )) {
+    if (!loadShaders()) {
         quit(true);
     }
 
@@ -471,6 +466,17 @@ void GameWindow::quit(bool internal) {
     }
 }
 
+bool GameWindow::loadShaders() {
+    mBlockShader.setAttribLocation("aVertex",   0);
+    mBlockShader.setAttribLocation("aNormal",   1);
+    mBlockShader.setAttribLocation("aTexCoord", 2);
+    mBlockShader.setAttribLocation("aColor",    3);
+
+    return mBlockShader.loadFromFile(
+        "shaders/default.330.vert", "shaders/default.330.frag"
+    );
+}
+
 void GameWindow::handleEvents() {
     sf::Event event;
 
@@ -543,6 +549,11 @@ void GameWindow::handleEvent(const sf::Event &event) {
 
                     mFullscreen = !mFullscreen;
 
+                    break;
+                }
+
+                case sf::Keyboard::R: {
+                    loadShaders();
                     break;
                 }
 
@@ -695,9 +706,6 @@ void GameWindow::handleInput(const sf::Time &delta) {
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
         mPlayer.look(sf::Vector2f(0,180*delta.asSeconds()));
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {
-        mPlayer.setLook(sf::Vector2f(0,0));
     }
 
     sf::Vector3f move;
