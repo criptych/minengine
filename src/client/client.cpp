@@ -169,6 +169,8 @@ class GameWindow : protected sf::RenderWindow {
     sf::Font mFont;
     sf::Text mDebugText;
 
+    sf::Time mMinFrameLength;
+    sf::Time mFrameDelay;
     sf::Time mTickLength;
     sf::Time mPlayTime;
     unsigned int mMaxTicksPerFrame;
@@ -249,6 +251,10 @@ GameWindow::GameWindow(
     L"MinEngine Client"
 ), mWindowStyle(
     sf::Style::Default
+), mMinFrameLength(
+    sf::microseconds(4167) // ~240fps
+), mFrameDelay(
+    //~ sf::microseconds(1000)
 ), mTickLength(
     sf::microseconds(20000) // 50000
 ), mMaxTicksPerFrame(
@@ -304,6 +310,7 @@ void GameWindow::run() {
 
         sf::Time frameLength = clock.getElapsedTime();
         mFrameLength = 0.2f * mFrameLength + 0.8f * frameLength;
+        mFrameDelay = 0.5f * mFrameDelay + 0.5f * (mMinFrameLength - frameLength);
 
         frameCount += 1;
 
@@ -315,6 +322,8 @@ void GameWindow::run() {
         }
 
         display();
+
+        sf::sleep(mFrameDelay);
     }
 
     quit(true);
@@ -755,10 +764,10 @@ void GameWindow::render() {
     sf::Vector3f e = mPlayer.getEyePosition();
     sf::Vector2f o = mPlayer.getLook();
     snprintf(temp, sizeof(temp),
-             "%.2ffps (%lldus/f) / %.2ftps\n"
+             "%.2ffps (%lldus/f, %lldus delay) / %.2ftps\n"
              "%8.4f,%8.4f,%8.4f (%8.4f,%8.4f,%8.4f)\n"
              "%8.4f,%8.4f",
-             mFramesPerSecond, mFrameLength.asMicroseconds(), mTicksPerSecond,
+             mFramesPerSecond, mFrameLength.asMicroseconds(), mFrameDelay.asMicroseconds(), mTicksPerSecond,
              p.x, p.y, p.z, e.x, e.y, e.z, o.x, o.y);
     mDebugText.setString(temp);
 
