@@ -23,6 +23,12 @@ ADD_SUBDIRECTORY(lib/glew-1.13.0)
 
 SET(ENGINE_SRCS
     src/engine/engine.cpp
+    src/engine/entity.cpp
+    src/engine/model.cpp
+    src/engine/network.cpp
+    src/engine/physics.cpp
+    src/engine/types.cpp
+    src/engine/world.cpp
 )
 
 SET(CLIENT_SRCS

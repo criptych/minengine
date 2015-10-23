@@ -2,22 +2,33 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __ENGINE_HPP__
-#define __ENGINE_HPP__ 1
+#ifndef __ENTITY_HPP__
+#define __ENTITY_HPP__ 1
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "entity.hpp"
-#include "math.hpp"
-#include "model.hpp"
-#include "network.hpp"
-#include "physics.hpp"
 #include "types.hpp"
-#include "world.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#endif // __ENGINE_HPP__
+class Entity {
+    EntityID mID;
+    Position mPosition;
+    Velocity mVelocity;
+    Orientation mOrientation;
+
+public:
+    EntityID getID() const;
+    const Position &getPosition() const;
+    const Velocity &getVelocity() const;
+    const Orientation &getOrientation() const;
+
+    void update();
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+#endif // __ENTITY_HPP__
 
 ////////////////////////////////////////////////////////////////////////////////
 //  EOF
