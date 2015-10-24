@@ -499,24 +499,28 @@ bool GameWindow::loadTextures() {
     }
     mDiffMap.setSmooth(true);
     mDiffMap.setRepeated(true);
+    mDiffMap.generateMipmap();
 
     if (!mergeImages("textures/Scifi_Hex_Wall_specular.jpg", "textures/Scifi_Hex_Wall_glossiness.jpg", mSpecMap)) {
         return false;
     }
     mSpecMap.setSmooth(true);
     mSpecMap.setRepeated(true);
+    mSpecMap.generateMipmap();
 
     if (!mergeImages("textures/Scifi_Hex_Wall_glow.jpg", "textures/Scifi_Hex_Wall_Ambient_Occlusion.jpg", mGlowMap)) {
         return false;
     }
     mGlowMap.setSmooth(true);
     mGlowMap.setRepeated(true);
+    mGlowMap.generateMipmap();
 
     if (!mergeImages("textures/Scifi_Hex_Wall_normal.jpg", "textures/Scifi_Hex_Wall_Displacement.jpg", mBumpMap)) {
         return false;
     }
     mBumpMap.setSmooth(true);
     mBumpMap.setRepeated(true);
+    mBumpMap.generateMipmap();
 
     return true;
 }
