@@ -223,6 +223,7 @@ protected:
     void quit(bool internal);
 
     bool loadShaders();
+    bool loadTextures();
 
     void handleEvents();
 
@@ -347,10 +348,16 @@ void GameWindow::quit() {
     quit(false);
 }
 
-static void mergeImages(const std::string &rgbFN, const std::string &alphaFN, sf::Texture &texture) {
+static bool mergeImages(const std::string &rgbFN, const std::string &alphaFN, sf::Texture &texture) {
     sf::Image rgbImage, alphaImage;
-    rgbImage.loadFromFile(rgbFN);
-    alphaImage.loadFromFile(alphaFN);
+
+    if (!rgbImage.loadFromFile(rgbFN)) {
+        return false;
+    }
+
+    if (!alphaImage.loadFromFile(alphaFN)) {
+        return false;
+    }
 
     sf::Vector2u size(rgbImage.getSize()), p;
 
@@ -359,13 +366,16 @@ static void mergeImages(const std::string &rgbFN, const std::string &alphaFN, sf
         for (p.y = 0; p.y < size.y; p.y++) {
             for (p.x = 0; p.x < size.x; p.x++) {
                 sf::Color c = rgbImage.getPixel(p.x, p.y);
-                c.a = alphaImage.getPixel(p.x, p.y).r;
+                sf::Color a = alphaImage.getPixel(p.x, p.y);
+                c.a = (a.r + a.g + a.b) / 3;
                 rgbImage.setPixel(p.x, p.y, c);
             }
         }
     }
 
     texture.loadFromImage(rgbImage);
+
+    return true;
 }
 
 void GameWindow::init() {
@@ -410,6 +420,10 @@ void GameWindow::init() {
         quit(true);
     }
 
+    if (!loadTextures()) {
+        quit(true);
+    }
+
     sf::Image white;
     white.create(16, 16, sf::Color::White);
     mWhiteTex.loadFromImage(white);
@@ -421,29 +435,6 @@ void GameWindow::init() {
     sf::Image clear;
     clear.create(16, 16, sf::Color::Transparent);
     mClearTex.loadFromImage(clear);
-
-    mDiffMap.loadFromFile("textures/Scifi_Hex_Wall_Albedo.jpg");
-    mDiffMap.setSmooth(true);
-    mDiffMap.setRepeated(true);
-
-    //~ mSpecMap.loadFromFile("textures/Scifi_Hex_Wall_specular.jpg");
-    mergeImages("textures/Scifi_Hex_Wall_specular.jpg", "textures/Scifi_Hex_Wall_glossiness.jpg", mSpecMap);
-    mSpecMap.setSmooth(true);
-    mSpecMap.setRepeated(true);
-
-    mGlowMap.setSmooth(true);
-    mGlowMap.setRepeated(true);
-
-    //~ mBumpMap.loadFromFile("textures/Scifi_Hex_Wall_normal.jpg");
-    mergeImages("textures/Scifi_Hex_Wall_normal.jpg", "textures/Scifi_Hex_Wall_Displacement.jpg", mBumpMap);
-    mBumpMap.setSmooth(true);
-    mBumpMap.setRepeated(true);
-
-    mBlockShader.setParameter("uResolution", sf::Vector2f(getSize()));
-    mBlockShader.setParameter("uDiffMap", mDiffMap);
-    mBlockShader.setParameter("uSpecMap", mSpecMap);
-    mBlockShader.setParameter("uGlowMap", mGlowMap);
-    mBlockShader.setParameter("uBumpMap", mBumpMap);
 
     //~ mCubeModel.makeBox(sf::Vector3f(0.5f,0.5f,0.5f), sf::Vector3f(0.0f,0.5f,0.0f));
     //~ mCubeModel.setColor(sf::Color(0xaa,0x88,0x66));
@@ -499,6 +490,36 @@ bool GameWindow::loadShaders() {
     return mBlockShader.loadFromFile(
         "shaders/default.330.vert", "shaders/default.330.frag"
     );
+}
+
+bool GameWindow::loadTextures() {
+    if (!mDiffMap.loadFromFile("textures/Scifi_Hex_Wall_Albedo.jpg")) {
+        return false;
+    }
+    mDiffMap.setSmooth(true);
+    mDiffMap.setRepeated(true);
+
+    //~ mSpecMap.loadFromFile("textures/Scifi_Hex_Wall_specular.jpg");
+    if (!mergeImages("textures/Scifi_Hex_Wall_specular.jpg", "textures/Scifi_Hex_Wall_glossiness.jpg", mSpecMap)) {
+        return false;
+    }
+    mSpecMap.setSmooth(true);
+    mSpecMap.setRepeated(true);
+
+    if (!mergeImages("textures/Scifi_Hex_Wall_glow.jpg", "textures/Scifi_Hex_Wall_Ambient_Occlusion.jpg", mGlowMap)) {
+        return false;
+    }
+    mGlowMap.setSmooth(true);
+    mGlowMap.setRepeated(true);
+
+    //~ mBumpMap.loadFromFile("textures/Scifi_Hex_Wall_normal.jpg");
+    if (!mergeImages("textures/Scifi_Hex_Wall_normal.jpg", "textures/Scifi_Hex_Wall_Displacement.jpg", mBumpMap)) {
+        return false;
+    }
+    mBumpMap.setSmooth(true);
+    mBumpMap.setRepeated(true);
+
+    return true;
 }
 
 void GameWindow::handleEvents() {
@@ -577,7 +598,11 @@ void GameWindow::handleEvent(const sf::Event &event) {
                 }
 
                 case sf::Keyboard::R: {
-                    loadShaders();
+                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                        loadTextures();
+                    } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
+                        loadShaders();
+                    }
                     break;
                 }
 
