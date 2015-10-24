@@ -352,19 +352,20 @@ static void mergeImages(const std::string &rgbFN, const std::string &alphaFN, sf
     rgbImage.loadFromFile(rgbFN);
     alphaImage.loadFromFile(alphaFN);
 
-    if (rgbImage.getSize() == alphaImage.getSize()) {
+    sf::Vector2u size(rgbImage.getSize()), p;
+
+    if (size == alphaImage.getSize()) {
         sf::err() << "merging \"" << rgbFN << "\" and \"" << alphaFN << "\"...\n";
-        sf::Vector2u size(rgbImage.getSize()), p;
         for (p.y = 0; p.y < size.y; p.y++) {
             for (p.x = 0; p.x < size.x; p.x++) {
-                sf::Color c = alphaImage.getPixel(p.x, p.y);
-                c.a = rgbImage.getPixel(p.x, p.y).r;
-                alphaImage.setPixel(p.x, p.y, c);
+                sf::Color c = rgbImage.getPixel(p.x, p.y);
+                c.a = alphaImage.getPixel(p.x, p.y).r;
+                rgbImage.setPixel(p.x, p.y, c);
             }
         }
     }
 
-    texture.loadFromImage(alphaImage);
+    texture.loadFromImage(rgbImage);
 }
 
 void GameWindow::init() {
