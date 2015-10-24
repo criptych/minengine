@@ -165,6 +165,7 @@ class GameWindow : protected sf::RenderWindow {
     sf::String mWindowTitle;
     sf::Uint32 mWindowStyle;
     sf::Vector2i mWindowCenter;
+    sf::ContextSettings mContextSettings;
 
     sf::Font mFont;
     sf::Text mDebugText;
@@ -231,6 +232,8 @@ protected:
 
     void setMousePosition(const sf::Vector2i &position);
     sf::Vector2i getMousePosition() const;
+    void lockMouse();
+    void unlockMouse();
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -239,7 +242,7 @@ GameWindow::GameWindow(
 ): mFullscreen(
     false
 ), mMouseLocked(
-    true
+    false
 ), mAllowQuit(
     true
 ), mPaused(
@@ -376,9 +379,13 @@ static bool mergeImages(const std::string &rgbFN, const std::string &alphaFN, sf
 }
 
 void GameWindow::init() {
-    unsigned int contextAttribs = sf::ContextSettings::Default;
-    //~ unsigned int contextAttribs = sf::ContextSettings::Core;
-    sf::ContextSettings contextSettings(24,8, 8, 3,3, contextAttribs);
+    mContextSettings = sf::ContextSettings(
+        24, 8,  // depth and stencil bits
+        8,      // antialiasing level
+        3,3,    // OpenGL version (major, minor)
+        sf::ContextSettings::Default
+        //~ sf::ContextSettings::Core
+    );
 
     mDesktopMode = sf::VideoMode::getDesktopMode();
 
@@ -386,7 +393,7 @@ void GameWindow::init() {
                  mDesktopMode.width, mDesktopMode.height,
                  mDesktopMode.bitsPerPixel);
 
-    create(mWindowMode, mWindowTitle, mWindowStyle, contextSettings);
+    create(mWindowMode, mWindowTitle, mWindowStyle, mContextSettings);
 
     const sf::ContextSettings &usedSettings = getSettings();
     sf::err() << "Using OpenGL " << usedSettings.majorVersion << '.' << usedSettings.minorVersion << ' ' <<
@@ -403,8 +410,6 @@ void GameWindow::init() {
 
     sf::Vector3f eye = mPlayer.getEyePosition();
     sf::err() << "mPlayer.getEyePosition() == " << eye.x << ',' << eye.y << ',' << eye.z << '\n';
-
-    mWindowCenter = sf::Vector2i(getSize()) / 2;
 
     GLChecked(glewInit());
 
@@ -463,7 +468,7 @@ void GameWindow::init() {
     mPlane.setModel(mPlaneModel);
     mPlane.setShader(mBlockShader);
 
-    setMousePosition(mWindowCenter);
+    lockMouse();
 }
 
 void GameWindow::quit(bool internal) {
@@ -533,6 +538,7 @@ void GameWindow::handleEvent(const sf::Event &event) {
             if (size.y > 0) {
                 mPlayer.getCamera().setAspect(size.x / size.y);
             }
+            mWindowCenter = sf::Vector2i(size) / 2;
             break;
         }
 
@@ -557,9 +563,10 @@ void GameWindow::handleEvent(const sf::Event &event) {
                 }
 
                 case sf::Keyboard::Tab: {
-                    mMouseLocked = !mMouseLocked;
                     if (mMouseLocked) {
-                        setMousePosition(mWindowCenter);
+                        unlockMouse();
+                    } else {
+                        lockMouse();
                     }
                     break;
                 }
@@ -575,15 +582,25 @@ void GameWindow::handleEvent(const sf::Event &event) {
                 }
 
                 case sf::Keyboard::F11: {
+                    bool wasLocked = mMouseLocked;
+
+                    if (wasLocked) {
+                        unlockMouse();
+                    }
+
                     if (mFullscreen) {
-                        create(mWindowMode, mWindowTitle, mWindowStyle, getSettings());
+                        create(mWindowMode, mWindowTitle, mWindowStyle, mContextSettings);
                     } else {
-                        create(mDesktopMode, mWindowTitle, mWindowStyle | sf::Style::Fullscreen, getSettings());
+                        create(mDesktopMode, mWindowTitle, mWindowStyle | sf::Style::Fullscreen, mContextSettings);
                     }
 
                     GLChecked(glClearColor(0.200,0.267,0.333,0.0));
 
                     mFullscreen = !mFullscreen;
+
+                    if (wasLocked) {
+                        lockMouse();
+                    }
 
                     break;
                 }
@@ -933,6 +950,16 @@ void GameWindow::setMousePosition(const sf::Vector2i &position) {
 
 sf::Vector2i GameWindow::getMousePosition() const {
     return sf::Mouse::getPosition(*this);
+}
+
+void GameWindow::lockMouse() {
+    mMouseLocked = true;
+    mWindowCenter = sf::Vector2i(getSize()) / 2;
+    setMousePosition(mWindowCenter);
+}
+
+void GameWindow::unlockMouse() {
+    mMouseLocked = false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
