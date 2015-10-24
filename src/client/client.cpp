@@ -177,6 +177,9 @@ class GameWindow : protected sf::RenderWindow {
 
     float mTicksPerSecond;
     float mFramesPerSecond;
+    sf::Time mInputLength;
+    sf::Time mUpdateLength;
+    sf::Time mRenderLength;
     sf::Time mFrameLength;
 
     Player mPlayer;
@@ -285,11 +288,13 @@ void GameWindow::run() {
     mFrameLength = sf::Time::Zero;
 
     while (isOpen()) {
-        handleEvents();
-
         sf::Time delta = clock.restart();
 
+        handleEvents();
+
         handleInput(delta);
+
+        sf::Time inputTime = clock.getElapsedTime();
 
         tickAccum += delta;
         fpsAccum += delta;
@@ -306,11 +311,20 @@ void GameWindow::run() {
             }
         }
 
+        sf::Time updateTime = clock.getElapsedTime();
+
         render();
 
-        sf::Time frameLength = clock.getElapsedTime();
-        mFrameLength = 0.2f * mFrameLength + 0.8f * frameLength;
-        mFrameDelay = 0.5f * mFrameDelay + 0.5f * (mMinFrameLength - frameLength);
+        sf::Time renderTime = clock.getElapsedTime();
+
+        static const float lastFrameRatio = 0.2f;
+        static const float nextFrameRatio = 0.8f;
+
+        mInputLength = lastFrameRatio * mInputLength + nextFrameRatio * inputTime;
+        mUpdateLength = lastFrameRatio * mUpdateLength + nextFrameRatio * (updateTime - inputTime);
+        mRenderLength = lastFrameRatio * mRenderLength + nextFrameRatio * (renderTime - updateTime);
+        mFrameLength = lastFrameRatio * mFrameLength + nextFrameRatio * renderTime;
+        mFrameDelay = lastFrameRatio * mFrameDelay + nextFrameRatio * (mMinFrameLength - renderTime);
 
         frameCount += 1;
 
@@ -866,6 +880,32 @@ void GameWindow::render() {
 
     pushGLStates();
 
+    float frameLength = mFrameLength.asSeconds();
+    float inputFrac = mInputLength.asSeconds() / frameLength;
+    float updateFrac = mUpdateLength.asSeconds() / frameLength;
+    float renderFrac = mRenderLength.asSeconds() / frameLength;
+    float idleFrac = 1.0f - inputFrac - updateFrac - renderFrac;
+
+    sf::RectangleShape rect(sf::Vector2f(32, 32));
+    rect.setFillColor(sf::Color::White);
+    draw(rect);
+
+    rect.setPosition(sf::Vector2f(0, 32.0f * (idleFrac)));
+    rect.setSize(sf::Vector2f(32, 32.0f * (inputFrac + updateFrac + renderFrac)));
+    rect.setFillColor(sf::Color::Red);
+    draw(rect);
+
+    rect.setPosition(sf::Vector2f(0, 32.0f * (idleFrac + renderFrac)));
+    rect.setSize(sf::Vector2f(32, 32.0f * (inputFrac + updateFrac)));
+    rect.setFillColor(sf::Color::Green);
+    draw(rect);
+
+    rect.setPosition(sf::Vector2f(0, 32.0f * (idleFrac + renderFrac + updateFrac)));
+    rect.setSize(sf::Vector2f(32, 32.0f * (inputFrac)));
+    rect.setFillColor(sf::Color::Blue);
+    draw(rect);
+
+    mDebugText.setPosition(sf::Vector2f(32, 0));
     draw(mDebugText);
 
     popGLStates();
