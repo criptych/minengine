@@ -530,7 +530,9 @@ void GameWindow::handleEvent(const sf::Event &event) {
             sf::Vector2f size(getSize());
             mBlockShader.setParameter("uResolution", size);
             GLChecked(glViewport(0, 0, size.x, size.y));
-            mPlayer.getCamera().setAspect(size.x / size.y);
+            if (size.y > 0) {
+                mPlayer.getCamera().setAspect(size.x / size.y);
+            }
             break;
         }
 
