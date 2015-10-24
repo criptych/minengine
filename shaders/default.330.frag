@@ -10,8 +10,14 @@ uniform vec3 uEyePos = vec3(0,0,5);
 
 uniform vec3 uLightDir  = vec3(0,1,0);
 uniform vec3 uLightPos  = vec3(-4,4,4);
+//~ uniform vec3 uLightAmbt = vec3(0.2, 0.2, 0.2);
 uniform vec3 uLightAmbt = vec3(0.5, 0.5, 0.5);
+//~ uniform vec3 uLightAmbt = vec3(0.8, 0.8, 0.8);
+//~ uniform vec3 uLightAmbt = vec3(1.0, 1.0, 1.0);
+//~ uniform vec3 uLightDiff = vec3(0.2, 0.2, 0.2);
 uniform vec3 uLightDiff = vec3(0.5, 0.5, 0.5);
+//~ uniform vec3 uLightDiff = vec3(0.8, 0.8, 0.8);
+//~ uniform vec3 uLightDiff = vec3(1.0, 1.0, 1.0);
 uniform vec3 uLightSpec = vec3(1.0, 1.0, 1.0);
 
 uniform sampler2D uDiffMap; // diffuse color (albedo)
@@ -51,24 +57,6 @@ mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
     return mat3( T * invmax, B * invmax, N );
 }
 
-vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
-{
-    // assume N, the interpolated vertex normal and
-    // V, the view vector (vertex to eye)
-    vec3 map = texture2D( uBumpMap, texcoord ).xyz;/*
-#ifdef WITH_NORMALMAP_UNSIGNED
-    map = map * 255./127. - 128./127.;
-#endif
-#ifdef WITH_NORMALMAP_2CHANNEL
-    map.z = sqrt( 1. - dot( map.xy, map.xy ) );
-#endif
-#ifdef WITH_NORMALMAP_GREEN_UP
-    map.y = -map.y;
-#endif*/
-    mat3 TBN = cotangent_frame( N, -V, texcoord );
-    return normalize( TBN * map );
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 void main () {
@@ -81,20 +69,18 @@ void main () {
 
     mat3 TBN = cotangent_frame( normal, -eyeDir, texCoord );
     float scale = uBumpScaleBias.x * height - uBumpScaleBias.y;
-    //~ texCoord += scale * normalize(TBN * eyeDir).xy;
+    texCoord += scale * normalize(TBN * eyeDir).xy;
 
-    //~ bumpTexVal = texture2D(uBumpMap, texCoord);
-    //~ normal = normalize(normal + (bumpTexVal.xzy * 2 - 1));
-    //~ normal = perturb_normal( normal, eyeDir, vTexCoord );
-
-    normal = normalize(TBN * (texture2D(uBumpMap, texCoord).xyz * 2 - 1));
+    vec3 bumpNormal = texture2D(uBumpMap, texCoord).xyz * 2 - 1;
+    normal = normalize(TBN * bumpNormal);
+    //~ normal = bumpNormal;
 
     vec3 halfVec = normalize(eyeDir + lightDir);
 
     float diffFactor = max(0, dot(normal, lightDir));
+    //~ float diffFactor = max(0, dot(normal, uLightDir));
     float specFactor = max(0, dot(normal, halfVec)); // Blinn-Phong
     //~ float specFactor = max(0, dot(eyeDir, reflect(lightDir, normal))); // True Phong
-    //~ float diffFactor = max(0, dot(normal, uLightDir));
     //~ float specFactor = max(0, dot(normal, normalize(eyeDir+uLightDir)));
 
     vec4 diffTexCol = texture2D(uDiffMap, texCoord); //vec4(1.0,1.0,1.0,1.0);
@@ -113,7 +99,7 @@ void main () {
 
     fColor = vec4(ambtColor, diffTexCol.a);
     fColor.rgb += diffColor * diffFactor;
-    fColor.rgb += specColor * pow(specFactor, specPower);
+    fColor.rgb += specColor * pow(specFactor, specPower) * specTexCol.a;
     fColor.rgb += glowColor;
 
     //~ fColor.rgb = 0.5 + 0.5 * normal;
@@ -122,5 +108,16 @@ void main () {
     //~ fColor.rgb = vec3(diffFactor);
     //~ fColor.r = diffFactor;
 
+    //~ fColor.rgb = normal * 0.5 + 0.5;
+    //~ fColor.rgb = vec3(diffFactor);
+
+    //~ fColor.rgb = vec3(texCoord, 0);
+    //~ fColor.rgb = vec3(vTexCoord, 0);
+    //~ fColor.rgb = bumpNormal * 0.5 + 0.5;
+
+    //~ fColor.rgb = vec3(glowTexCol.a);
+
     //~ fColor.rg = gl_FragCoord.xy / uResolution;
+
+    //~ fColor = vec4(vec3(gl_FragDepth), 1);
 }
