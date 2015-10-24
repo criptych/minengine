@@ -181,6 +181,7 @@ class GameWindow : protected sf::RenderWindow {
     sf::Time mInputLength;
     sf::Time mUpdateLength;
     sf::Time mRenderLength;
+    sf::Time mIdleLength;
     sf::Time mFrameLength;
 
     Player mPlayer;
@@ -318,14 +319,20 @@ void GameWindow::run() {
 
         sf::Time renderTime = clock.getElapsedTime();
 
-        static const float lastFrameRatio = 0.2f;
-        static const float nextFrameRatio = 0.8f;
+        display();
+
+        sf::sleep(mFrameDelay);
+
+        sf::Time endTime = clock.getElapsedTime();
+
+        static const float lastFrameRatio = 0.4f;
+        static const float nextFrameRatio = 0.6f;
 
         mInputLength = lastFrameRatio * mInputLength + nextFrameRatio * inputTime;
         mUpdateLength = lastFrameRatio * mUpdateLength + nextFrameRatio * (updateTime - inputTime);
         mRenderLength = lastFrameRatio * mRenderLength + nextFrameRatio * (renderTime - updateTime);
-        mFrameLength = lastFrameRatio * mFrameLength + nextFrameRatio * renderTime;
-        mFrameDelay = lastFrameRatio * mFrameDelay + nextFrameRatio * (mMinFrameLength - renderTime);
+        mIdleLength = lastFrameRatio * mIdleLength + nextFrameRatio * (endTime - renderTime);
+        mFrameLength = lastFrameRatio * mFrameLength + nextFrameRatio * endTime;
 
         frameCount += 1;
 
@@ -334,11 +341,9 @@ void GameWindow::run() {
             mFramesPerSecond = float(frameCount) / fpsAccum.asSeconds();
             tickCount = frameCount = 0;
             fpsAccum = sf::Time::Zero;
+
+            mFrameDelay = mMinFrameLength - mInputLength - mUpdateLength - mRenderLength;
         }
-
-        display();
-
-        sf::sleep(mFrameDelay);
     }
 
     quit(true);
