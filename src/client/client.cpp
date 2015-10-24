@@ -198,9 +198,6 @@ class GameWindow : protected sf::RenderWindow {
     sf::Texture mBlackTex;
     sf::Texture mClearTex;
 
-    //~ Model mCubeModel;
-    //~ ClientModel mCube;
-
     Model mBallModel;
     ClientModel mBall;
 
@@ -436,17 +433,11 @@ void GameWindow::init() {
     clear.create(16, 16, sf::Color::Transparent);
     mClearTex.loadFromImage(clear);
 
-    //~ mCubeModel.makeBox(sf::Vector3f(0.5f,0.5f,0.5f), sf::Vector3f(0.0f,0.5f,0.0f));
-    //~ mCubeModel.setColor(sf::Color(0xaa,0x88,0x66));
-    //~ mCube.setModel(mCubeModel);
-    //~ mCube.setShader(mBlockShader);
-
     mBallModel.makeBall(0.5f, 8, 16);
     mBall.setModel(mBallModel);
     mBall.setShader(mBlockShader);
 
     mPlaneModel.setPrimitive(GL_TRIANGLES);
-    //~ mPlaneModel.makeBox(sf::Vector3f(50.0f,0.00f,50.0f));
 
     sf::Vector3f size(2, 0, 2), pos(0, 0, 0);
 
@@ -499,7 +490,6 @@ bool GameWindow::loadTextures() {
     mDiffMap.setSmooth(true);
     mDiffMap.setRepeated(true);
 
-    //~ mSpecMap.loadFromFile("textures/Scifi_Hex_Wall_specular.jpg");
     if (!mergeImages("textures/Scifi_Hex_Wall_specular.jpg", "textures/Scifi_Hex_Wall_glossiness.jpg", mSpecMap)) {
         return false;
     }
@@ -512,7 +502,6 @@ bool GameWindow::loadTextures() {
     mGlowMap.setSmooth(true);
     mGlowMap.setRepeated(true);
 
-    //~ mBumpMap.loadFromFile("textures/Scifi_Hex_Wall_normal.jpg");
     if (!mergeImages("textures/Scifi_Hex_Wall_normal.jpg", "textures/Scifi_Hex_Wall_Displacement.jpg", mBumpMap)) {
         return false;
     }
@@ -883,11 +872,6 @@ void GameWindow::render() {
     mBlockShader.setParameter("uGlowMap", mGlowMap);
     mBlockShader.setParameter("uBumpMap", mBumpMap);
     mPlane.render();
-
-    //~ mCube.render();
-    //~ modelViewTransform.translate(sf::Vector3f(1.0f,0.0f,0.0f));
-    //~ mBlockShader.setParameter("uViewMatrix", modelViewTransform);
-    //~ mCube.render();
 
     ////////////////////////////////////////////////////////////
     //  end 3D
