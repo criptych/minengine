@@ -257,7 +257,11 @@ GameWindow::GameWindow(
 ), mWindowStyle(
     sf::Style::Default
 ), mMinFrameLength(
+    //~ sf::microseconds(2083) // ~480fps
     sf::microseconds(4167) // ~240fps
+    //~ sf::microseconds(8333) // ~120fps
+    //~ sf::microseconds(16667) // ~60fps
+    //~ sf::microseconds(33333) // ~30fps
 ), mFrameDelay(
     //~ sf::microseconds(1000)
 ), mTickLength(
