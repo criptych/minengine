@@ -388,8 +388,8 @@ void GameWindow::init() {
         24, 8,  // depth and stencil bits
         8,      // antialiasing level
         3,3,    // OpenGL version (major, minor)
-        sf::ContextSettings::Default
-        //~ sf::ContextSettings::Core
+        //~ sf::ContextSettings::Default
+        sf::ContextSettings::Core
     );
 
     mDesktopMode = sf::VideoMode::getDesktopMode();
@@ -416,6 +416,7 @@ void GameWindow::init() {
     sf::Vector3f eye = mPlayer.getEyePosition();
     sf::err() << "mPlayer.getEyePosition() == " << eye.x << ',' << eye.y << ',' << eye.z << '\n';
 
+    glewExperimental = true;
     GLChecked(glewInit());
 
     GLChecked(glEnable(GL_DEPTH_TEST));
@@ -916,7 +917,7 @@ void GameWindow::render() {
 
     // draw 2D overlay
 
-    pushGLStates();
+    //~ pushGLStates();
 
     float frameLength = mFrameLength.asSeconds();
     float inputFrac = mInputLength.asSeconds() / frameLength;
@@ -946,7 +947,7 @@ void GameWindow::render() {
     mDebugText.setPosition(sf::Vector2f(32, 0));
     draw(mDebugText);
 
-    popGLStates();
+    //~ popGLStates();
 
     ////////////////////////////////////////////////////////////
     //  end 2D

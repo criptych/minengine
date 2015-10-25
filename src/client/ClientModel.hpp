@@ -16,6 +16,7 @@
 class ClientModel {
     const Model *mModel;
     const sf::Shader *mShader;
+    mutable GLuint mVAO;
     mutable GLuint mVBO;
     mutable GLuint mIBO;
     mutable GLenum mPrimitive;
@@ -38,8 +39,8 @@ public:
     void render() const;
 
 private:
-    void createVBO() const;
-    void destroyVBO();
+    void createVertexArrays() const;
+    void destroyVertexArrays();
 };
 
 ////////////////////////////////////////////////////////////////////////////////

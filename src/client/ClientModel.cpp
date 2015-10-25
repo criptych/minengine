@@ -27,11 +27,11 @@ ClientModel::ClientModel(
 }
 
 ClientModel::~ClientModel() {
-    destroyVBO();
+    destroyVertexArrays();
 }
 
 void ClientModel::setModel(const Model *model) {
-    destroyVBO();
+    destroyVertexArrays();
     mModel = model;
     if (mModel) {
         mPrimitive = mModel->getPrimitive();
@@ -60,9 +60,9 @@ const sf::Shader *ClientModel::getShader() const {
 
 void ClientModel::render() const {
     if (mModel) {
-        if (mVBO == 0) {
-            createVBO();
-            if (mVBO == 0) {
+        if (mVAO == 0) {
+            createVertexArrays();
+            if (mVAO == 0) {
                 return;
             }
         }
@@ -70,6 +70,8 @@ void ClientModel::render() const {
         if (mShader) {
             sf::Shader::bind(mShader);
         }
+
+        GLChecked(glBindVertexArray(mVAO));
 
         GLChecked(glBindBuffer(GL_ARRAY_BUFFER, mVBO));
 
@@ -79,15 +81,15 @@ void ClientModel::render() const {
 
 #define SizeAndOffset(T, F) sizeof(T), reinterpret_cast<const void*>(offsetof(T, F))
 
-        GLChecked(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, SizeAndOffset(Vertex, position)));
-        GLChecked(glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE,  SizeAndOffset(Vertex, normal)));
-        GLChecked(glVertexAttribPointer(2, 2, GL_SHORT, GL_TRUE,  SizeAndOffset(Vertex, texCoord)));
-        GLChecked(glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, SizeAndOffset(Vertex, color)));
-
         GLChecked(glEnableVertexAttribArray(0));
         GLChecked(glEnableVertexAttribArray(1));
         GLChecked(glEnableVertexAttribArray(2));
         GLChecked(glEnableVertexAttribArray(3));
+
+        GLChecked(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, SizeAndOffset(Vertex, position)));
+        GLChecked(glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE,  SizeAndOffset(Vertex, normal)));
+        GLChecked(glVertexAttribPointer(2, 2, GL_SHORT, GL_TRUE,  SizeAndOffset(Vertex, texCoord)));
+        GLChecked(glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, SizeAndOffset(Vertex, color)));
 
         //~ GLChecked(glVertexPointer(3, GL_FLOAT, SizeAndOffset(Vertex, position)));
         //~ GLChecked(glNormalPointer(GL_FLOAT, SizeAndOffset(Vertex, normal)));
@@ -116,13 +118,15 @@ void ClientModel::render() const {
             GLChecked(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
         }
 
+        GLChecked(glBindVertexArray(0));
+
         if (mShader) {
             sf::Shader::bind(nullptr);
         }
     }
 }
 
-void ClientModel::createVBO() const {
+void ClientModel::createVertexArrays() const {
     if (mModel) {
         size_t numVerts = mModel->getVertices().size();
         size_t numIndex = mModel->getIndices().size();
@@ -136,8 +140,26 @@ void ClientModel::createVBO() const {
         sf::err() << "numVerts = " << numVerts;
         sf::err() << ", numIndex = " << numIndex;
 
+        if (!mVAO) {
+            if (!glGenVertexArrays) {
+                sf::err() << "\n\nglGenVertexArrays == NULL!\n";
+            }
+
+            GLChecked(glGenVertexArrays(1, &mVAO));
+
+            sf::err() << ", VAO = " << mVAO;
+
+            if (!mVAO) {
+                return;
+            }
+        }
+
+        GLChecked(glBindVertexArray(mVAO));
+
         if (!mVBO) {
             GLChecked(glGenBuffers(1, &mVBO));
+
+            sf::err() << ", VBO = " << mVBO;
 
             if (!mVBO) {
                 return;
@@ -152,6 +174,9 @@ void ClientModel::createVBO() const {
 
             if (!mIBO) {
                 GLChecked(glGenBuffers(1, &mIBO));
+
+                sf::err() << ", IBO = " << mIBO;
+
                 if (!mIBO) {
                     return;
                 }
@@ -179,11 +204,18 @@ void ClientModel::createVBO() const {
         GLChecked(glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
         GLChecked(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
+        GLChecked(glBindVertexArray(0));
+
         sf::err() << std::endl;
     }
 }
 
-void ClientModel::destroyVBO() {
+void ClientModel::destroyVertexArrays() {
+    if (mVAO) {
+        GLChecked(glDeleteVertexArrays(1, &mVAO));
+        mVAO = 0;
+    }
+
     if (mVBO) {
         GLChecked(glDeleteBuffers(1, &mVBO));
         mVBO = 0;
