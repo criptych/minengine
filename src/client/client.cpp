@@ -200,11 +200,19 @@ class GameWindow : protected sf::RenderWindow {
     sf::Texture mBlackTex;
     sf::Texture mClearTex;
 
+    sf::Texture mCubeDiffMap;
+    sf::Texture mCubeSpecMap;
+    sf::Texture mCubeGlowMap;
+    sf::Texture mCubeBumpMap;
+
     Model mBallModel;
     ClientModel mBall;
 
     Model mPlaneModel;
     ClientModel mPlane;
+
+    Model mCubeModel;
+    ClientModel mCube;
 
     ChunkData mTestChunkData;
     Chunk mTestChunk;
@@ -478,6 +486,10 @@ void GameWindow::init() {
     mPlane.setModel(mPlaneModel);
     mPlane.setShader(mBlockShader);
 
+    mCubeModel.makeBox(sf::Vector3f(0.5f, 0.5f, 0.5f), sf::Vector3f(0, 0.5f, 0));
+    mCube.setModel(mCubeModel);
+    mCube.setShader(mBlockShader);
+
     lockMouse();
 }
 
@@ -526,6 +538,34 @@ bool GameWindow::loadTextures() {
     mBumpMap.setSmooth(true);
     mBumpMap.setRepeated(true);
     mBumpMap.generateMipmap();
+
+    if (!mCubeDiffMap.loadFromFile("textures/cube_albedo.png")) {
+        return false;
+    }
+    mCubeDiffMap.setSmooth(true);
+    mCubeDiffMap.setRepeated(true);
+    mCubeDiffMap.generateMipmap();
+
+    if (!mCubeSpecMap.loadFromFile("textures/cube_specular.png")) {
+        return false;
+    }
+    mCubeSpecMap.setSmooth(true);
+    mCubeSpecMap.setRepeated(true);
+    mCubeSpecMap.generateMipmap();
+
+    if (!mCubeGlowMap.loadFromFile("textures/cube_glow.png")) {
+        return false;
+    }
+    mCubeGlowMap.setSmooth(true);
+    mCubeGlowMap.setRepeated(true);
+    mCubeGlowMap.generateMipmap();
+
+    if (!mCubeBumpMap.loadFromFile("textures/cube_normal.png")) {
+        return false;
+    }
+    mCubeBumpMap.setSmooth(true);
+    mCubeBumpMap.setRepeated(true);
+    mCubeBumpMap.generateMipmap();
 
     return true;
 }
@@ -905,6 +945,12 @@ void GameWindow::render() {
     mBlockShader.setParameter("uGlowMap", mGlowMap);
     mBlockShader.setParameter("uBumpMap", mBumpMap);
     mPlane.render();
+
+    mBlockShader.setParameter("uDiffMap", mCubeDiffMap);
+    mBlockShader.setParameter("uSpecMap", mCubeSpecMap);
+    mBlockShader.setParameter("uGlowMap", mCubeGlowMap);
+    mBlockShader.setParameter("uBumpMap", mCubeBumpMap);
+    mCube.render();
 
     ////////////////////////////////////////////////////////////
     //  end 3D

@@ -25,7 +25,7 @@ uniform sampler2D uSpecMap; // specular color + glossiness
 uniform sampler2D uGlowMap; // emission color + AO
 uniform sampler2D uBumpMap; // normal + height
 uniform float uSpecPow = 100.0; // specular exponent
-uniform vec2 uBumpScaleBias = vec2(0.04, 0.02);
+uniform vec2 uBumpScaleBias = vec2(0.04, 0.00);
 
 in vec3 vVertex;
 in vec3 vNormal;
