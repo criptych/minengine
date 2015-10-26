@@ -25,7 +25,8 @@ uniform sampler2D uSpecMap; // specular color + glossiness
 uniform sampler2D uGlowMap; // emission color + AO
 uniform sampler2D uBumpMap; // normal + height
 uniform float uSpecPow = 100.0; // specular exponent
-uniform vec2 uBumpScaleBias = vec2(0.04, 0.00);
+uniform float uBumpScale = 0.04; // displacement scaling
+uniform float uBumpBias = 0.00; // displacement bias
 
 in vec3 vVertex;
 in vec3 vNormal;
@@ -68,7 +69,7 @@ void main () {
     float height = texture2D(uBumpMap, texCoord).w;
 
     mat3 TBN = cotangent_frame( normal, -eyeDir, texCoord );
-    float scale = uBumpScaleBias.x * height - uBumpScaleBias.y;
+    float scale = uBumpScale * height - uBumpBias;
     texCoord += scale * normalize(TBN * eyeDir).xy;
 
     vec3 bumpNormal = texture2D(uBumpMap, texCoord).xyz * 2 - 1;
