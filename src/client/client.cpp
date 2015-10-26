@@ -392,8 +392,8 @@ void GameWindow::init() {
         24, 8,  // depth and stencil bits
         8,      // antialiasing level
         3,3,    // OpenGL version (major, minor)
-        //~ sf::ContextSettings::Default
-        sf::ContextSettings::Core
+        sf::ContextSettings::Default
+        //~ sf::ContextSettings::Core
     );
 
     mDesktopMode = sf::VideoMode::getDesktopMode();
@@ -921,7 +921,7 @@ void GameWindow::render() {
 
     // draw 2D overlay
 
-    //~ pushGLStates();
+    GLChecked(pushGLStates());
 
     float frameLength = mFrameLength.asSeconds();
     float inputFrac = mInputLength.asSeconds() / frameLength;
@@ -931,27 +931,27 @@ void GameWindow::render() {
 
     sf::RectangleShape rect(sf::Vector2f(32, 32));
     rect.setFillColor(sf::Color::White);
-    draw(rect);
+    GLChecked(draw(rect));
 
     rect.setPosition(sf::Vector2f(0, 32.0f * (idleFrac)));
     rect.setSize(sf::Vector2f(32, 32.0f * (inputFrac + updateFrac + renderFrac)));
     rect.setFillColor(sf::Color::Red);
-    draw(rect);
+    GLChecked(draw(rect));
 
     rect.setPosition(sf::Vector2f(0, 32.0f * (idleFrac + renderFrac)));
     rect.setSize(sf::Vector2f(32, 32.0f * (inputFrac + updateFrac)));
     rect.setFillColor(sf::Color::Green);
-    draw(rect);
+    GLChecked(draw(rect));
 
     rect.setPosition(sf::Vector2f(0, 32.0f * (idleFrac + renderFrac + updateFrac)));
     rect.setSize(sf::Vector2f(32, 32.0f * (inputFrac)));
     rect.setFillColor(sf::Color::Blue);
-    draw(rect);
+    GLChecked(draw(rect));
 
     mDebugText.setPosition(sf::Vector2f(32, 0));
-    draw(mDebugText);
+    GLChecked(draw(mDebugText));
 
-    //~ popGLStates();
+    GLChecked(popGLStates());
 
     ////////////////////////////////////////////////////////////
     //  end 2D
