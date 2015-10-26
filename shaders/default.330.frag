@@ -25,6 +25,9 @@ uniform sampler2D uSpecMap; // specular color + glossiness
 uniform sampler2D uGlowMap; // emission color + AO
 uniform sampler2D uBumpMap; // normal + height
 uniform float uSpecPow = 100.0; // specular exponent
+uniform float uFresnelBias = 0.05; // fresnel bias
+uniform float uFresnelScale = 0.95; // fresnel scaling
+uniform float uFresnelPow = 5.0; // fresnel exponent
 uniform float uBumpScale = 0.04; // displacement scaling
 uniform float uBumpBias = 0.00; // displacement bias
 
@@ -84,6 +87,9 @@ void main () {
     //~ float specFactor = max(0, dot(eyeDir, reflect(lightDir, normal))); // True Phong
     //~ float specFactor = max(0, dot(normal, normalize(eyeDir+uLightDir)));
 
+    float fresnelFactor = uFresnelBias + uFresnelScale * pow(1.0 + dot(eyeDir, normal), uFresnelPow);
+    fresnelFactor = min(1.0, max(0.0, fresnelFactor));
+
     vec4 diffTexCol = texture2D(uDiffMap, texCoord); //vec4(1.0,1.0,1.0,1.0);
     vec4 specTexCol = texture2D(uSpecMap, texCoord); //vec4(1.0,1.0,1.0,0.2);
     vec4 glowTexCol = texture2D(uGlowMap, texCoord); //vec4(0.0,0.0,0.0,1.0);
@@ -101,6 +107,7 @@ void main () {
     fColor = vec4(ambtColor, diffTexCol.a);
     fColor.rgb += diffColor * diffFactor;
     fColor.rgb += specColor * pow(specFactor, specPower) * specTexCol.a;
+    fColor.rgb += specColor * fresnelFactor * specTexCol.a;
     fColor.rgb += glowColor;
 
     //~ fColor.rgb = 0.5 + 0.5 * normal;
@@ -108,6 +115,8 @@ void main () {
     //~ fColor.rgb = vec3(diffFactor, specFactor, 0.0);
     //~ fColor.rgb = vec3(diffFactor);
     //~ fColor.r = diffFactor;
+    //~ fColor.rgb = vec3(diffFactor);
+    //~ fColor.rgb = vec3(dFdx( vTexCoord ) * 10 + 0.5, 0);
 
     //~ fColor.rgb = normal * 0.5 + 0.5;
     //~ fColor.rgb = vec3(diffFactor);
@@ -119,6 +128,8 @@ void main () {
     //~ fColor.rgb = vec3(glowTexCol.a);
 
     //~ fColor.rg = gl_FragCoord.xy / uResolution;
+
+    //~ fColor.rgb = vec3(fresnelFactor);
 
     //~ fColor = vec4(vec3(gl_FragDepth), 1);
 }
