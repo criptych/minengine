@@ -380,17 +380,29 @@ static bool mergeImages(const std::string &rgbFN, const std::string &alphaFN, sf
 
     if (size == alphaImage.getSize()) {
         sf::err() << "merging \"" << rgbFN << "\" and \"" << alphaFN << "\"...\n";
+
+        const sf::Uint8 *rgb = rgbImage.getPixelsPtr();
+        const sf::Uint8 *alpha = alphaImage.getPixelsPtr();
+
+        std::vector<sf::Uint8> outData(size.x * size.y * 4);
+        sf::Uint8 *out = outData.data();
+
         for (p.y = 0; p.y < size.y; p.y++) {
             for (p.x = 0; p.x < size.x; p.x++) {
-                sf::Color c = rgbImage.getPixel(p.x, p.y);
-                sf::Color a = alphaImage.getPixel(p.x, p.y);
-                c.a = (a.r + a.g + a.b) / 3;
-                rgbImage.setPixel(p.x, p.y, c);
+                *out++ = *rgb++;
+                *out++ = *rgb++;
+                *out++ = *rgb++;
+                rgb++;
+                *out++ = *alpha++;
+                alpha++;
+                alpha++;
+                alpha++;
             }
         }
-    }
 
-    texture.loadFromImage(rgbImage);
+        texture.create(size.x, size.y);
+        texture.update(outData.data());
+    }
 
     return true;
 }
