@@ -5,31 +5,27 @@ precision mediump float;
 
 uniform float uTime = 0;
 uniform vec2 uResolution = vec2(1);
-
 uniform vec3 uEyePos = vec3(0,0,5);
 
-uniform vec3 uLightDir  = vec3(0,1,0);
-uniform vec3 uLightPos  = vec3(-4,4,4);
-//~ uniform vec3 uLightAmbt = vec3(0.2, 0.2, 0.2);
-uniform vec3 uLightAmbt = vec3(0.5, 0.5, 0.5);
-//~ uniform vec3 uLightAmbt = vec3(0.8, 0.8, 0.8);
-//~ uniform vec3 uLightAmbt = vec3(1.0, 1.0, 1.0);
-//~ uniform vec3 uLightDiff = vec3(0.2, 0.2, 0.2);
-uniform vec3 uLightDiff = vec3(0.5, 0.5, 0.5);
-//~ uniform vec3 uLightDiff = vec3(0.8, 0.8, 0.8);
-//~ uniform vec3 uLightDiff = vec3(1.0, 1.0, 1.0);
-uniform vec3 uLightSpec = vec3(1.0, 1.0, 1.0);
+uniform struct {
+    vec4 position;
+    vec4 ambtCol;
+    vec4 diffCol;
+    vec4 specCol;
+} uLight;
 
-uniform sampler2D uDiffMap; // diffuse color (albedo)
-uniform sampler2D uSpecMap; // specular color + glossiness
-uniform sampler2D uGlowMap; // emission color + AO
-uniform sampler2D uBumpMap; // normal + height
-uniform float uSpecPow = 100.0; // specular exponent
-uniform float uFresnelBias = 0.05; // fresnel bias
-uniform float uFresnelScale = 0.95; // fresnel scaling
-uniform float uFresnelPow = 5.0; // fresnel exponent
-uniform float uBumpScale = 0.04; // displacement scaling
-uniform float uBumpBias = 0.00; // displacement bias
+uniform struct {
+    sampler2D diffMap;
+    sampler2D specMap;
+    sampler2D glowMap;
+    sampler2D bumpMap;
+    float specPow;
+    float bumpScale;
+    float bumpBias;
+    float fresnelPow;
+    float fresnelScale;
+    float fresnelBias;
+} uMaterial;
 
 in vec3 vVertex;
 in vec3 vNormal;
@@ -65,17 +61,17 @@ mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 
 void main () {
     vec3 normal = normalize(vNormal);
-    vec3 lightDir = normalize(uLightPos - vVertex);
+    vec3 lightDir = normalize(uLight.position.xyz - vVertex * uLight.position.w);
     vec3 eyeDir = normalize(uEyePos - vVertex);
 
     vec2 texCoord = vTexCoord;
-    float height = texture2D(uBumpMap, texCoord).w;
+    float height = texture2D(uMaterial.bumpMap, texCoord).w;
 
     mat3 TBN = cotangent_frame( normal, -eyeDir, texCoord );
-    float scale = uBumpScale * height - uBumpBias;
+    float scale = uMaterial.bumpScale * height - uMaterial.bumpBias;
     texCoord += scale * normalize(TBN * eyeDir).xy;
 
-    vec3 bumpNormal = texture2D(uBumpMap, texCoord).xyz * 2 - 1;
+    vec3 bumpNormal = texture2D(uMaterial.bumpMap, texCoord).xyz * 2 - 1;
     normal = normalize(TBN * bumpNormal);
     //~ normal = bumpNormal;
 
@@ -87,21 +83,21 @@ void main () {
     //~ float specFactor = max(0, dot(eyeDir, reflect(lightDir, normal))); // True Phong
     //~ float specFactor = max(0, dot(normal, normalize(eyeDir+uLightDir)));
 
-    float fresnelFactor = uFresnelBias + uFresnelScale * pow(1.0 + dot(eyeDir, normal), uFresnelPow);
+    float fresnelFactor = uMaterial.fresnelBias + uMaterial.fresnelScale * pow(1.0 + dot(eyeDir, normal), uMaterial.fresnelPow);
     fresnelFactor = min(1.0, max(0.0, fresnelFactor));
 
-    vec4 diffTexCol = texture2D(uDiffMap, texCoord); //vec4(1.0,1.0,1.0,1.0);
-    vec4 specTexCol = texture2D(uSpecMap, texCoord); //vec4(1.0,1.0,1.0,0.2);
-    vec4 glowTexCol = texture2D(uGlowMap, texCoord); //vec4(0.0,0.0,0.0,1.0);
+    vec4 diffTexCol = texture2D(uMaterial.diffMap, texCoord); //vec4(1.0,1.0,1.0,1.0);
+    vec4 specTexCol = texture2D(uMaterial.specMap, texCoord); //vec4(1.0,1.0,1.0,0.2);
+    vec4 glowTexCol = texture2D(uMaterial.glowMap, texCoord); //vec4(0.0,0.0,0.0,1.0);
 
     //~ diffFactor = pow(0.5 + 0.5 * diffFactor, 2.0);
 
     diffTexCol *= vColor;
 
-    vec3 ambtColor = uLightAmbt * diffTexCol.rgb * glowTexCol.a;
-    vec3 diffColor = uLightDiff * diffTexCol.rgb;
-    vec3 specColor = uLightSpec * specTexCol.rgb;
-    float specPower = uSpecPow * specTexCol.a;
+    vec3 ambtColor = uLight.ambtCol.rgb * diffTexCol.rgb * glowTexCol.a;
+    vec3 diffColor = uLight.diffCol.rgb * diffTexCol.rgb;
+    vec3 specColor = uLight.specCol.rgb * specTexCol.rgb;
+    float specPower = uMaterial.specPow * specTexCol.a;
     vec3 glowColor = glowTexCol.rgb;
 
     fColor = vec4(ambtColor, diffTexCol.a);

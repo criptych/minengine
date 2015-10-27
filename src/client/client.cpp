@@ -936,32 +936,32 @@ void GameWindow::render() {
     spinLight.rotate(mSpinAngle, sf::Vector3f(0,1,0));
     sf::Vector3f spinLightPos = spinLight.transformPoint(mLightPos);
 
-    mBlockShader.setParameter("uLightPos", spinLightPos);
+    mBlockShader.setParameter("uLight.position", spinLightPos);
     mBlockShader.setParameter("uEyePos", mPlayer.getEyePosition());
 
     sf::Transform3D lightBallTransform;
     lightBallTransform.translate(spinLightPos);
     mBlockShader.setParameter("uViewMatrix", lightBallTransform);
 
-    mBlockShader.setParameter("uDiffMap", mWhiteTex);
-    mBlockShader.setParameter("uSpecMap", mWhiteTex);
-    mBlockShader.setParameter("uGlowMap", mClearTex);
-    mBlockShader.setParameter("uBumpMap", mClearTex);
+    mBlockShader.setParameter("uMaterial.diffMap", mWhiteTex);
+    mBlockShader.setParameter("uMaterial.specMap", mWhiteTex);
+    mBlockShader.setParameter("uMaterial.glowMap", mClearTex);
+    mBlockShader.setParameter("uMaterial.bumpMap", mClearTex);
     mBall.render();
 
     sf::Transform3D modelViewTransform;
     mBlockShader.setParameter("uViewMatrix", modelViewTransform);
 
-    mBlockShader.setParameter("uDiffMap", mDiffMap);
-    mBlockShader.setParameter("uSpecMap", mSpecMap);
-    mBlockShader.setParameter("uGlowMap", mGlowMap);
-    mBlockShader.setParameter("uBumpMap", mBumpMap);
+    mBlockShader.setParameter("uMaterial.diffMap", mDiffMap);
+    mBlockShader.setParameter("uMaterial.specMap", mSpecMap);
+    mBlockShader.setParameter("uMaterial.glowMap", mGlowMap);
+    mBlockShader.setParameter("uMaterial.bumpMap", mBumpMap);
     mPlane.render();
 
-    mBlockShader.setParameter("uDiffMap", mCubeDiffMap);
-    mBlockShader.setParameter("uSpecMap", mCubeSpecMap);
-    mBlockShader.setParameter("uGlowMap", mCubeGlowMap);
-    mBlockShader.setParameter("uBumpMap", mCubeBumpMap);
+    mBlockShader.setParameter("uMaterial.diffMap", mCubeDiffMap);
+    mBlockShader.setParameter("uMaterial.specMap", mCubeSpecMap);
+    mBlockShader.setParameter("uMaterial.glowMap", mCubeGlowMap);
+    mBlockShader.setParameter("uMaterial.bumpMap", mCubeBumpMap);
     mCube.render();
 
     ////////////////////////////////////////////////////////////
