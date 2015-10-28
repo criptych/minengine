@@ -7,25 +7,30 @@ uniform float uTime = 0;
 uniform vec2 uResolution = vec2(1);
 uniform vec3 uEyePos = vec3(0,0,5);
 
-uniform struct {
-    vec4 position;
-    vec4 ambtCol;
-    vec4 diffCol;
-    vec4 specCol;
-} uLight;
+struct Light {
+    vec3 position;
+    vec4 ambtColor;
+    vec4 diffColor;
+    vec4 specColor;
+};
 
-uniform struct {
+uniform Light uLight;
+uniform Light uLights[4];
+
+struct Material {
     sampler2D diffMap;
     sampler2D specMap;
     sampler2D glowMap;
     sampler2D bumpMap;
-    float specPow;
+    float specPower;
     float bumpScale;
     float bumpBias;
-    float fresnelPow;
+    float fresnelPower;
     float fresnelScale;
     float fresnelBias;
-} uMaterial;
+};
+
+uniform Material uMaterial;
 
 in vec3 vVertex;
 in vec3 vNormal;
@@ -61,14 +66,15 @@ mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 
 void main () {
     vec3 normal = normalize(vNormal);
-    vec3 lightDir = normalize(uLight.position.xyz - vVertex * uLight.position.w);
+    vec3 lightDir = normalize(uLight.position.xyz - vVertex /* uLight.position.w/**/);
     vec3 eyeDir = normalize(uEyePos - vVertex);
 
     vec2 texCoord = vTexCoord;
     float height = texture2D(uMaterial.bumpMap, texCoord).w;
 
     mat3 TBN = cotangent_frame( normal, -eyeDir, texCoord );
-    float scale = uMaterial.bumpScale * height - uMaterial.bumpBias;
+    //~ float scale = uMaterial.bumpScale * height - uMaterial.bumpBias;
+    float scale = 0.02 * height - 0.00;
     texCoord += scale * normalize(TBN * eyeDir).xy;
 
     vec3 bumpNormal = texture2D(uMaterial.bumpMap, texCoord).xyz * 2 - 1;
@@ -79,37 +85,37 @@ void main () {
 
     float diffFactor = max(0, dot(normal, lightDir));
     //~ float diffFactor = max(0, dot(normal, uLightDir));
-    float specFactor = max(0, dot(normal, halfVec)); // Blinn-Phong
-    //~ float specFactor = max(0, dot(eyeDir, reflect(lightDir, normal))); // True Phong
+    float specFactor = pow(max(0, dot(normal, halfVec)), /*uMaterial.specPower*/10.0); // Blinn-Phong
+    //~ float specFactor = pow(max(0, dot(eyeDir, reflect(lightDir, normal))), uMaterial.specPower); // True Phong
     //~ float specFactor = max(0, dot(normal, normalize(eyeDir+uLightDir)));
 
-    float fresnelFactor = uMaterial.fresnelBias + uMaterial.fresnelScale * pow(1.0 + dot(eyeDir, normal), uMaterial.fresnelPow);
-    fresnelFactor = min(1.0, max(0.0, fresnelFactor));
+    //~ float fresnelFactor = uMaterial.fresnelBias + uMaterial.fresnelScale *
+        //~ pow(1.0 + dot(eyeDir, normal), uMaterial.fresnelPower);
+    float fresnelFactor = min(1.0, pow(1.0 - dot(eyeDir, halfVec), 2.0));
 
-    vec4 diffTexCol = texture2D(uMaterial.diffMap, texCoord); //vec4(1.0,1.0,1.0,1.0);
-    vec4 specTexCol = texture2D(uMaterial.specMap, texCoord); //vec4(1.0,1.0,1.0,0.2);
-    vec4 glowTexCol = texture2D(uMaterial.glowMap, texCoord); //vec4(0.0,0.0,0.0,1.0);
+    vec4 diffTexCol = texture2D(uMaterial.diffMap, texCoord);
+    vec4 specTexCol = texture2D(uMaterial.specMap, texCoord);
+    vec4 glowTexCol = texture2D(uMaterial.glowMap, texCoord);
 
     //~ diffFactor = pow(0.5 + 0.5 * diffFactor, 2.0);
 
     diffTexCol *= vColor;
 
-    vec3 ambtColor = uLight.ambtCol.rgb * diffTexCol.rgb * glowTexCol.a;
-    vec3 diffColor = uLight.diffCol.rgb * diffTexCol.rgb;
-    vec3 specColor = uLight.specCol.rgb * specTexCol.rgb;
-    float specPower = uMaterial.specPow * specTexCol.a;
+    vec3 ambtColor = uLight.ambtColor.rgb * diffTexCol.rgb * glowTexCol.a;
+    vec3 diffColor = uLight.diffColor.rgb * diffTexCol.rgb;
+    vec3 specColor = uLight.specColor.rgb * specTexCol.rgb * specTexCol.a;
     vec3 glowColor = glowTexCol.rgb;
 
     fColor = vec4(ambtColor, diffTexCol.a);
-    fColor.rgb += diffColor * diffFactor;
-    fColor.rgb += specColor * pow(specFactor, specPower) * specTexCol.a;
-    fColor.rgb += specColor * fresnelFactor * specTexCol.a;
+    fColor.rgb += diffColor * diffFactor * (1.0f - fresnelFactor);
+    fColor.rgb += specColor * specFactor * (0.0f + fresnelFactor);
     fColor.rgb += glowColor;
 
     //~ fColor.rgb = 0.5 + 0.5 * normal;
 
     //~ fColor.rgb = vec3(diffFactor, specFactor, 0.0);
     //~ fColor.rgb = vec3(diffFactor);
+    //~ fColor.rgb = vec3(specFactor);
     //~ fColor.r = diffFactor;
     //~ fColor.rgb = vec3(diffFactor);
     //~ fColor.rgb = vec3(dFdx( vTexCoord ) * 10 + 0.5, 0);
@@ -125,7 +131,10 @@ void main () {
 
     //~ fColor.rg = gl_FragCoord.xy / uResolution;
 
+    //~ fColor.rgb = fresnelFactor * vec3(1,0,0) + dot(halfVec, normal) * vec3(0,1,0);// + specFactor * vec3(0,0,1);
     //~ fColor.rgb = vec3(fresnelFactor);
+
+    //~ fColor.rgb = fresnelFactor * (0.5 + 0.5 * normal);
 
     //~ fColor = vec4(vec3(gl_FragDepth), 1);
 }

@@ -936,7 +936,14 @@ void GameWindow::render() {
     spinLight.rotate(mSpinAngle, sf::Vector3f(0,1,0));
     sf::Vector3f spinLightPos = spinLight.transformPoint(mLightPos);
 
+    static const sf::Color lightAmbt(51,51,51);
+    static const sf::Color lightDiff(204,204,204);
+    static const sf::Color lightSpec(255,255,255);
+
     mBlockShader.setParameter("uLight.position", spinLightPos);
+    mBlockShader.setParameter("uLight.ambtColor", lightAmbt);
+    mBlockShader.setParameter("uLight.diffColor", lightDiff);
+    mBlockShader.setParameter("uLight.specColor", lightSpec);
     mBlockShader.setParameter("uEyePos", mPlayer.getEyePosition());
 
     sf::Transform3D lightBallTransform;
