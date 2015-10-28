@@ -424,6 +424,8 @@ void GameWindow::init() {
 
     create(mWindowMode, mWindowTitle, mWindowStyle, mContextSettings);
 
+    setVerticalSyncEnabled(true);
+
     const sf::ContextSettings &usedSettings = getSettings();
     sf::err() << "Using OpenGL " << usedSettings.majorVersion << '.' << usedSettings.minorVersion << ' ' <<
         ((usedSettings.attributeFlags & sf::ContextSettings::Core) ? "Core" : "Compat") <<
