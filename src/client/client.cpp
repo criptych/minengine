@@ -860,6 +860,20 @@ void GameWindow::handleInput(const sf::Time &delta) {
             move *= 2.0f;
         }
 
+        float fov = mPlayer.getCamera().getFOV();
+
+        if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
+            if (fov > 30.0f) {
+                fov -= 100.0f * delta.asSeconds();
+            }
+        } else {
+            if (fov < 75.0f) {
+                fov += 100.0f * delta.asSeconds();
+            }
+        }
+
+        mPlayer.getCamera().setFOV(fov);
+
         mPlayer.move(move);
     }
 }
