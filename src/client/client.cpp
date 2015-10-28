@@ -411,7 +411,7 @@ void GameWindow::init() {
     mContextSettings = sf::ContextSettings(
         24, 8,  // depth and stencil bits
         8,      // antialiasing level
-        3,3,    // OpenGL version (major, minor)
+        3, 3,   // OpenGL version (major, minor)
         sf::ContextSettings::Default
         //~ sf::ContextSettings::Core
     );
@@ -601,6 +601,7 @@ void GameWindow::handleEvent(const sf::Event &event) {
 
         case sf::Event::Resized: {
             sf::Vector2f size(getSize());
+            sf::err() << "Window resized to " << size.x << 'x' << size.y << '\n';
             mBlockShader.setParameter("uResolution", size);
             GLChecked(glViewport(0, 0, size.x, size.y));
             if (size.y > 0) {
