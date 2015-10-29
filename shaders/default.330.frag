@@ -85,25 +85,24 @@ void main () {
 
     for (int i = 0; i < 4; i++) {
 
-        vec3 lightDir = normalize(uLights[i].position.xyz - vVertex /* uLight.position.w/**/);
+        vec3 lightDir = normalize(uLights[i].position.xyz - vVertex);
         vec3 halfVec = normalize(eyeDir + lightDir);
 
         float diffFactor = max(0, dot(normal, lightDir));
-        //~ float diffFactor = max(0, dot(normal, uLightDir));
-        float specFactor = pow(max(0, dot(normal, halfVec)), /*uMaterial.specPower*/10.0); // Blinn-Phong
-        //~ float specFactor = pow(max(0, dot(eyeDir, reflect(lightDir, normal))), uMaterial.specPower); // True Phong
-        //~ float specFactor = max(0, dot(normal, normalize(eyeDir+uLightDir)));
+        float specFactor = max(0, dot(normal, halfVec)); // Blinn-Phong
+        //~ float specFactor = max(0, dot(eyeDir, reflect(lightDir, normal))); // True Phong
+        specFactor = pow(specFactor, uMaterial.specPower);
 
         float fresnelFactor = uMaterial.fresnelBias + uMaterial.fresnelScale *
             pow(1.0 - dot(eyeDir, halfVec), uMaterial.fresnelPower);
 
-        //~ diffFactor = pow(0.5 + 0.5 * diffFactor, 2.0);
+        vec3 ambtLight = uLights[i].ambtColor.rgb;
+        vec3 diffLight = uLights[i].diffColor.rgb * (1.0f - fresnelFactor);
+        vec3 specLight = uLights[i].specColor.rgb * (0.0f + fresnelFactor);
 
-        ambtColor += uLights[i].ambtColor.rgb * diffTexCol.rgb * glowTexCol.a;
-        diffColor += uLights[i].diffColor.rgb * diffTexCol.rgb * diffFactor
-                                                        * (1.0f - fresnelFactor);
-        specColor += uLights[i].specColor.rgb * specTexCol.rgb * specTexCol.a * specFactor
-                                                        * (0.0f + fresnelFactor);
+        ambtColor += ambtLight * diffTexCol.rgb * glowTexCol.a;
+        diffColor += diffLight * diffTexCol.rgb * diffFactor;
+        specColor += specLight * specTexCol.rgb * specFactor * specTexCol.a;
     }
 
     fColor = vec4(0);
@@ -111,35 +110,4 @@ void main () {
     fColor.rgb += specColor;
     fColor.rgb += glowColor;
     fColor.a   += diffTexCol.a;
-
-
-
-    //~ fColor.rgb = 0.5 + 0.5 * normal;
-
-    //~ fColor.rgb = vec3(diffFactor, specFactor, 0.0);
-    //~ fColor.rgb = vec3(diffFactor);
-    //~ fColor.rgb = vec3(specFactor);
-    //~ fColor.r = diffFactor;
-    //~ fColor.rgb = vec3(diffFactor);
-    //~ fColor.rgb = vec3(dFdx( vTexCoord ) * 10 + 0.5, 0);
-
-    //~ fColor.rgb = normal * 0.5 + 0.5;
-    //~ fColor.rgb = vec3(diffFactor);
-
-    //~ fColor.rgb = vec3(texCoord, 0);
-    //~ fColor.rgb = vec3(vTexCoord, 0);
-    //~ fColor.rgb = bumpNormal * 0.5 + 0.5;
-
-    //~ fColor.rgb = vec3(glowTexCol.a);
-
-    //~ fColor.rg = gl_FragCoord.xy / uResolution;
-
-    //~ fColor.rgb = fresnelFactor * vec3(1,0,0) + dot(halfVec, normal) * vec3(0,1,0);// + specFactor * vec3(0,0,1);
-    //~ fColor.rgb = mix(vec3(diffFactor, 0, 0), vec3(0, specFactor, 0), fresnelFactor);
-
-    //~ fColor.rgb = vec3(fresnelFactor);
-
-    //~ fColor.rgb = fresnelFactor * (0.5 + 0.5 * normal);
-
-    //~ fColor = vec4(vec3(gl_FragDepth), 1);
 }
