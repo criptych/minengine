@@ -7,7 +7,15 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static inline void _GLCheck(const char *file, int line) {
+static inline void GLClearErrors() {
+    GLenum errcode;
+
+    while ( (errcode = glGetError()) ) {
+        // ignore
+    }
+}
+
+static inline void _GLCheckErrors(const char *file, int line) {
     GLenum errcode;
 
     while ( (errcode = glGetError()) ) {
@@ -17,10 +25,10 @@ static inline void _GLCheck(const char *file, int line) {
     }
 }
 
-#define GLCheck() _GLCheck(__FILE__, __LINE__)
+#define GLCheckErrors() _GLCheckErrors(__FILE__, __LINE__)
 
 #ifndef NDEBUG
-# define GLChecked(f) (f,GLCheck())
+# define GLChecked(f) (f,GLCheckErrors())
 #else
 # define GLChecked(f) f
 #endif

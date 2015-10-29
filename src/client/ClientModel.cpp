@@ -68,8 +68,10 @@ void ClientModel::render() const {
         }
 
         if (mShader) {
-            sf::Shader::bind(mShader);
+            GLChecked(sf::Shader::bind(mShader));
         }
+
+        GLClearErrors();
 
         GLChecked(glBindVertexArray(mVAO));
 
@@ -121,7 +123,7 @@ void ClientModel::render() const {
         GLChecked(glBindVertexArray(0));
 
         if (mShader) {
-            sf::Shader::bind(nullptr);
+            GLChecked(sf::Shader::bind(nullptr));
         }
     }
 }
@@ -139,6 +141,8 @@ void ClientModel::createVertexArrays() const {
 
         sf::err() << "numVerts = " << numVerts;
         sf::err() << ", numIndex = " << numIndex;
+
+        GLClearErrors();
 
         if (!mVAO) {
             if (!glGenVertexArrays) {
