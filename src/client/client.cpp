@@ -957,10 +957,10 @@ void GameWindow::render() {
     static const sf::Color lightDiff(204,204,204);
     static const sf::Color lightSpec(255,255,255);
 
-    mBlockShader.setParameter("uLight.position", spinLightPos);
-    mBlockShader.setParameter("uLight.ambtColor", lightAmbt);
-    mBlockShader.setParameter("uLight.diffColor", lightDiff);
-    mBlockShader.setParameter("uLight.specColor", lightSpec);
+    mBlockShader.setParameter("uLights[0].position", spinLightPos);
+    mBlockShader.setParameter("uLights[0].ambtColor", lightAmbt);
+    mBlockShader.setParameter("uLights[0].diffColor", lightDiff);
+    mBlockShader.setParameter("uLights[0].specColor", lightSpec);
     mBlockShader.setParameter("uEyePos", mPlayer.getEyePosition());
 
     sf::Transform3D lightBallTransform;

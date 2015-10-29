@@ -14,7 +14,6 @@ struct Light {
     vec4 specColor;
 };
 
-uniform Light uLight;
 uniform Light uLights[4];
 
 struct Material {
@@ -66,7 +65,6 @@ mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 
 void main () {
     vec3 normal = normalize(vNormal);
-    vec3 lightDir = normalize(uLight.position.xyz - vVertex /* uLight.position.w/**/);
     vec3 eyeDir = normalize(uEyePos - vVertex);
 
     vec2 texCoord = vTexCoord;
@@ -77,39 +75,51 @@ void main () {
     float scale = 0.02 * height - 0.00;
     texCoord += scale * normalize(TBN * eyeDir).xy;
 
-    vec3 bumpNormal = texture2D(uMaterial.bumpMap, texCoord).xyz * 2 - 1;
-    normal = normalize(TBN * bumpNormal);
-    //~ normal = bumpNormal;
-
-    vec3 halfVec = normalize(eyeDir + lightDir);
-
-    float diffFactor = max(0, dot(normal, lightDir));
-    //~ float diffFactor = max(0, dot(normal, uLightDir));
-    float specFactor = pow(max(0, dot(normal, halfVec)), /*uMaterial.specPower*/10.0); // Blinn-Phong
-    //~ float specFactor = pow(max(0, dot(eyeDir, reflect(lightDir, normal))), uMaterial.specPower); // True Phong
-    //~ float specFactor = max(0, dot(normal, normalize(eyeDir+uLightDir)));
-
-    //~ float fresnelFactor = uMaterial.fresnelBias + uMaterial.fresnelScale *
-        //~ pow(1.0 + dot(eyeDir, normal), uMaterial.fresnelPower);
-    float fresnelFactor = min(1.0, pow(1.0 - dot(eyeDir, halfVec), 2.0));
-
     vec4 diffTexCol = texture2D(uMaterial.diffMap, texCoord);
     vec4 specTexCol = texture2D(uMaterial.specMap, texCoord);
     vec4 glowTexCol = texture2D(uMaterial.glowMap, texCoord);
 
-    //~ diffFactor = pow(0.5 + 0.5 * diffFactor, 2.0);
-
     diffTexCol *= vColor;
 
-    vec3 ambtColor = uLight.ambtColor.rgb * diffTexCol.rgb * glowTexCol.a;
-    vec3 diffColor = uLight.diffColor.rgb * diffTexCol.rgb;
-    vec3 specColor = uLight.specColor.rgb * specTexCol.rgb * specTexCol.a;
+    vec3 bumpNormal = texture2D(uMaterial.bumpMap, texCoord).xyz * 2 - 1;
+    normal = normalize(TBN * bumpNormal);
+    //~ normal = bumpNormal;
+
+
+    vec3 ambtColor, diffColor, specColor;
     vec3 glowColor = glowTexCol.rgb;
 
-    fColor = vec4(ambtColor, diffTexCol.a);
-    fColor.rgb += diffColor * diffFactor * (1.0f - fresnelFactor);
-    fColor.rgb += specColor * specFactor * (0.0f + fresnelFactor);
+    for (int i = 0; i < 4; i++) {
+
+        vec3 lightDir = normalize(uLights[i].position.xyz - vVertex /* uLight.position.w/**/);
+        vec3 halfVec = normalize(eyeDir + lightDir);
+
+        float diffFactor = max(0, dot(normal, lightDir));
+        //~ float diffFactor = max(0, dot(normal, uLightDir));
+        float specFactor = pow(max(0, dot(normal, halfVec)), /*uMaterial.specPower*/10.0); // Blinn-Phong
+        //~ float specFactor = pow(max(0, dot(eyeDir, reflect(lightDir, normal))), uMaterial.specPower); // True Phong
+        //~ float specFactor = max(0, dot(normal, normalize(eyeDir+uLightDir)));
+
+        //~ float fresnelFactor = uMaterial.fresnelBias + uMaterial.fresnelScale *
+            //~ pow(1.0 + dot(eyeDir, normal), uMaterial.fresnelPower);
+        float fresnelFactor = min(1.0, pow(1.0 - dot(eyeDir, halfVec), 2.0));
+
+        //~ diffFactor = pow(0.5 + 0.5 * diffFactor, 2.0);
+
+        ambtColor += uLights[i].ambtColor.rgb * diffTexCol.rgb * glowTexCol.a;
+        diffColor += uLights[i].diffColor.rgb * diffTexCol.rgb * diffFactor
+                                                        * (1.0f - fresnelFactor);
+        specColor += uLights[i].specColor.rgb * specTexCol.rgb * specTexCol.a * specFactor
+                                                        * (0.0f + fresnelFactor);
+    }
+
+    fColor = vec4(0);
+    fColor.rgb += diffColor;
+    fColor.rgb += specColor;
     fColor.rgb += glowColor;
+    fColor.a   += diffTexCol.a;
+
+
 
     //~ fColor.rgb = 0.5 + 0.5 * normal;
 
@@ -132,6 +142,8 @@ void main () {
     //~ fColor.rg = gl_FragCoord.xy / uResolution;
 
     //~ fColor.rgb = fresnelFactor * vec3(1,0,0) + dot(halfVec, normal) * vec3(0,1,0);// + specFactor * vec3(0,0,1);
+    //~ fColor.rgb = mix(vec3(diffFactor, 0, 0), vec3(0, specFactor, 0), fresnelFactor);
+
     //~ fColor.rgb = vec3(fresnelFactor);
 
     //~ fColor.rgb = fresnelFactor * (0.5 + 0.5 * normal);
