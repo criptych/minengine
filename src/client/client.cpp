@@ -561,7 +561,6 @@ bool GameWindow::loadShaders() {
     mBlockShader.setAttribLocation("aVertex",   0);
     mBlockShader.setAttribLocation("aNormal",   1);
     mBlockShader.setAttribLocation("aTexCoord", 2);
-    mBlockShader.setAttribLocation("aColor",    3);
 
     return mBlockShader.loadFromFile(
         "shaders/default.330.vert", "shaders/default.330.frag"

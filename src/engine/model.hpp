@@ -14,117 +14,60 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 struct Vertex {
-    sf::Color color;
-    sf::Vector2<sf::Int16> texCoord;
+    sf::Vector2f texCoord;
     sf::Vector3f normal;
     sf::Vector3f position;
 
     Vertex(
-    ): color(sf::Color::White) {
+    ) {
     }
 
     explicit Vertex(
         const sf::Vector3f &position
-    ): color(sf::Color::White), position(position) {
+    ): position(position) {
     }
 
     Vertex(
         const sf::Vector3f &normal,
         const sf::Vector3f &position
-    ): color(sf::Color::White), normal(normal), position(position) {
+    ): normal(normal), position(position) {
     }
 
     Vertex(
-        const sf::Vector2<sf::Int16> &texCoord,
+        const sf::Vector2f &texCoord,
         const sf::Vector3f &position
-    ): color(sf::Color::White), texCoord(texCoord), position(position) {
+    ): texCoord(texCoord), position(position) {
     }
 
     Vertex(
-        const sf::Vector2<sf::Int16> &texCoord,
+        const sf::Vector2f &texCoord,
         const sf::Vector3f &normal,
         const sf::Vector3f &position
-    ): color(sf::Color::White), texCoord(texCoord), normal(normal), position(position) {
-    }
-
-    Vertex(
-        const sf::Color &color,
-        const sf::Vector3f &position
-    ): color(color), position(position) {
-    }
-
-    Vertex(
-        const sf::Color &color,
-        const sf::Vector3f &normal,
-        const sf::Vector3f &position
-    ): color(color), normal(normal), position(position) {
-    }
-
-    Vertex(
-        const sf::Color &color,
-        const sf::Vector2<sf::Int16> &texCoord,
-        const sf::Vector3f &position
-    ): color(color), texCoord(texCoord), position(position) {
-    }
-
-    Vertex(
-        const sf::Color &color,
-        const sf::Vector2<sf::Int16> &texCoord,
-        const sf::Vector3f &normal,
-        const sf::Vector3f &position
-    ): color(color), texCoord(texCoord), normal(normal), position(position) {
+    ): texCoord(texCoord), normal(normal), position(position) {
     }
 
     Vertex(
         float x, float y, float z
-    ): color(sf::Color::White), position(x, y, z) {
+    ): position(x, y, z) {
     }
 
     Vertex(
         float u, float v, float w,
         float x, float y, float z
-    ): color(sf::Color::White), normal(u, v, w), position(x, y, z) {
+    ): normal(u, v, w), position(x, y, z) {
     }
 
     Vertex(
-        uint16_t s, uint16_t t,
+        float s, float t,
         float x, float y, float z
-    ): color(sf::Color::White), texCoord(s, t), position(x, y, z) {
+    ): texCoord(s, t), position(x, y, z) {
     }
 
     Vertex(
-        uint16_t s, uint16_t t,
+        float s, float t,
         float u, float v, float w,
         float x, float y, float z
-    ): color(sf::Color::White), texCoord(s, t), normal(u, v, w), position(x, y, z) {
-    }
-
-    Vertex(
-        uint8_t r, uint8_t g, uint8_t b, uint8_t a,
-        float x, float y, float z
-    ): color(r, g, b, a), position(x, y, z) {
-    }
-
-    Vertex(
-        uint8_t r, uint8_t g, uint8_t b, uint8_t a,
-        float u, float v, float w,
-        float x, float y, float z
-    ): color(r, g, b, a), normal(u, v, w), position(x, y, z) {
-    }
-
-    Vertex(
-        uint8_t r, uint8_t g, uint8_t b, uint8_t a,
-        uint16_t s, uint16_t t,
-        float x, float y, float z
-    ): color(r, g, b, a), texCoord(s, t), position(x, y, z) {
-    }
-
-    Vertex(
-        uint8_t r, uint8_t g, uint8_t b, uint8_t a,
-        uint16_t s, uint16_t t,
-        float u, float v, float w,
-        float x, float y, float z
-    ): color(r, g, b, a), texCoord(s, t), normal(u, v, w), position(x, y, z) {
+    ): texCoord(s, t), normal(u, v, w), position(x, y, z) {
     }
 
 };
@@ -216,8 +159,6 @@ public:
             addIndex(v);
         }
     }
-
-    void setColor(const sf::Color &color);
 
     void calcNormals(bool smooth = false);
     void calcNormals(size_t start, size_t end, bool smooth = false);

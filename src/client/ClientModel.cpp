@@ -151,12 +151,10 @@ void ClientModel::createVertexArrays() const {
         GLChecked(glEnableVertexAttribArray(0));
         GLChecked(glEnableVertexAttribArray(1));
         GLChecked(glEnableVertexAttribArray(2));
-        GLChecked(glEnableVertexAttribArray(3));
 
         GLChecked(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, SizeAndOffset(Vertex, position)));
         GLChecked(glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE,  SizeAndOffset(Vertex, normal)));
-        GLChecked(glVertexAttribPointer(2, 2, GL_SHORT, GL_TRUE,  SizeAndOffset(Vertex, texCoord)));
-        GLChecked(glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, SizeAndOffset(Vertex, color)));
+        GLChecked(glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, SizeAndOffset(Vertex, texCoord)));
 
         GLChecked(glBindVertexArray(0));
 

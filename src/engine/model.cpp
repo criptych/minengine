@@ -108,12 +108,6 @@ void Model::addIndices(const uint16_t *verts, size_t count) {
     mIndices.insert(mIndices.end(), verts, verts + count);
 }
 
-void Model::setColor(const sf::Color &color) {
-    for (Vertex &v : mVertices) {
-        v.color = color;
-    }
-}
-
 void Model::calcNormals(bool smooth) {
     calcNormals(0, mVertices.size(), smooth);
 }
@@ -265,35 +259,35 @@ void Model::addBox(const sf::Vector3f &size, const sf::Vector3f &center) {
         case GLQuads: {
             reserveVertices(mVertices.size() + 24);
 
-            addVertex(Vertex(0x7fff,0x0000,  1, 0, 0, mx.x,mx.y,mn.z));
-            addVertex(Vertex(0x7fff,0x7fff,  1, 0, 0, mx.x,mx.y,mx.z));
-            addVertex(Vertex(0x0000,0x7fff,  1, 0, 0, mx.x,mn.y,mx.z));
-            addVertex(Vertex(0x0000,0x0000,  1, 0, 0, mx.x,mn.y,mn.z));
+            addVertex(Vertex(1.0f,0.0f,  1.0f, 0.0f, 0.0f, mx.x,mx.y,mn.z));
+            addVertex(Vertex(1.0f,1.0f,  1.0f, 0.0f, 0.0f, mx.x,mx.y,mx.z));
+            addVertex(Vertex(0.0f,1.0f,  1.0f, 0.0f, 0.0f, mx.x,mn.y,mx.z));
+            addVertex(Vertex(0.0f,0.0f,  1.0f, 0.0f, 0.0f, mx.x,mn.y,mn.z));
 
-            addVertex(Vertex(0x0000,0x0000, -1, 0, 0, mn.x,mn.y,mn.z));
-            addVertex(Vertex(0x0000,0x7fff, -1, 0, 0, mn.x,mn.y,mx.z));
-            addVertex(Vertex(0x7fff,0x7fff, -1, 0, 0, mn.x,mx.y,mx.z));
-            addVertex(Vertex(0x7fff,0x0000, -1, 0, 0, mn.x,mx.y,mn.z));
+            addVertex(Vertex(0.0f,0.0f, -1.0f, 0.0f, 0.0f, mn.x,mn.y,mn.z));
+            addVertex(Vertex(0.0f,1.0f, -1.0f, 0.0f, 0.0f, mn.x,mn.y,mx.z));
+            addVertex(Vertex(1.0f,1.0f, -1.0f, 0.0f, 0.0f, mn.x,mx.y,mx.z));
+            addVertex(Vertex(1.0f,0.0f, -1.0f, 0.0f, 0.0f, mn.x,mx.y,mn.z));
 
-            addVertex(Vertex(0x0000,0x0000,  0, 1, 0, mn.x,mx.y,mn.z));
-            addVertex(Vertex(0x0000,0x7fff,  0, 1, 0, mn.x,mx.y,mx.z));
-            addVertex(Vertex(0x7fff,0x7fff,  0, 1, 0, mx.x,mx.y,mx.z));
-            addVertex(Vertex(0x7fff,0x0000,  0, 1, 0, mx.x,mx.y,mn.z));
+            addVertex(Vertex(0.0f,0.0f,  0.0f, 1.0f, 0.0f, mn.x,mx.y,mn.z));
+            addVertex(Vertex(0.0f,1.0f,  0.0f, 1.0f, 0.0f, mn.x,mx.y,mx.z));
+            addVertex(Vertex(1.0f,1.0f,  0.0f, 1.0f, 0.0f, mx.x,mx.y,mx.z));
+            addVertex(Vertex(1.0f,0.0f,  0.0f, 1.0f, 0.0f, mx.x,mx.y,mn.z));
 
-            addVertex(Vertex(0x7fff,0x0000,  0,-1, 0, mx.x,mn.y,mn.z));
-            addVertex(Vertex(0x7fff,0x7fff,  0,-1, 0, mx.x,mn.y,mx.z));
-            addVertex(Vertex(0x0000,0x7fff,  0,-1, 0, mn.x,mn.y,mx.z));
-            addVertex(Vertex(0x0000,0x0000,  0,-1, 0, mn.x,mn.y,mn.z));
+            addVertex(Vertex(1.0f,0.0f,  0.0f,-1.0f, 0.0f, mx.x,mn.y,mn.z));
+            addVertex(Vertex(1.0f,1.0f,  0.0f,-1.0f, 0.0f, mx.x,mn.y,mx.z));
+            addVertex(Vertex(0.0f,1.0f,  0.0f,-1.0f, 0.0f, mn.x,mn.y,mx.z));
+            addVertex(Vertex(0.0f,0.0f,  0.0f,-1.0f, 0.0f, mn.x,mn.y,mn.z));
 
-            addVertex(Vertex(0x7fff,0x0000,  0, 0, 1, mx.x,mn.y,mx.z));
-            addVertex(Vertex(0x7fff,0x7fff,  0, 0, 1, mx.x,mx.y,mx.z));
-            addVertex(Vertex(0x0000,0x7fff,  0, 0, 1, mn.x,mx.y,mx.z));
-            addVertex(Vertex(0x0000,0x0000,  0, 0, 1, mn.x,mn.y,mx.z));
+            addVertex(Vertex(1.0f,0.0f,  0.0f, 0.0f, 1.0f, mx.x,mn.y,mx.z));
+            addVertex(Vertex(1.0f,1.0f,  0.0f, 0.0f, 1.0f, mx.x,mx.y,mx.z));
+            addVertex(Vertex(0.0f,1.0f,  0.0f, 0.0f, 1.0f, mn.x,mx.y,mx.z));
+            addVertex(Vertex(0.0f,0.0f,  0.0f, 0.0f, 1.0f, mn.x,mn.y,mx.z));
 
-            addVertex(Vertex(0x0000,0x0000,  0, 0,-1, mn.x,mn.y,mn.z));
-            addVertex(Vertex(0x0000,0x7fff,  0, 0,-1, mn.x,mx.y,mn.z));
-            addVertex(Vertex(0x7fff,0x7fff,  0, 0,-1, mx.x,mx.y,mn.z));
-            addVertex(Vertex(0x7fff,0x0000,  0, 0,-1, mx.x,mn.y,mn.z));
+            addVertex(Vertex(0.0f,0.0f,  0.0f, 0.0f,-1.0f, mn.x,mn.y,mn.z));
+            addVertex(Vertex(0.0f,1.0f,  0.0f, 0.0f,-1.0f, mn.x,mx.y,mn.z));
+            addVertex(Vertex(1.0f,1.0f,  0.0f, 0.0f,-1.0f, mx.x,mx.y,mn.z));
+            addVertex(Vertex(1.0f,0.0f,  0.0f, 0.0f,-1.0f, mx.x,mn.y,mn.z));
 
             break;
         }

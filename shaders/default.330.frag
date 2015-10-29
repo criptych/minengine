@@ -34,7 +34,6 @@ uniform Material uMaterial;
 in vec3 vVertex;
 in vec3 vNormal;
 in vec2 vTexCoord;
-in vec4 vColor;
 
 out vec4 fColor;
 
@@ -79,12 +78,8 @@ void main () {
     vec4 specTexCol = texture2D(uMaterial.specMap, texCoord);
     vec4 glowTexCol = texture2D(uMaterial.glowMap, texCoord);
 
-    diffTexCol *= vColor;
-
     vec3 bumpNormal = texture2D(uMaterial.bumpMap, texCoord).xyz * 2 - 1;
     normal = normalize(TBN * bumpNormal);
-    //~ normal = bumpNormal;
-
 
     vec3 ambtColor, diffColor, specColor;
     vec3 glowColor = glowTexCol.rgb;
