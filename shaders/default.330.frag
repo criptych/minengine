@@ -106,6 +106,7 @@ void main () {
     }
 
     fColor = vec4(0);
+    fColor.rgb += ambtColor;
     fColor.rgb += diffColor;
     fColor.rgb += specColor;
     fColor.rgb += glowColor;
