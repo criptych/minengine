@@ -23,20 +23,31 @@ ADD_SUBDIRECTORY(lib/glew-1.13.0)
 
 SET(ENGINE_SRCS
     src/engine/engine.cpp
+    src/engine/engine.hpp
     src/engine/entity.cpp
+    src/engine/entity.hpp
     src/engine/math.cpp
+    src/engine/math.hpp
     src/engine/model.cpp
+    src/engine/model.hpp
     src/engine/network.cpp
+    src/engine/network.hpp
     src/engine/physics.cpp
+    src/engine/physics.hpp
     src/engine/types.cpp
+    src/engine/types.hpp
     src/engine/world.cpp
+    src/engine/world.hpp
 )
 
 SET(CLIENT_SRCS
     src/client/client.cpp
     src/client/Camera.cpp
+    src/client/Camera.hpp
     src/client/ClientModel.cpp
+    src/client/ClientModel.hpp
     src/client/Transformable3D.cpp
+    src/client/Transformable3D.hpp
 )
 
 SET(SERVER_SRCS
@@ -44,6 +55,7 @@ SET(SERVER_SRCS
 )
 
 SET(TEST_SRCS
+    test/catch.hpp
     test/testmain.cpp
     test/test_physics.cpp
 )
