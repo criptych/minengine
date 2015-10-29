@@ -546,7 +546,9 @@ void GameWindow::init() {
     mCubeMtl.fresnelScale = 1.0f;
     mCubeMtl.fresnelBias = 0.0f;
 
-    lockMouse();
+    if (hasFocus()) {
+        lockMouse();
+    }
 }
 
 void GameWindow::quit(bool internal) {
