@@ -70,8 +70,7 @@ void main () {
     float height = texture2D(uMaterial.bumpMap, texCoord).w;
 
     mat3 TBN = cotangent_frame( normal, -eyeDir, texCoord );
-    //~ float scale = uMaterial.bumpScale * height - uMaterial.bumpBias;
-    float scale = 0.02 * height - 0.00;
+    float scale = uMaterial.bumpScale * height - uMaterial.bumpBias;
     texCoord += scale * normalize(TBN * eyeDir).xy;
 
     vec4 diffTexCol = texture2D(uMaterial.diffMap, texCoord);
@@ -95,9 +94,8 @@ void main () {
         //~ float specFactor = pow(max(0, dot(eyeDir, reflect(lightDir, normal))), uMaterial.specPower); // True Phong
         //~ float specFactor = max(0, dot(normal, normalize(eyeDir+uLightDir)));
 
-        //~ float fresnelFactor = uMaterial.fresnelBias + uMaterial.fresnelScale *
-            //~ pow(1.0 + dot(eyeDir, normal), uMaterial.fresnelPower);
-        float fresnelFactor = min(1.0, pow(1.0 - dot(eyeDir, halfVec), 2.0));
+        float fresnelFactor = uMaterial.fresnelBias + uMaterial.fresnelScale *
+            pow(1.0 - dot(eyeDir, halfVec), uMaterial.fresnelPower);
 
         //~ diffFactor = pow(0.5 + 0.5 * diffFactor, 2.0);
 
