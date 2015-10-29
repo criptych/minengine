@@ -15,7 +15,6 @@
 
 class ClientModel {
     const Model *mModel;
-    const sf::Shader *mShader;
     mutable GLuint mVAO;
     mutable GLuint mVBO;
     mutable GLuint mIBO;
@@ -23,18 +22,13 @@ class ClientModel {
     mutable GLuint mCount;
 
 public:
-    ClientModel(const Model *model = nullptr, const sf::Shader *shader = nullptr);
+    ClientModel(const Model *model = nullptr);
     ClientModel(const Model &model);
-    ClientModel(const Model &model, const sf::Shader &shader);
     ~ClientModel();
 
     void setModel(const Model &model);
     void setModel(const Model *model);
     const Model *getModel() const;
-
-    void setShader(const sf::Shader &shader);
-    void setShader(const sf::Shader *shader);
-    const sf::Shader *getShader() const;
 
     void render() const;
 

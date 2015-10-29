@@ -10,20 +10,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 ClientModel::ClientModel(
-    const Model *model,
-    const sf::Shader *shader
-): mModel(model), mShader(shader), mVBO(), mPrimitive(), mCount() {
+    const Model *model
+): mModel(model), mVAO(), mVBO(), mIBO(), mPrimitive(), mCount() {
 }
 
 ClientModel::ClientModel(
     const Model &model
-): mModel(&model), mShader(nullptr), mVBO(), mPrimitive(), mCount() {
-}
-
-ClientModel::ClientModel(
-    const Model &model,
-    const sf::Shader &shader
-): mModel(&model), mShader(&shader), mVBO(), mPrimitive(), mCount() {
+): mModel(&model), mVAO(), mVBO(), mIBO(), mPrimitive(), mCount() {
 }
 
 ClientModel::~ClientModel() {
@@ -46,18 +39,6 @@ const Model *ClientModel::getModel() const {
     return mModel;
 }
 
-void ClientModel::setShader(const sf::Shader *shader) {
-    mShader = shader;
-}
-
-void ClientModel::setShader(const sf::Shader &shader) {
-    setShader(&shader);
-}
-
-const sf::Shader *ClientModel::getShader() const {
-    return mShader;
-}
-
 void ClientModel::render() const {
     if (mModel) {
         if (mVAO == 0) {
@@ -65,10 +46,6 @@ void ClientModel::render() const {
             if (mVAO == 0) {
                 return;
             }
-        }
-
-        if (mShader) {
-            GLChecked(sf::Shader::bind(mShader));
         }
 
         GLClearErrors();
@@ -121,10 +98,6 @@ void ClientModel::render() const {
         }
 
         GLChecked(glBindVertexArray(0));
-
-        if (mShader) {
-            GLChecked(sf::Shader::bind(nullptr));
-        }
     }
 }
 

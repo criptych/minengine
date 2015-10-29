@@ -46,6 +46,8 @@ SET(CLIENT_SRCS
     src/client/Camera.hpp
     src/client/ClientModel.cpp
     src/client/ClientModel.hpp
+    src/client/ClientObject.cpp
+    src/client/ClientObject.hpp
     src/client/Transformable3D.cpp
     src/client/Transformable3D.hpp
 )

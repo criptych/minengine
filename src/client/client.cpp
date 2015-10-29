@@ -23,6 +23,7 @@
 #include "Transformable3D.hpp"
 #include "Camera.hpp"
 #include "ClientModel.hpp"
+#include "ClientObject.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -206,13 +207,20 @@ class GameWindow : protected sf::RenderWindow {
     sf::Texture mCubeBumpMap;
 
     Model mBallModel;
-    ClientModel mBall;
-
     Model mPlaneModel;
-    ClientModel mPlane;
-
     Model mCubeModel;
+
+    ClientModel mBall;
+    ClientModel mPlane;
     ClientModel mCube;
+
+    MaterialInfo mBallMtl;
+    MaterialInfo mPlaneMtl;
+    MaterialInfo mCubeMtl;
+
+    ClientObject mBallObj;
+    ClientObject mPlaneObj;
+    ClientObject mCubeObj;
 
     ChunkData mTestChunkData;
     Chunk mTestChunk;
@@ -281,7 +289,12 @@ GameWindow::GameWindow(
 ), mSpinAngle(
 ), mSpinSpeed(
     12
-), mTestChunkData(
+), mBallObj(
+    mBall, mBlockShader, mBallMtl
+), mPlaneObj(
+    mPlane, mBlockShader, mPlaneMtl
+), mCubeObj(
+    mCube, mBlockShader, mCubeMtl
 ), mTestChunk(
     Position(),
     &mTestChunkData
@@ -472,7 +485,6 @@ void GameWindow::init() {
 
     mBallModel.makeBall(0.5f, 8, 16);
     mBall.setModel(mBallModel);
-    mBall.setShader(mBlockShader);
 
     mPlaneModel.setPrimitive(GL_TRIANGLES);
 
@@ -496,13 +508,43 @@ void GameWindow::init() {
         }
     }
 
-    //~ mPlaneModel.setColor(sf::Color::Green);
     mPlane.setModel(mPlaneModel);
-    mPlane.setShader(mBlockShader);
 
     mCubeModel.makeBox(sf::Vector3f(0.5f, 0.5f, 0.5f), sf::Vector3f(0, 0.5f, 0));
     mCube.setModel(mCubeModel);
-    mCube.setShader(mBlockShader);
+
+    mBallMtl.diffMap = &mWhiteTex;
+    mBallMtl.specMap = &mWhiteTex;
+    mBallMtl.glowMap = &mClearTex;
+    mBallMtl.bumpMap = &mClearTex;
+    mBallMtl.specPower = 100.0f;
+    mBallMtl.bumpScale = 0.00f;
+    mBallMtl.bumpBias = 0.00f;
+    mBallMtl.fresnelPower = 5.0f;
+    mBallMtl.fresnelScale = 1.0f;
+    mBallMtl.fresnelBias = 0.0f;
+
+    mPlaneMtl.diffMap = &mDiffMap;
+    mPlaneMtl.specMap = &mSpecMap;
+    mPlaneMtl.glowMap = &mGlowMap;
+    mPlaneMtl.bumpMap = &mBumpMap;
+    mPlaneMtl.specPower = 100.0f;
+    mPlaneMtl.bumpScale = 0.02f;
+    mPlaneMtl.bumpBias = 0.00f;
+    mPlaneMtl.fresnelPower = 5.0f;
+    mPlaneMtl.fresnelScale = 1.0f;
+    mPlaneMtl.fresnelBias = 0.0f;
+
+    mCubeMtl.diffMap = &mCubeDiffMap;
+    mCubeMtl.specMap = &mCubeSpecMap;
+    mCubeMtl.glowMap = &mCubeGlowMap;
+    mCubeMtl.bumpMap = &mCubeBumpMap;
+    mCubeMtl.specPower = 1000.0f;
+    mCubeMtl.bumpScale = 0.05f;
+    mCubeMtl.bumpBias = -0.02f;
+    mCubeMtl.fresnelPower = 5.0f;
+    mCubeMtl.fresnelScale = 1.0f;
+    mCubeMtl.fresnelBias = 0.0f;
 
     lockMouse();
 }
@@ -967,26 +1009,13 @@ void GameWindow::render() {
     lightBallTransform.translate(spinLightPos);
     mBlockShader.setParameter("uViewMatrix", lightBallTransform);
 
-    mBlockShader.setParameter("uMaterial.diffMap", mWhiteTex);
-    mBlockShader.setParameter("uMaterial.specMap", mWhiteTex);
-    mBlockShader.setParameter("uMaterial.glowMap", mClearTex);
-    mBlockShader.setParameter("uMaterial.bumpMap", mClearTex);
-    mBall.render();
+    mBallObj.render();
 
     sf::Transform3D modelViewTransform;
     mBlockShader.setParameter("uViewMatrix", modelViewTransform);
 
-    mBlockShader.setParameter("uMaterial.diffMap", mDiffMap);
-    mBlockShader.setParameter("uMaterial.specMap", mSpecMap);
-    mBlockShader.setParameter("uMaterial.glowMap", mGlowMap);
-    mBlockShader.setParameter("uMaterial.bumpMap", mBumpMap);
-    mPlane.render();
-
-    mBlockShader.setParameter("uMaterial.diffMap", mCubeDiffMap);
-    mBlockShader.setParameter("uMaterial.specMap", mCubeSpecMap);
-    mBlockShader.setParameter("uMaterial.glowMap", mCubeGlowMap);
-    mBlockShader.setParameter("uMaterial.bumpMap", mCubeBumpMap);
-    mCube.render();
+    mPlaneObj.render();
+    mCubeObj.render();
 
     ////////////////////////////////////////////////////////////
     //  end 3D
