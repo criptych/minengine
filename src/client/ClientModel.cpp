@@ -52,49 +52,10 @@ void ClientModel::render() const {
 
         GLChecked(glBindVertexArray(mVAO));
 
-        GLChecked(glBindBuffer(GL_ARRAY_BUFFER, mVBO));
-
-        if (mIBO) {
-            GLChecked(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIBO));
-        }
-
-#define SizeAndOffset(T, F) sizeof(T), reinterpret_cast<const void*>(offsetof(T, F))
-
-        GLChecked(glEnableVertexAttribArray(0));
-        GLChecked(glEnableVertexAttribArray(1));
-        GLChecked(glEnableVertexAttribArray(2));
-        GLChecked(glEnableVertexAttribArray(3));
-
-        GLChecked(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, SizeAndOffset(Vertex, position)));
-        GLChecked(glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE,  SizeAndOffset(Vertex, normal)));
-        GLChecked(glVertexAttribPointer(2, 2, GL_SHORT, GL_TRUE,  SizeAndOffset(Vertex, texCoord)));
-        GLChecked(glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, SizeAndOffset(Vertex, color)));
-
-        //~ GLChecked(glVertexPointer(3, GL_FLOAT, SizeAndOffset(Vertex, position)));
-        //~ GLChecked(glNormalPointer(GL_FLOAT, SizeAndOffset(Vertex, normal)));
-        //~ GLChecked(glTexCoordPointer(2, GL_SHORT, SizeAndOffset(Vertex, texCoord)));
-        //~ GLChecked(glColorPointer(4, GL_UNSIGNED_BYTE, SizeAndOffset(Vertex, color)));
-
-        //~ GLChecked(glEnableClientState(GL_VERTEX_ARRAY));
-        //~ GLChecked(glEnableClientState(GL_NORMAL_ARRAY));
-        //~ GLChecked(glEnableClientState(GL_TEXTURE_COORD_ARRAY));
-        //~ GLChecked(glEnableClientState(GL_COLOR_ARRAY));
-
         if (mIBO) {
             GLChecked(glDrawElements(mPrimitive, mCount, GL_UNSIGNED_SHORT, nullptr));
         } else {
             GLChecked(glDrawArrays(mPrimitive, 0, mCount));
-        }
-
-        GLChecked(glDisableVertexAttribArray(0));
-        GLChecked(glDisableVertexAttribArray(1));
-        GLChecked(glDisableVertexAttribArray(2));
-        GLChecked(glDisableVertexAttribArray(3));
-
-        GLChecked(glBindBuffer(GL_ARRAY_BUFFER, 0));
-
-        if (mIBO) {
-            GLChecked(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
         }
 
         GLChecked(glBindVertexArray(0));
@@ -166,7 +127,6 @@ void ClientModel::createVertexArrays() const {
             const void *data = mModel->getIndices().data();
             GLChecked(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIBO));
             GLChecked(glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
-            GLChecked(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
         }
 
         sf::err() << ", mPrimitive = " << mPrimitive;
@@ -179,7 +139,24 @@ void ClientModel::createVertexArrays() const {
         sf::err() << std::flush;
         GLChecked(glBindBuffer(GL_ARRAY_BUFFER, mVBO));
         GLChecked(glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
-        GLChecked(glBindBuffer(GL_ARRAY_BUFFER, 0));
+
+        GLChecked(glBindBuffer(GL_ARRAY_BUFFER, mVBO));
+
+        if (mIBO) {
+            GLChecked(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIBO));
+        }
+
+#define SizeAndOffset(T, F) sizeof(T), reinterpret_cast<const void*>(offsetof(T, F))
+
+        GLChecked(glEnableVertexAttribArray(0));
+        GLChecked(glEnableVertexAttribArray(1));
+        GLChecked(glEnableVertexAttribArray(2));
+        GLChecked(glEnableVertexAttribArray(3));
+
+        GLChecked(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, SizeAndOffset(Vertex, position)));
+        GLChecked(glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE,  SizeAndOffset(Vertex, normal)));
+        GLChecked(glVertexAttribPointer(2, 2, GL_SHORT, GL_TRUE,  SizeAndOffset(Vertex, texCoord)));
+        GLChecked(glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, SizeAndOffset(Vertex, color)));
 
         GLChecked(glBindVertexArray(0));
 
