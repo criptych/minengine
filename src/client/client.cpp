@@ -157,6 +157,7 @@ class GameWindow : protected sf::RenderWindow {
     bool mFullscreen;
     bool mMouseLocked;
     bool mAllowQuit;
+    bool mQuitting;
     bool mPaused;
 
     int mViewMode;
@@ -262,6 +263,8 @@ GameWindow::GameWindow(
     false
 ), mAllowQuit(
     true
+), mQuitting(
+    false
 ), mPaused(
     false
 ), mViewMode(
@@ -310,11 +313,13 @@ void GameWindow::run() {
     sf::Time fpsAccum;
     sf::Time fpsInterval(sf::microseconds(1000000));
 
+    mQuitting = false;
+
     init();
 
     mFrameLength = sf::Time::Zero;
 
-    while (isOpen()) {
+    while (!mQuitting) {
         sf::Time delta = clock.restart();
 
         handleEvents();
@@ -371,7 +376,7 @@ void GameWindow::run() {
         }
     }
 
-    quit(true);
+    close();
 }
 
 void GameWindow::quit() {
@@ -553,7 +558,7 @@ void GameWindow::init() {
 
 void GameWindow::quit(bool internal) {
     if (internal || mAllowQuit) {
-        close();
+        mQuitting = true;
     }
 }
 
