@@ -1,8 +1,6 @@
 #version 330
 #extension all : warn
 
-//~ #error
-
 uniform mat4 uProjMatrix;
 uniform mat4 uViewMatrix;
 

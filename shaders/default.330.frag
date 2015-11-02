@@ -64,7 +64,7 @@ mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 
 void main () {
     vec3 normal = normalize(vNormal);
-    vec3 eyeDir = normalize(uEyePos - vVertex);
+    vec3 eyeDir = normalize(-vVertex);
 
     vec2 texCoord = vTexCoord;
     float height = texture2D(uMaterial.bumpMap, texCoord).w;

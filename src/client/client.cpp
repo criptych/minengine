@@ -45,7 +45,6 @@ public:
     const Camera &getCamera() const;
 
     const sf::Transform3D &getTransform() const;
-    sf::Transform3D getViewTransform() const;
 
     sf::Vector3f getEyePosition() const;
 
@@ -94,10 +93,6 @@ const sf::Transform3D &Player::getTransform() const {
         mNeedsUpdate = false;
     }
     return mTransform;
-}
-
-sf::Transform3D Player::getViewTransform() const {
-    return mCamera.getTransform() * getTransform();
 }
 
 const sf::Vector3f &Player::getPosition() const {
@@ -996,10 +991,12 @@ void GameWindow::render() {
 
     mPlayer.render();
 
-    sf::Transform3D projectionTransform(mPlayer.getViewTransform());
+    sf::Transform3D projectionTransform(mPlayer.getCamera().getTransform());
+    sf::Transform3D modelViewTransform(mPlayer.getTransform());
 
     mBlockShader.setParameter("uTime", mPlayTime.asSeconds());
     mBlockShader.setParameter("uProjMatrix", projectionTransform);
+    mBlockShader.setParameter("uViewMatrix", modelViewTransform);
 
     sf::Transform3D spinLight;
     spinLight.rotate(mSpinAngle, sf::Vector3f(0,1,0));
@@ -1009,23 +1006,20 @@ void GameWindow::render() {
     static const sf::Color lightDiff(204,204,204);
     static const sf::Color lightSpec(255,255,255);
 
-    mBlockShader.setParameter("uLights[0].position", spinLightPos);
+    mBlockShader.setParameter("uLights[0].position", modelViewTransform * spinLightPos);
     mBlockShader.setParameter("uLights[0].ambtColor", lightAmbt);
     mBlockShader.setParameter("uLights[0].diffColor", lightDiff);
     mBlockShader.setParameter("uLights[0].specColor", lightSpec);
     mBlockShader.setParameter("uEyePos", mPlayer.getEyePosition());
 
-    sf::Transform3D lightBallTransform;
-    lightBallTransform.translate(spinLightPos);
-    mBlockShader.setParameter("uViewMatrix", lightBallTransform);
-
-    mBallObj.render();
-
-    sf::Transform3D modelViewTransform;
-    mBlockShader.setParameter("uViewMatrix", modelViewTransform);
-
     mPlaneObj.render();
     mCubeObj.render();
+
+    sf::Transform3D lightBallTransform;
+    lightBallTransform.translate(spinLightPos);
+    mBlockShader.setParameter("uViewMatrix", modelViewTransform * lightBallTransform);
+
+    mBallObj.render();
 
     ////////////////////////////////////////////////////////////
     //  end 3D
