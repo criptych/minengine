@@ -235,7 +235,7 @@ public:
     void quit();
 
 protected:
-    void init();
+    bool init();
     void quit(bool internal);
 
     bool loadShaders();
@@ -315,7 +315,9 @@ void GameWindow::run() {
 
     mQuitting = false;
 
-    init();
+    if (!init()) {
+        return;
+    }
 
     mFrameLength = sf::Time::Zero;
 
@@ -425,7 +427,7 @@ static bool mergeImages(const std::string &rgbFN, const std::string &alphaFN, sf
     return true;
 }
 
-void GameWindow::init() {
+bool GameWindow::init() {
     mContextSettings = sf::ContextSettings(
         24, 8,  // depth and stencil bits
         8,      // antialiasing level
@@ -469,11 +471,11 @@ void GameWindow::init() {
     GLChecked(glClearColor(0.200,0.267,0.333,0.0));
 
     if (!loadShaders()) {
-        quit(true);
+        return false;
     }
 
     if (!loadTextures()) {
-        quit(true);
+        return false;
     }
 
     sf::Image white;
@@ -554,6 +556,8 @@ void GameWindow::init() {
     if (hasFocus()) {
         lockMouse();
     }
+
+    return true;
 }
 
 void GameWindow::quit(bool internal) {
