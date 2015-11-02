@@ -111,4 +111,6 @@ void main () {
     fColor.rgb += specColor;
     fColor.rgb += glowColor;
     fColor.a   += diffTexCol.a;
+
+    fColor.rgb = pow(fColor.rgb, vec3(1.0/2.2));
 }
