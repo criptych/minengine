@@ -140,8 +140,6 @@ void ClientModel::createVertexArrays() const {
         GLChecked(glBindBuffer(GL_ARRAY_BUFFER, mVBO));
         GLChecked(glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
 
-        GLChecked(glBindBuffer(GL_ARRAY_BUFFER, mVBO));
-
         if (mIBO) {
             GLChecked(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIBO));
         }

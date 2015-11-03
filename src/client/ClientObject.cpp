@@ -93,9 +93,9 @@ void ClientObject::render() const {
                 mShader->setParameter("uMaterial.fresnelScale", mMaterial->fresnelScale);
                 mShader->setParameter("uMaterial.fresnelBias",  mMaterial->fresnelBias);
             }
-
-            sf::Shader::bind(mShader);
         }
+
+        sf::Shader::bind(mShader);
 
         mModel->render();
 

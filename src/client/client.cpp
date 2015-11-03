@@ -1034,6 +1034,8 @@ void GameWindow::render() {
     GLChecked(glDisable(GL_CULL_FACE));
     GLChecked(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
+    GLChecked(glBindBuffer(GL_ARRAY_BUFFER, 0));
+
     // draw 2D overlay
 
     GLChecked(pushGLStates());
