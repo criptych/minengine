@@ -31,6 +31,10 @@ struct Material {
 
 uniform Material uMaterial;
 
+uniform vec4 uFogColor = vec4(vec3(0.0), 1.0);
+uniform float uFogDensity = 0.2;
+uniform vec2 uFogRange = vec2(5.0, 50.0);
+
 in vec3 vVertex;
 in vec3 vNormal;
 in vec2 vTexCoord;
@@ -111,6 +115,11 @@ void main () {
     fColor.rgb += specColor;
     fColor.rgb += glowColor;
     fColor.a   += diffTexCol.a;
+
+    float fogFactor = exp(-pow(uFogDensity*max(0.0, -vVertex.z-uFogRange.x), 2.0));
+    //~ float fogFactor = exp(-uFogDensity*max(0.0, -vVertex.z-uFogRange.x));
+    //~ float fogFactor = 1.0 - ((-vVertex.z - uFogRange.x) / (uFogRange.y - uFogRange.x));
+    fColor.rgb = mix(uFogColor.rgb, fColor.rgb, clamp(fogFactor, 0.0, 1.0));
 
     fColor.rgb = pow(fColor.rgb, vec3(1.0/2.2));
 }
