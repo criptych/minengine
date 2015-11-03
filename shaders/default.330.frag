@@ -3,9 +3,8 @@
 
 precision mediump float;
 
-uniform float uTime = 0;
+uniform float uTime = 0.0;
 uniform vec2 uResolution = vec2(1);
-uniform vec3 uEyePos = vec3(0,0,5);
 
 struct Light {
     vec3 position;
@@ -38,6 +37,8 @@ uniform vec2 uFogRange = vec2(5.0, 50.0);
 in vec3 vVertex;
 in vec3 vNormal;
 in vec2 vTexCoord;
+
+in float vGlowFactor;
 
 out vec4 fColor;
 
@@ -86,6 +87,8 @@ void main () {
 
     vec3 ambtColor, diffColor, specColor;
     vec3 glowColor = glowTexCol.rgb;
+
+    glowColor *= vGlowFactor;
 
     for (int i = 0; i < 4; i++) {
 
