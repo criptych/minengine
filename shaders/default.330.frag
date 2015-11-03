@@ -6,6 +6,8 @@ precision mediump float;
 uniform float uTime = 0.0;
 uniform vec2 uResolution = vec2(1);
 
+const int cNumLights = 4;
+
 struct Light {
     vec3 position;
     vec4 ambtColor;
@@ -13,7 +15,7 @@ struct Light {
     vec4 specColor;
 };
 
-uniform Light uLights[4];
+uniform Light uLights[cNumLights];
 
 struct Material {
     sampler2D diffMap;
@@ -90,7 +92,7 @@ void main () {
 
     glowColor *= vGlowFactor;
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < cNumLights; i++) {
 
         vec3 lightDir = normalize(uLights[i].position.xyz - vVertex);
         vec3 halfVec = normalize(eyeDir + lightDir);
