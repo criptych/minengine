@@ -1,6 +1,53 @@
 #version 330
 #extension all : warn
 
+////////////////////////////////////////////////////////////////////////////////
+
+#ifndef HEIGHT_MAP
+# define HEIGHT_MAP 1
+#endif
+
+#ifndef NORMAL_MAP
+# define NORMAL_MAP 1
+#endif
+
+#ifndef FRESNEL
+# define FRESNEL    1
+#endif
+
+#ifndef PULSATE
+# define PULSATE    1
+#endif
+
+#ifndef GAMMA
+# define GAMMA      1
+#endif
+
+#ifndef FOG_TYPE
+# define FOG_TYPE   FOG_EXP2
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+
+#define FOG_NONE    0
+#define FOG_LINEAR  1
+#define FOG_EXP     2
+#define FOG_EXP2    3
+
+#ifndef FOG_FUNC
+# if FOG_TYPE == FOG_EXP2
+#  define FOG_FUNC(Z,D,N,F) (1.0 - exp(-pow((D)*max(0.0, (Z) - (N)), 2.0)))
+# elif FOG_TYPE == FOG_EXP
+#  define FOG_FUNC(Z,D,N,F) (1.0 - exp(-(D)*max(0.0, (Z) - (N))))
+# elif FOG_TYPE == FOG_LINEAR
+#  define FOG_FUNC(Z,D,N,F) (((Z) - (N)) / ((F) - (N)))
+# else
+#  define FOG_FUNC(Z,D,N,F) (0.0)
+# endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+
 precision mediump float;
 
 uniform float uTime = 0.0;
@@ -76,23 +123,30 @@ void main () {
     vec3 eyeDir = normalize(-vVertex);
 
     vec2 texCoord = vTexCoord;
-    float height = texture2D(uMaterial.bumpMap, texCoord).w;
 
+#if HEIGHT_MAP || NORMAL_MAP
     mat3 TBN = cotangent_frame( normal, -eyeDir, texCoord );
+# if HEIGHT_MAP
+    float height = texture2D(uMaterial.bumpMap, texCoord).w;
     float scale = uMaterial.bumpScale * height - uMaterial.bumpBias;
     texCoord += scale * normalize(TBN * eyeDir).xy;
+# endif
+# if NORMAL_MAP
+    vec3 bumpNormal = texture2D(uMaterial.bumpMap, texCoord).xyz * 2 - 1;
+    normal = normalize(TBN * bumpNormal);
+# endif
+#endif
 
     vec4 diffTexCol = texture2D(uMaterial.diffMap, texCoord);
     vec4 specTexCol = texture2D(uMaterial.specMap, texCoord);
     vec4 glowTexCol = texture2D(uMaterial.glowMap, texCoord);
 
-    vec3 bumpNormal = texture2D(uMaterial.bumpMap, texCoord).xyz * 2 - 1;
-    normal = normalize(TBN * bumpNormal);
-
     vec3 ambtColor, diffColor, specColor;
     vec3 glowColor = glowTexCol.rgb;
 
+#if PULSATE
     glowColor *= vGlowFactor;
+#endif
 
     for (int i = 0; i < cNumLights; i++) {
 
@@ -103,16 +157,20 @@ void main () {
         float specFactor = max(0, dot(normal, halfVec));
         specFactor = pow(specFactor, uMaterial.specPower);
 
+        vec3 ambtLight = uLights[i].ambtColor.rgb;
+        vec3 diffLight = uLights[i].diffColor.rgb * diffFactor;
+        vec3 specLight = uLights[i].specColor.rgb * specFactor;
+
+#if FRESNEL
         float fresnelFactor = uMaterial.fresnelBias + uMaterial.fresnelScale *
             pow(1.0 - dot(eyeDir, halfVec), uMaterial.fresnelPower);
-
-        vec3 ambtLight = uLights[i].ambtColor.rgb;
-        vec3 diffLight = uLights[i].diffColor.rgb * (1.0f - fresnelFactor);
-        vec3 specLight = uLights[i].specColor.rgb * (0.0f + fresnelFactor);
+        diffLight *= (1.0f - fresnelFactor);
+        specLight *= (0.0f + fresnelFactor);
+#endif
 
         ambtColor += ambtLight * diffTexCol.rgb * glowTexCol.a;
-        diffColor += diffLight * diffTexCol.rgb * diffFactor;
-        specColor += specLight * specTexCol.rgb * specFactor * specTexCol.a;
+        diffColor += diffLight * diffTexCol.rgb;
+        specColor += specLight * specTexCol.rgb * specTexCol.a;
     }
 
     fColor = vec4(0);
@@ -122,10 +180,12 @@ void main () {
     fColor.rgb += glowColor;
     fColor.a   += diffTexCol.a;
 
-    float fogFactor = exp(-pow(uFogDensity*max(0.0, -vVertex.z-uFogRange.x), 2.0));
-    //~ float fogFactor = exp(-uFogDensity*max(0.0, -vVertex.z-uFogRange.x));
-    //~ float fogFactor = 1.0 - ((-vVertex.z - uFogRange.x) / (uFogRange.y - uFogRange.x));
-    fColor.rgb = mix(uFogColor.rgb, fColor.rgb, clamp(fogFactor, 0.0, 1.0));
+#ifdef FOG_FUNC
+    float fogFactor = FOG_FUNC(-vVertex.z, uFogDensity, uFogRange.x, uFogRange.y);
+    fColor.rgb = mix(fColor.rgb, uFogColor.rgb, clamp(fogFactor, 0.0, 1.0));
+#endif
 
+#if GAMMA
     fColor.rgb = pow(fColor.rgb, vec3(1.0/uGamma));
+#endif
 }
