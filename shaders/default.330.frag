@@ -15,10 +15,6 @@
 # define FRESNEL    1
 #endif
 
-#ifndef PULSATE
-# define PULSATE    1
-#endif
-
 #ifndef GAMMA
 # define GAMMA      1
 #endif
@@ -79,6 +75,8 @@ struct Material {
 
 uniform Material uMaterial;
 
+uniform float uGlowFactor = 1.0;
+
 uniform vec4 uFogColor = vec4(vec3(0.0), 1.0);
 uniform float uFogDensity = 0.2;
 uniform vec2 uFogRange = vec2(5.0, 50.0);
@@ -88,8 +86,6 @@ uniform float uGamma = 2.2;
 in vec3 vVertex;
 in vec3 vNormal;
 in vec2 vTexCoord;
-
-in float vGlowFactor;
 
 out vec4 fColor;
 
@@ -144,9 +140,7 @@ void main () {
     vec3 ambtColor, diffColor, specColor;
     vec3 glowColor = glowTexCol.rgb;
 
-#if PULSATE
-    glowColor *= vGlowFactor;
-#endif
+    glowColor *= uGlowFactor;
 
     for (int i = 0; i < cNumLights; i++) {
 
