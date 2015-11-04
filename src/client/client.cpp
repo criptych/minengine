@@ -24,6 +24,7 @@
 #include "Camera.hpp"
 #include "ClientModel.hpp"
 #include "ClientObject.hpp"
+#include "TextureCache.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -187,6 +188,8 @@ class GameWindow : protected sf::RenderWindow {
     sf::Vector3f mLightPos;
     float mSpinAngle;
     float mSpinSpeed; // degrees/second
+
+    TextureCache mTextureCache;
 
     sf::Texture mDiffMap;
     sf::Texture mSpecMap;
@@ -577,12 +580,14 @@ bool GameWindow::loadShaders() {
 }
 
 bool GameWindow::loadTextures() {
-    if (!mDiffMap.loadFromFile("textures/Scifi_Hex_Wall_Albedo.jpg")) {
+    sf::Texture *t0 = mTextureCache.acquire("textures/Scifi_Hex_Wall_Albedo.jpg");
+    if (!t0) {
         return false;
     }
-    mDiffMap.setSmooth(true);
-    mDiffMap.setRepeated(true);
-    mDiffMap.generateMipmap();
+    t0->setSmooth(true);
+    t0->setRepeated(true);
+    t0->generateMipmap();
+    mDiffMap = *t0;
 
     if (!mergeImages("textures/Scifi_Hex_Wall_specular.jpg", "textures/Scifi_Hex_Wall_glossiness.jpg", mSpecMap)) {
         return false;

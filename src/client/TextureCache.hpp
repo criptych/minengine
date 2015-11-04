@@ -1,0 +1,51 @@
+////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////
+
+#ifndef __TEXTURECACHE_HPP__
+#define __TEXTURECACHE_HPP__ 1
+
+////////////////////////////////////////////////////////////////////////////////
+
+#include <SFML/Config.hpp>
+#include <SFML/Graphics/Texture.hpp>
+
+#include <map>
+#include <string>
+
+////////////////////////////////////////////////////////////////////////////////
+
+class TextureCache {
+    struct CacheEntry {
+        std::string name;
+        sf::Texture *texture;
+        sf::Uint32 references;
+    };
+    std::map<std::string, CacheEntry*> mTextures;
+    std::map<const sf::Texture*, CacheEntry*> mReverse;
+
+    size_t mMaxCount;
+
+public:
+    TextureCache(size_t maxCount = 1024);
+    ~TextureCache();
+
+    sf::Texture *acquire(const std::string &name, bool reload = false);
+    void release(const sf::Texture *texture);
+
+    void flush();
+
+protected:
+    void releaseAll();
+
+    sf::Texture *put(const std::string &name, sf::Texture *texture);
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+#endif // __TEXTURECACHE_HPP__
+
+////////////////////////////////////////////////////////////////////////////////
+//  EOF
+////////////////////////////////////////////////////////////////////////////////
+
