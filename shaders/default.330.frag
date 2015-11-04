@@ -15,6 +15,10 @@
 # define FRESNEL    1
 #endif
 
+#ifndef HDR
+# define HDR        0
+#endif
+
 #ifndef GAMMA
 # define GAMMA      1
 #endif
@@ -81,6 +85,7 @@ uniform vec4 uFogColor = vec4(vec3(0.0), 1.0);
 uniform float uFogDensity = 0.2;
 uniform vec2 uFogRange = vec2(5.0, 50.0);
 
+uniform float uExposure = 1.0;
 uniform float uGamma = 2.2;
 
 in vec3 vVertex;
@@ -177,6 +182,10 @@ void main () {
 #ifdef FOG_FUNC
     float fogFactor = FOG_FUNC(-vVertex.z, uFogDensity, uFogRange.x, uFogRange.y);
     fColor.rgb = mix(fColor.rgb, uFogColor.rgb, clamp(fogFactor, 0.0, 1.0));
+#endif
+
+#if HDR
+    fColor.rgb = vec3(1.0) - exp(-fColor.rgb * uExposure);
 #endif
 
 #if GAMMA
