@@ -31,7 +31,6 @@
 class Player {
     Camera mCamera;
     float mEyeHeight;
-    sf::Vector3f mPosition;
     sf::Vector2f mLookDir;
 
     Physics::Body mBody;
@@ -45,12 +44,15 @@ public:
     Camera &getCamera();
     const Camera &getCamera() const;
 
+    Physics::Body &getBody();
+    const Physics::Body &getBody() const;
+
     const sf::Transform3D &getTransform() const;
 
     sf::Vector3f getEyePosition() const;
 
     void setPosition(const sf::Vector3f &position);
-    const sf::Vector3f &getPosition() const;
+    sf::Vector3f getPosition() const;
 
     void move(const sf::Vector3f &offset);
 
@@ -59,7 +61,6 @@ public:
 
     void look(const sf::Vector2f &look);
 
-    void update(const sf::Time &delta);
     void render() const;
 };
 
@@ -85,6 +86,14 @@ const Camera &Player::getCamera() const {
     return mCamera;
 }
 
+Physics::Body &Player::getBody() {
+    return mBody;
+}
+
+const Physics::Body &Player::getBody() const {
+    return mBody;
+}
+
 const sf::Transform3D &Player::getTransform() const {
     if (mNeedsUpdate) {
         mTransform = sf::Transform3D();
@@ -96,16 +105,18 @@ const sf::Transform3D &Player::getTransform() const {
     return mTransform;
 }
 
-const sf::Vector3f &Player::getPosition() const {
-    return mPosition;
+sf::Vector3f Player::getPosition() const {
+    return sf::Vector3f(mBody.getPosition()) / 256.0f;
 }
 
 void Player::setPosition(const sf::Vector3f &position) {
-    mPosition = position;
+    mBody.setPosition(Position(position * 256.0f));
+    mNeedsUpdate = true;
 }
 
 sf::Vector3f Player::getEyePosition() const {
-    return sf::Vector3f(mPosition.x, mPosition.y + mEyeHeight, mPosition.z);
+    sf::Vector3f position(getPosition());
+    return sf::Vector3f(position.x, position.y + mEyeHeight, position.z);
 }
 
 void Player::setLook(const sf::Vector2f &look) {
@@ -128,8 +139,7 @@ void Player::look(const sf::Vector2f &look) {
 }
 
 void Player::move(const sf::Vector3f &move) {
-    mPosition += sf::Transform3D().rotate(-getLook().x, sf::Vector3f(0,1,0)) * move;
-    mNeedsUpdate = true;
+    setPosition(getPosition() + sf::Transform3D().rotate(-getLook().x, sf::Vector3f(0,1,0)) * move);
 }
 
 void Player::render() const {
