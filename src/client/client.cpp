@@ -912,7 +912,7 @@ void GameWindow::handleInput(const sf::Time &delta) {
             move *= 0.25f;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
-            move *= 2.0f;
+            move *= 4.0f;
         }
 
         float fov = mPlayer.getCamera().getFOV();
