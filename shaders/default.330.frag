@@ -192,7 +192,7 @@ void main () {
     fColor.a   += diffTexCol.a;
 
 #ifdef FOG_FUNC
-    float fogFactor = FOG_FUNC(-vVertex.z, uFogDensity, uFogRange.x, uFogRange.y);
+    float fogFactor = FOG_FUNC(length(vVertex), uFogDensity, uFogRange.x, uFogRange.y);
     fColor.rgb = mix(fColor.rgb, uFogColor.rgb, clamp(fogFactor, 0.0, 1.0));
 #endif
 
