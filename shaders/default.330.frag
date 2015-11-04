@@ -82,7 +82,7 @@ uniform Material uMaterial;
 uniform float uGlowFactor = 1.0;
 
 uniform vec4 uFogColor = vec4(vec3(0.0), 1.0);
-uniform float uFogDensity = 0.2;
+uniform float uFogDensity = 0.05;
 uniform vec2 uFogRange = vec2(5.0, 50.0);
 
 uniform float uExposure = 1.0;
