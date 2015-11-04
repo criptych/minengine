@@ -505,8 +505,13 @@ bool GameWindow::init() {
     sf::err() << "max = <" << max.x << ',' << max.y << ',' << max.z << ">\n";
 
     for (pos.z = min.z; pos.z <= max.z; pos.z += size.z * 2) {
+        mPlaneModel.addBox(sf::Vector3f(size.x, size.z, size.y), sf::Vector3f(pos.z, size.z, min.z-size.z));
+        mPlaneModel.addBox(sf::Vector3f(size.y, size.x, size.z), sf::Vector3f(min.x-size.x, size.x, pos.z));
+        mPlaneModel.addBox(sf::Vector3f(size.x, size.z, size.y), sf::Vector3f(pos.z, size.z, max.z+size.z));
+        mPlaneModel.addBox(sf::Vector3f(size.y, size.x, size.z), sf::Vector3f(max.x+size.x, size.x, pos.z));
         for (pos.x = min.x; pos.x <= max.x; pos.x += size.x * 2) {
             mPlaneModel.addBox(size, pos);
+            mPlaneModel.addBox(size, pos+sf::Vector3f(0,4,0));
         }
     }
 
