@@ -634,9 +634,9 @@ void GameWindow::handleEvent(const sf::Event &event) {
 
                 case sf::Keyboard::R: {
                     if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                        //~ loadTextures();
+                        mTextureCache.reloadAll();
                     } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
-                        //~ loadShaders();
+                        mShaderCache.reloadAll();
                     }
                     break;
                 }

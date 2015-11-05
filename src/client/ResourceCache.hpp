@@ -31,6 +31,8 @@ public:
     Resource *acquire(const std::string &name, bool reload = false);
     void release(const Resource *resource);
 
+    void reloadAll();
+
     void flush();
 
 protected:
@@ -62,8 +64,8 @@ ResourceCache<Resource>::~ResourceCache() {
 
 template <typename Resource>
 void ResourceCache<Resource>::releaseAll() {
-    for (auto &entry : mResources) {
-        entry.second->references = 0;
+    for (auto &item : mResources) {
+        item.second->references = 0;
     }
 }
 
@@ -74,6 +76,13 @@ void ResourceCache<Resource>::flush() {
         if (entry->references == 0) {
             remove(entry);
         }
+    }
+}
+
+template <typename Resource>
+void ResourceCache<Resource>::reloadAll() {
+    for (auto &item : mResources) {
+        release(acquire(item.second->name, true));
     }
 }
 
