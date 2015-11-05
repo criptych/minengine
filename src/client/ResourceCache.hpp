@@ -38,7 +38,7 @@ public:
 protected:
     void releaseAll();
 
-    virtual Resource *load(const std::string &name) = 0;
+    virtual Resource *load(Resource *resource, const std::string &name) = 0;
 
     CacheEntry *insert(const std::string &name, Resource *resource);
     void remove(CacheEntry *entry);
@@ -92,9 +92,10 @@ Resource *ResourceCache<Resource>::acquire(const std::string &name, bool reload)
     auto found = mResources.find(name);
     if (found == mResources.end()) {
         sf::err() << "Loading resource \"" << name << "\"... ";
-        Resource *resource = load(name);
-        if (!resource) {
+        Resource *resource = new Resource;
+        if (!load(resource, name)) {
             sf::err() << "error!\n";
+            delete resource;
             return nullptr;
         }
         sf::err() << "OK\n";
@@ -103,10 +104,8 @@ Resource *ResourceCache<Resource>::acquire(const std::string &name, bool reload)
         entry = found->second;
         if (reload) {
             sf::err() << "Reloading resource \"" << name << "\"... ";
-            Resource *resource = load(name);
-            if (!resource) {
+            if (!load(entry->resource, name)) {
                 sf::err() << "error!\n";
-                remove(entry);
                 return nullptr;
             }
             sf::err() << "OK\n";

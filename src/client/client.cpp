@@ -29,13 +29,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 class ShaderCache : public ResourceCache<sf::Shader> {
-    sf::Shader *load(const std::string &name) {
-        sf::Shader *shader = new sf::Shader();
+    sf::Shader *load(sf::Shader *shader, const std::string &name) {
         shader->setAttribLocation("aVertex",   0);
         shader->setAttribLocation("aNormal",   1);
         shader->setAttribLocation("aTexCoord", 2);
         if (!shader->loadFromFile(name+".vert", name+".frag")) {
-            delete shader;
             return nullptr;
         }
         return shader;
@@ -43,10 +41,8 @@ class ShaderCache : public ResourceCache<sf::Shader> {
 };
 
 class TextureCache : public ResourceCache<sf::Texture> {
-    sf::Texture *load(const std::string &name) {
-        sf::Texture *texture = new sf::Texture();
+    sf::Texture *load(sf::Texture *texture, const std::string &name) {
         if (!texture->loadFromFile(name)) {
-            delete texture;
             return nullptr;
         }
         texture->setSmooth(true);
