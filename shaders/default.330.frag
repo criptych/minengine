@@ -15,6 +15,10 @@
 # define FRESNEL    1
 #endif
 
+#ifndef FOG_TYPE
+# define FOG_TYPE   FOG_EXP2
+#endif
+
 #ifndef HDR
 # define HDR        0
 #endif
@@ -23,8 +27,8 @@
 # define GAMMA      1
 #endif
 
-#ifndef FOG_TYPE
-# define FOG_TYPE   FOG_EXP2
+#ifndef BLOOM
+# define BLOOM      0
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -88,6 +92,8 @@ uniform vec2 uFogRange = vec2(5.0, 50.0);
 uniform float uExposure = 1.0;
 uniform float uGamma = 2.2;
 
+uniform float uBloomThreshold = 0.5;
+
 in vec3 vVertex;
 in vec3 vNormal;
 in vec2 vTexCoord;
@@ -115,6 +121,12 @@ mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
     // construct a scale-invariant frame
     float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
     return mat3( T * invmax, B * invmax, N );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+float intensity(vec3 color) {
+    return dot(color, vec3(0.2126, 0.7152, 0.0722));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -190,5 +202,9 @@ void main () {
 
 #if GAMMA
     fColor.rgb = pow(fColor.rgb, vec3(1.0/uGamma));
+#endif
+
+#if BLOOM
+    fColor.rgb = step(uBloomThreshold, intensity(fColor.rgb)) * fColor.rgb;
 #endif
 }
