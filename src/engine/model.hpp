@@ -167,13 +167,11 @@ public:
     void addBox(const sf::Vector3f &size, const sf::Vector3f &center);
     void addBox(const sf::Vector3f &size, const sf::FloatRect &texRect);
     void addBox(const sf::Vector3f &size);
-    void addBox();
 
     void makeBox(const sf::Vector3f &size, const sf::Vector3f &center, const sf::FloatRect &texRect);
     void makeBox(const sf::Vector3f &size, const sf::Vector3f &center);
     void makeBox(const sf::Vector3f &size, const sf::FloatRect &texRect);
     void makeBox(const sf::Vector3f &size);
-    void makeBox();
 
     void addBall(float radius, size_t step, size_t rstep, const sf::Vector3f &center);
     void addBall(float radius, size_t step, size_t rstep);

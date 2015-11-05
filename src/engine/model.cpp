@@ -120,8 +120,6 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
         return;
     }
 
-    //~ sf::err() << "start == " << start << ", end == " << end << '\n';
-
     switch (mPrimitive) {
         case GLTriangles: {
             for (size_t i = start; i < end; i += 3) {
@@ -191,50 +189,7 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
             }
             break;
         }
-
-        case GLQuads: {
-            for (size_t i = start; i < end; i += 4) {
-                sf::Vector3f p[4], n[4];
-
-                for (size_t j = 0; j < 4; j++) {
-                    p[j] = mVertices[i+j].position;
-                }
-
-                for (size_t j = 0; j < 4; j++) {
-                    n[j] = normalize(cross(p[(j+1)%4]-p[(j+0)%4],
-                                           p[(j+3)%4]-p[(j-0)%4]));
-                }
-
-                for (size_t j = 0; j < 4; j++) {
-                    mVertices[i+j].normal = n[j];
-                }
-            }
-            break;
-        }
-
-        case GLQuadStrip: {
-            end -= 2;
-            for (size_t i = start; i < end; i += 2) {
-                sf::Vector3f p[4], n[4];
-
-                for (size_t j = 0; j < 4; j++) {
-                    p[j] = mVertices[i+j].position;
-                }
-
-                for (size_t j = 0; j < 4; j++) {
-                    n[j] = normalize(cross(p[(j+1)%4]-p[(j+0)%4],
-                                           p[(j+3)%4]-p[(j-0)%4]));
-                }
-
-                for (size_t j = 0; j < 4; j++) {
-                    mVertices[i+j].normal = n[j];
-                }
-            }
-            break;
-        }
     }
-
-    //~ sf::err() << std::flush;
 }
 
 void Model::addBox(const sf::Vector3f &size, const sf::Vector3f &center, const sf::FloatRect &texRect) {
@@ -256,10 +211,6 @@ void Model::addBox(const sf::Vector3f &size, const sf::Vector3f &center, const s
             addQuad(n+16, n+17, n+18, n+19);
             addQuad(n+20, n+21, n+22, n+23);
 
-            // continue
-        }
-
-        case GLQuads: {
             reserveVertices(24);
 
             addVertex(Vertex(t1.x,t0.y,  1.0f, 0.0f, 0.0f, mx.x,mx.y,mn.z));
@@ -309,10 +260,6 @@ void Model::addBox(const sf::Vector3f &size) {
     addBox(size, sf::Vector3f());
 }
 
-void Model::addBox() {
-    addBox(sf::Vector3f(1,1,1));
-}
-
 void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center, const sf::FloatRect &texRect) {
     clearVertices();
     clearIndices();
@@ -330,10 +277,6 @@ void Model::makeBox(const sf::Vector3f &size, const sf::FloatRect &texRect) {
 
 void Model::makeBox(const sf::Vector3f &size) {
     makeBox(size, sf::Vector3f());
-}
-
-void Model::makeBox() {
-    makeBox(sf::Vector3f(1,1,1));
 }
 
 void Model::addBall(float radius, size_t step, size_t rstep, const sf::Vector3f &center) {
