@@ -48,8 +48,8 @@ SET(CLIENT_SRCS
     src/client/ClientModel.hpp
     src/client/ClientObject.cpp
     src/client/ClientObject.hpp
-    src/client/TextureCache.cpp
-    src/client/TextureCache.hpp
+    src/client/ResourceCache.cpp
+    src/client/ResourceCache.hpp
     src/client/Transformable3D.cpp
     src/client/Transformable3D.hpp
 )

@@ -24,7 +24,34 @@
 #include "Camera.hpp"
 #include "ClientModel.hpp"
 #include "ClientObject.hpp"
-#include "TextureCache.hpp"
+#include "ResourceCache.hpp"
+
+////////////////////////////////////////////////////////////////////////////////
+
+class ShaderCache : public ResourceCache<sf::Shader> {
+    sf::Shader *load(const std::string &name) {
+        sf::Shader *shader = new sf::Shader();
+        if (!shader->loadFromFile(name+".vert", name+".frag")) {
+            delete shader;
+            return nullptr;
+        }
+        return shader;
+    }
+};
+
+class TextureCache : public ResourceCache<sf::Texture> {
+    sf::Texture *load(const std::string &name) {
+        sf::Texture *texture = new sf::Texture();
+        if (!texture->loadFromFile(name)) {
+            delete texture;
+            return nullptr;
+        }
+        texture->setSmooth(true);
+        texture->setRepeated(true);
+        texture->generateMipmap();
+        return texture;
+    }
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -199,6 +226,7 @@ class GameWindow : protected sf::RenderWindow {
     float mSpinAngle;
     float mSpinSpeed; // degrees/second
 
+    ShaderCache mShaderCache;
     TextureCache mTextureCache;
 
     sf::Texture mDiffMap;
@@ -594,9 +622,6 @@ bool GameWindow::loadTextures() {
     if (!t0) {
         return false;
     }
-    t0->setSmooth(true);
-    t0->setRepeated(true);
-    t0->generateMipmap();
     mDiffMap = *t0;
 
     if (!mergeImages("textures/Scifi_Hex_Wall_specular.jpg", "textures/Scifi_Hex_Wall_glossiness.jpg", mSpecMap)) {
