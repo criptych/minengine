@@ -51,7 +51,7 @@ void Model::clearVertices() {
 }
 
 void Model::reserveVertices(size_t count) {
-    mVertices.reserve(count);
+    mVertices.reserve(mVertices.size() + count);
 }
 
 void Model::addVertex(const Vertex &vertex) {
@@ -86,7 +86,7 @@ void Model::clearIndices() {
 }
 
 void Model::reserveIndices(size_t count) {
-    mIndices.reserve(count);
+    mIndices.reserve(mIndices.size() + count);
 }
 
 void Model::addIndex(uint16_t vertex) {
@@ -246,7 +246,7 @@ void Model::addBox(const sf::Vector3f &size, const sf::Vector3f &center, const s
 
     switch (mPrimitive) {
         case GLTriangles: {
-            reserveIndices(mIndices.size() + 36);
+            reserveIndices(36);
 
             size_t n = mVertices.size();
             addQuad(n+ 0, n+ 1, n+ 2, n+ 3);
@@ -260,7 +260,7 @@ void Model::addBox(const sf::Vector3f &size, const sf::Vector3f &center, const s
         }
 
         case GLQuads: {
-            reserveVertices(mVertices.size() + 24);
+            reserveVertices(24);
 
             addVertex(Vertex(t1.x,t0.y,  1.0f, 0.0f, 0.0f, mx.x,mx.y,mn.z));
             addVertex(Vertex(t1.x,t1.y,  1.0f, 0.0f, 0.0f, mx.x,mx.y,mx.z));
@@ -349,8 +349,8 @@ void Model::addBall(float radius, size_t step, size_t rstep, const sf::Vector3f 
     step += 1;
     rstep += 1;
 
-    reserveVertices(mVertices.size() + (step) * (rstep));
-    reserveIndices(mIndices.size() + (step) * (rstep) * 2);
+    reserveVertices((step) * (rstep));
+    reserveIndices((step) * (rstep) * 2);
 
     sf::Vector3f n;
     size_t i, j, k = mVertices.size();
