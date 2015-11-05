@@ -31,6 +31,9 @@
 class ShaderCache : public ResourceCache<sf::Shader> {
     sf::Shader *load(const std::string &name) {
         sf::Shader *shader = new sf::Shader();
+        shader->setAttribLocation("aVertex",   0);
+        shader->setAttribLocation("aNormal",   1);
+        shader->setAttribLocation("aTexCoord", 2);
         if (!shader->loadFromFile(name+".vert", name+".frag")) {
             delete shader;
             return nullptr;
@@ -220,7 +223,7 @@ class GameWindow : protected sf::RenderWindow {
     sf::Time mFrameLength;
 
     Player mPlayer;
-    mutable sf::Shader mBlockShader;
+    sf::Shader *mBlockShader;
 
     sf::Vector3f mLightPos;
     float mSpinAngle;
@@ -228,20 +231,6 @@ class GameWindow : protected sf::RenderWindow {
 
     ShaderCache mShaderCache;
     TextureCache mTextureCache;
-
-    sf::Texture mDiffMap;
-    sf::Texture mSpecMap;
-    sf::Texture mGlowMap;
-    sf::Texture mBumpMap;
-
-    sf::Texture mWhiteTex;
-    sf::Texture mBlackTex;
-    sf::Texture mClearTex;
-
-    sf::Texture mCubeDiffMap;
-    sf::Texture mCubeSpecMap;
-    sf::Texture mCubeGlowMap;
-    sf::Texture mCubeBumpMap;
 
     Model mBallModel;
     Model mPlaneModel;
@@ -273,9 +262,6 @@ public:
 protected:
     bool init();
     void quit(bool internal);
-
-    bool loadShaders();
-    bool loadTextures();
 
     void handleEvents();
 
@@ -329,11 +315,11 @@ GameWindow::GameWindow(
 ), mSpinSpeed(
     12
 ), mBallObj(
-    mBall, mBlockShader, mBallMtl
+    mBall
 ), mPlaneObj(
-    mPlane, mBlockShader, mPlaneMtl
+    mPlane
 ), mCubeObj(
-    mCube, mBlockShader, mCubeMtl
+    mCube
 ), mTestChunk(
     Position(),
     &mTestChunkData
@@ -421,48 +407,6 @@ void GameWindow::quit() {
     quit(false);
 }
 
-static bool mergeImages(const std::string &rgbFN, const std::string &alphaFN, sf::Texture &texture) {
-    sf::Image rgbImage, alphaImage;
-
-    if (!rgbImage.loadFromFile(rgbFN)) {
-        return false;
-    }
-
-    if (!alphaImage.loadFromFile(alphaFN)) {
-        return false;
-    }
-
-    sf::Vector2u size(rgbImage.getSize()), p;
-
-    if (size == alphaImage.getSize()) {
-        sf::err() << "merging \"" << rgbFN << "\" and \"" << alphaFN << "\"...\n";
-
-        const sf::Uint8 *rgb = rgbImage.getPixelsPtr();
-        const sf::Uint8 *alpha = alphaImage.getPixelsPtr();
-
-        std::vector<sf::Uint8> outData(size.x * size.y * 4);
-        sf::Uint8 *out = outData.data();
-
-        for (p.y = 0; p.y < size.y; p.y++) {
-            for (p.x = 0; p.x < size.x; p.x++) {
-                *out++ = *rgb++;
-                *out++ = *rgb++;
-                *out++ = *rgb++;
-                rgb++;
-                *out++ = *alpha++;
-                alpha++;
-                alpha++;
-                alpha++;
-            }
-        }
-
-        texture.create(size.x, size.y);
-        texture.update(outData.data());
-    }
-
-    return true;
-}
-
 bool GameWindow::init() {
     mContextSettings = sf::ContextSettings(
         24, 8,  // depth and stencil bits
@@ -506,26 +450,6 @@ bool GameWindow::init() {
     GLChecked(glEnable(GL_CULL_FACE));
     GLChecked(glClearColor(0.200,0.267,0.333,0.0));
 
-    if (!loadShaders()) {
-        return false;
-    }
-
-    if (!loadTextures()) {
-        return false;
-    }
-
-    sf::Image white;
-    white.create(16, 16, sf::Color::White);
-    mWhiteTex.loadFromImage(white);
-
-    sf::Image black;
-    black.create(16, 16, sf::Color::Black);
-    mBlackTex.loadFromImage(black);
-
-    sf::Image clear;
-    clear.create(16, 16, sf::Color::Transparent);
-    mClearTex.loadFromImage(clear);
-
     mBallModel.makeBall(0.5f, 8, 16);
     mBall.setModel(mBallModel);
 
@@ -561,10 +485,12 @@ bool GameWindow::init() {
     mCubeModel.makeBox(sf::Vector3f(0.5f, 0.5f, 0.5f), sf::Vector3f(0, 0.5f, 0));
     mCube.setModel(mCubeModel);
 
-    mBallMtl.diffMap = &mWhiteTex;
-    mBallMtl.specMap = &mWhiteTex;
-    mBallMtl.glowMap = &mClearTex;
-    mBallMtl.bumpMap = &mClearTex;
+    mBlockShader = mShaderCache.acquire("shaders/default.330");
+
+    mBallMtl.diffMap = mTextureCache.acquire("textures/white.png");
+    mBallMtl.specMap = mTextureCache.acquire("textures/white.png");
+    mBallMtl.glowMap = mTextureCache.acquire("textures/clear.png");
+    mBallMtl.bumpMap = mTextureCache.acquire("textures/clear.png");
     mBallMtl.specPower = 100.0f;
     mBallMtl.bumpScale = 0.00f;
     mBallMtl.bumpBias = 0.00f;
@@ -572,10 +498,13 @@ bool GameWindow::init() {
     mBallMtl.fresnelScale = 1.0f;
     mBallMtl.fresnelBias = 0.0f;
 
-    mPlaneMtl.diffMap = &mDiffMap;
-    mPlaneMtl.specMap = &mSpecMap;
-    mPlaneMtl.glowMap = &mGlowMap;
-    mPlaneMtl.bumpMap = &mBumpMap;
+    mBallObj.setShader(mBlockShader);
+    mBallObj.setMaterial(mBallMtl);
+
+    mPlaneMtl.diffMap = mTextureCache.acquire("textures/wall_albedo.png");
+    mPlaneMtl.specMap = mTextureCache.acquire("textures/wall_specular.png");
+    mPlaneMtl.glowMap = mTextureCache.acquire("textures/wall_glow.png");
+    mPlaneMtl.bumpMap = mTextureCache.acquire("textures/wall_normal.png");
     mPlaneMtl.specPower = 100.0f;
     mPlaneMtl.bumpScale = 0.02f;
     mPlaneMtl.bumpBias = 0.00f;
@@ -583,16 +512,22 @@ bool GameWindow::init() {
     mPlaneMtl.fresnelScale = 1.0f;
     mPlaneMtl.fresnelBias = 0.0f;
 
-    mCubeMtl.diffMap = &mCubeDiffMap;
-    mCubeMtl.specMap = &mCubeSpecMap;
-    mCubeMtl.glowMap = &mCubeGlowMap;
-    mCubeMtl.bumpMap = &mCubeBumpMap;
+    mPlaneObj.setShader(mBlockShader);
+    mPlaneObj.setMaterial(mPlaneMtl);
+
+    mCubeMtl.diffMap = mTextureCache.acquire("textures/cube_albedo.png");
+    mCubeMtl.specMap = mTextureCache.acquire("textures/cube_specular.png");
+    mCubeMtl.glowMap = mTextureCache.acquire("textures/cube_glow.png");
+    mCubeMtl.bumpMap = mTextureCache.acquire("textures/cube_normal.png");
     mCubeMtl.specPower = 1000.0f;
     mCubeMtl.bumpScale = 0.05f;
     mCubeMtl.bumpBias = -0.02f;
     mCubeMtl.fresnelPower = 5.0f;
     mCubeMtl.fresnelScale = 1.0f;
     mCubeMtl.fresnelBias = 0.0f;
+
+    mCubeObj.setShader(mBlockShader);
+    mCubeObj.setMaterial(mCubeMtl);
 
     if (hasFocus()) {
         lockMouse();
@@ -605,75 +540,6 @@ void GameWindow::quit(bool internal) {
     if (internal || mAllowQuit) {
         mQuitting = true;
     }
-}
-
-bool GameWindow::loadShaders() {
-    mBlockShader.setAttribLocation("aVertex",   0);
-    mBlockShader.setAttribLocation("aNormal",   1);
-    mBlockShader.setAttribLocation("aTexCoord", 2);
-
-    return mBlockShader.loadFromFile(
-        "shaders/default.330.vert", "shaders/default.330.frag"
-    );
-}
-
-bool GameWindow::loadTextures() {
-    sf::Texture *t0 = mTextureCache.acquire("textures/Scifi_Hex_Wall_Albedo.jpg");
-    if (!t0) {
-        return false;
-    }
-    mDiffMap = *t0;
-
-    if (!mergeImages("textures/Scifi_Hex_Wall_specular.jpg", "textures/Scifi_Hex_Wall_glossiness.jpg", mSpecMap)) {
-        return false;
-    }
-    mSpecMap.setSmooth(true);
-    mSpecMap.setRepeated(true);
-    mSpecMap.generateMipmap();
-
-    if (!mergeImages("textures/Scifi_Hex_Wall_glow.jpg", "textures/Scifi_Hex_Wall_Ambient_Occlusion.jpg", mGlowMap)) {
-        return false;
-    }
-    mGlowMap.setSmooth(true);
-    mGlowMap.setRepeated(true);
-    mGlowMap.generateMipmap();
-
-    if (!mergeImages("textures/Scifi_Hex_Wall_normal.jpg", "textures/Scifi_Hex_Wall_Displacement.jpg", mBumpMap)) {
-        return false;
-    }
-    mBumpMap.setSmooth(true);
-    mBumpMap.setRepeated(true);
-    mBumpMap.generateMipmap();
-
-    if (!mCubeDiffMap.loadFromFile("textures/cube_albedo.png")) {
-        return false;
-    }
-    mCubeDiffMap.setSmooth(true);
-    mCubeDiffMap.setRepeated(true);
-    mCubeDiffMap.generateMipmap();
-
-    if (!mCubeSpecMap.loadFromFile("textures/cube_specular.png")) {
-        return false;
-    }
-    mCubeSpecMap.setSmooth(true);
-    mCubeSpecMap.setRepeated(true);
-    mCubeSpecMap.generateMipmap();
-
-    if (!mCubeGlowMap.loadFromFile("textures/cube_glow.png")) {
-        return false;
-    }
-    mCubeGlowMap.setSmooth(true);
-    mCubeGlowMap.setRepeated(true);
-    mCubeGlowMap.generateMipmap();
-
-    if (!mCubeBumpMap.loadFromFile("textures/cube_normal.png")) {
-        return false;
-    }
-    mCubeBumpMap.setSmooth(true);
-    mCubeBumpMap.setRepeated(true);
-    mCubeBumpMap.generateMipmap();
-
-    return true;
 }
 
 void GameWindow::handleEvents() {
@@ -694,7 +560,7 @@ void GameWindow::handleEvent(const sf::Event &event) {
         case sf::Event::Resized: {
             sf::Vector2f size(getSize());
             sf::err() << "Window resized to " << size.x << 'x' << size.y << '\n';
-            mBlockShader.setParameter("uResolution", size);
+            mBlockShader->setParameter("uResolution", size);
             GLChecked(glViewport(0, 0, size.x, size.y));
             if (size.y > 0) {
                 mPlayer.getCamera().setAspect(size.x / size.y);
@@ -768,9 +634,9 @@ void GameWindow::handleEvent(const sf::Event &event) {
 
                 case sf::Keyboard::R: {
                     if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                        loadTextures();
+                        //~ loadTextures();
                     } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
-                        loadShaders();
+                        //~ loadShaders();
                     }
                     break;
                 }
@@ -1039,9 +905,9 @@ void GameWindow::render() {
     sf::Transform3D projectionTransform(mPlayer.getCamera().getTransform());
     sf::Transform3D modelViewTransform(mPlayer.getTransform());
 
-    mBlockShader.setParameter("uTime", mPlayTime.asSeconds());
-    mBlockShader.setParameter("uProjMatrix", projectionTransform);
-    mBlockShader.setParameter("uViewMatrix", modelViewTransform);
+    mBlockShader->setParameter("uTime", mPlayTime.asSeconds());
+    mBlockShader->setParameter("uProjMatrix", projectionTransform);
+    mBlockShader->setParameter("uViewMatrix", modelViewTransform);
 
     sf::Transform3D spinLight;
     spinLight.rotate(mSpinAngle, sf::Vector3f(0,1,0));
@@ -1051,18 +917,18 @@ void GameWindow::render() {
     static const sf::Color lightDiff(230,230,230);
     static const sf::Color lightSpec(255,255,255);
 
-    mBlockShader.setParameter("uLights[0].position", modelViewTransform * spinLightPos);
-    mBlockShader.setParameter("uLights[0].ambtColor", lightAmbt);
-    mBlockShader.setParameter("uLights[0].diffColor", lightDiff);
-    mBlockShader.setParameter("uLights[0].specColor", lightSpec);
-    mBlockShader.setParameter("uEyePos", mPlayer.getEyePosition());
+    mBlockShader->setParameter("uLights[0].position", modelViewTransform * spinLightPos);
+    mBlockShader->setParameter("uLights[0].ambtColor", lightAmbt);
+    mBlockShader->setParameter("uLights[0].diffColor", lightDiff);
+    mBlockShader->setParameter("uLights[0].specColor", lightSpec);
+    mBlockShader->setParameter("uEyePos", mPlayer.getEyePosition());
 
     mPlaneObj.render();
     mCubeObj.render();
 
     sf::Transform3D lightBallTransform;
     lightBallTransform.translate(spinLightPos);
-    mBlockShader.setParameter("uViewMatrix", modelViewTransform * lightBallTransform);
+    mBlockShader->setParameter("uViewMatrix", modelViewTransform * lightBallTransform);
 
     mBallObj.render();
 
