@@ -237,9 +237,12 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
     //~ sf::err() << std::flush;
 }
 
-void Model::addBox(const sf::Vector3f &size, const sf::Vector3f &center) {
+void Model::addBox(const sf::Vector3f &size, const sf::Vector3f &center, const sf::FloatRect &texRect) {
     sf::Vector3f mx = center + size;
     sf::Vector3f mn = center - size;
+
+    sf::Vector2f t0(texRect.left, texRect.top);
+    sf::Vector2f t1(texRect.left + texRect.width, texRect.top + texRect.height);
 
     switch (mPrimitive) {
         case GLTriangles: {
@@ -259,39 +262,47 @@ void Model::addBox(const sf::Vector3f &size, const sf::Vector3f &center) {
         case GLQuads: {
             reserveVertices(mVertices.size() + 24);
 
-            addVertex(Vertex(1.0f,0.0f,  1.0f, 0.0f, 0.0f, mx.x,mx.y,mn.z));
-            addVertex(Vertex(1.0f,1.0f,  1.0f, 0.0f, 0.0f, mx.x,mx.y,mx.z));
-            addVertex(Vertex(0.0f,1.0f,  1.0f, 0.0f, 0.0f, mx.x,mn.y,mx.z));
-            addVertex(Vertex(0.0f,0.0f,  1.0f, 0.0f, 0.0f, mx.x,mn.y,mn.z));
+            addVertex(Vertex(t1.x,t0.y,  1.0f, 0.0f, 0.0f, mx.x,mx.y,mn.z));
+            addVertex(Vertex(t1.x,t1.y,  1.0f, 0.0f, 0.0f, mx.x,mx.y,mx.z));
+            addVertex(Vertex(t0.x,t1.y,  1.0f, 0.0f, 0.0f, mx.x,mn.y,mx.z));
+            addVertex(Vertex(t0.x,t0.y,  1.0f, 0.0f, 0.0f, mx.x,mn.y,mn.z));
 
-            addVertex(Vertex(0.0f,0.0f, -1.0f, 0.0f, 0.0f, mn.x,mn.y,mn.z));
-            addVertex(Vertex(0.0f,1.0f, -1.0f, 0.0f, 0.0f, mn.x,mn.y,mx.z));
-            addVertex(Vertex(1.0f,1.0f, -1.0f, 0.0f, 0.0f, mn.x,mx.y,mx.z));
-            addVertex(Vertex(1.0f,0.0f, -1.0f, 0.0f, 0.0f, mn.x,mx.y,mn.z));
+            addVertex(Vertex(t0.x,t0.y, -1.0f, 0.0f, 0.0f, mn.x,mn.y,mn.z));
+            addVertex(Vertex(t0.x,t1.y, -1.0f, 0.0f, 0.0f, mn.x,mn.y,mx.z));
+            addVertex(Vertex(t1.x,t1.y, -1.0f, 0.0f, 0.0f, mn.x,mx.y,mx.z));
+            addVertex(Vertex(t1.x,t0.y, -1.0f, 0.0f, 0.0f, mn.x,mx.y,mn.z));
 
-            addVertex(Vertex(0.0f,0.0f,  0.0f, 1.0f, 0.0f, mn.x,mx.y,mn.z));
-            addVertex(Vertex(0.0f,1.0f,  0.0f, 1.0f, 0.0f, mn.x,mx.y,mx.z));
-            addVertex(Vertex(1.0f,1.0f,  0.0f, 1.0f, 0.0f, mx.x,mx.y,mx.z));
-            addVertex(Vertex(1.0f,0.0f,  0.0f, 1.0f, 0.0f, mx.x,mx.y,mn.z));
+            addVertex(Vertex(t0.x,t0.y,  0.0f, 1.0f, 0.0f, mn.x,mx.y,mn.z));
+            addVertex(Vertex(t0.x,t1.y,  0.0f, 1.0f, 0.0f, mn.x,mx.y,mx.z));
+            addVertex(Vertex(t1.x,t1.y,  0.0f, 1.0f, 0.0f, mx.x,mx.y,mx.z));
+            addVertex(Vertex(t1.x,t0.y,  0.0f, 1.0f, 0.0f, mx.x,mx.y,mn.z));
 
-            addVertex(Vertex(1.0f,0.0f,  0.0f,-1.0f, 0.0f, mx.x,mn.y,mn.z));
-            addVertex(Vertex(1.0f,1.0f,  0.0f,-1.0f, 0.0f, mx.x,mn.y,mx.z));
-            addVertex(Vertex(0.0f,1.0f,  0.0f,-1.0f, 0.0f, mn.x,mn.y,mx.z));
-            addVertex(Vertex(0.0f,0.0f,  0.0f,-1.0f, 0.0f, mn.x,mn.y,mn.z));
+            addVertex(Vertex(t1.x,t0.y,  0.0f,-1.0f, 0.0f, mx.x,mn.y,mn.z));
+            addVertex(Vertex(t1.x,t1.y,  0.0f,-1.0f, 0.0f, mx.x,mn.y,mx.z));
+            addVertex(Vertex(t0.x,t1.y,  0.0f,-1.0f, 0.0f, mn.x,mn.y,mx.z));
+            addVertex(Vertex(t0.x,t0.y,  0.0f,-1.0f, 0.0f, mn.x,mn.y,mn.z));
 
-            addVertex(Vertex(1.0f,0.0f,  0.0f, 0.0f, 1.0f, mx.x,mn.y,mx.z));
-            addVertex(Vertex(1.0f,1.0f,  0.0f, 0.0f, 1.0f, mx.x,mx.y,mx.z));
-            addVertex(Vertex(0.0f,1.0f,  0.0f, 0.0f, 1.0f, mn.x,mx.y,mx.z));
-            addVertex(Vertex(0.0f,0.0f,  0.0f, 0.0f, 1.0f, mn.x,mn.y,mx.z));
+            addVertex(Vertex(t1.x,t0.y,  0.0f, 0.0f, 1.0f, mx.x,mn.y,mx.z));
+            addVertex(Vertex(t1.x,t1.y,  0.0f, 0.0f, 1.0f, mx.x,mx.y,mx.z));
+            addVertex(Vertex(t0.x,t1.y,  0.0f, 0.0f, 1.0f, mn.x,mx.y,mx.z));
+            addVertex(Vertex(t0.x,t0.y,  0.0f, 0.0f, 1.0f, mn.x,mn.y,mx.z));
 
-            addVertex(Vertex(0.0f,0.0f,  0.0f, 0.0f,-1.0f, mn.x,mn.y,mn.z));
-            addVertex(Vertex(0.0f,1.0f,  0.0f, 0.0f,-1.0f, mn.x,mx.y,mn.z));
-            addVertex(Vertex(1.0f,1.0f,  0.0f, 0.0f,-1.0f, mx.x,mx.y,mn.z));
-            addVertex(Vertex(1.0f,0.0f,  0.0f, 0.0f,-1.0f, mx.x,mn.y,mn.z));
+            addVertex(Vertex(t0.x,t0.y,  0.0f, 0.0f,-1.0f, mn.x,mn.y,mn.z));
+            addVertex(Vertex(t0.x,t1.y,  0.0f, 0.0f,-1.0f, mn.x,mx.y,mn.z));
+            addVertex(Vertex(t1.x,t1.y,  0.0f, 0.0f,-1.0f, mx.x,mx.y,mn.z));
+            addVertex(Vertex(t1.x,t0.y,  0.0f, 0.0f,-1.0f, mx.x,mn.y,mn.z));
 
             break;
         }
     }
+}
+
+void Model::addBox(const sf::Vector3f &size, const sf::Vector3f &center) {
+    addBox(size, sf::Vector3f(), sf::FloatRect(0, 0, 1, 1));
+}
+
+void Model::addBox(const sf::Vector3f &size, const sf::FloatRect &texRect) {
+    addBox(size, sf::Vector3f(), texRect);
 }
 
 void Model::addBox(const sf::Vector3f &size) {
@@ -302,11 +313,19 @@ void Model::addBox() {
     addBox(sf::Vector3f(1,1,1));
 }
 
-void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center) {
+void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center, const sf::FloatRect &texRect) {
     clearVertices();
     clearIndices();
     setPrimitive(GLTriangles);
-    addBox(size, center);
+    addBox(size, center, texRect);
+}
+
+void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center) {
+    makeBox(size, center, sf::FloatRect(0, 0, 1, 1));
+}
+
+void Model::makeBox(const sf::Vector3f &size, const sf::FloatRect &texRect) {
+    makeBox(size, sf::Vector3f(), texRect);
 }
 
 void Model::makeBox(const sf::Vector3f &size) {

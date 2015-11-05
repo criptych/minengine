@@ -163,11 +163,15 @@ public:
     void calcNormals(bool smooth = false);
     void calcNormals(size_t start, size_t end, bool smooth = false);
 
+    void addBox(const sf::Vector3f &size, const sf::Vector3f &center, const sf::FloatRect &texRect);
     void addBox(const sf::Vector3f &size, const sf::Vector3f &center);
+    void addBox(const sf::Vector3f &size, const sf::FloatRect &texRect);
     void addBox(const sf::Vector3f &size);
     void addBox();
 
+    void makeBox(const sf::Vector3f &size, const sf::Vector3f &center, const sf::FloatRect &texRect);
     void makeBox(const sf::Vector3f &size, const sf::Vector3f &center);
+    void makeBox(const sf::Vector3f &size, const sf::FloatRect &texRect);
     void makeBox(const sf::Vector3f &size);
     void makeBox();
 
