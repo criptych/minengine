@@ -1,4 +1,21 @@
 language: cpp
+sudo: required
+before_install:
+    - sudo apt-get update -qq
+    - sudo apt-get install -y libfreetype6 libfreetype6-dev
+    - sudo apt-get install -y libjpeg8 libjpeg8-dev
+    - sudo apt-get install -y libx11-6 libx11-dev
+    - sudo apt-get install -y libxrandr2 libxrandr-dev
+    - sudo apt-get install -y libxcb1 libxcb1-dev
+    - sudo apt-get install -y libx11-xcb1 libx11-xcb-dev
+    - sudo apt-get install -y libxcb-image0 libxcb-image0-dev
+    - sudo apt-get install -y libflac8 libflac-dev
+    - sudo apt-get install -y libogg0 libogg-dev
+    - sudo apt-get install -y libvorbis0a libvorbis-dev
+    - sudo apt-get install -y libvorbisenc2
+    - sudo apt-get install -y libvorbisfile3
+    - sudo apt-get install -y libopenal1 libopenal-dev
+
 install:
     - git clone https://github.com/criptych/SFML.git SFML -b custom
     - mkdir SFML/build && cd SFML/build && cmake ..
@@ -8,4 +25,3 @@ script:
     - cmake --build .
 compiler:
     - gcc
-    - clang
