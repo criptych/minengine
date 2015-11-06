@@ -2,9 +2,10 @@
 ##
 ################################################################################
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-PROJECT(minengine VERSION 0.1 LANGUAGES C CXX)
+PROJECT(minengine LANGUAGES C CXX)
+SET(PROJECT_VERSION 0.1)
 
 IF(NOT CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE "Debug" CACHE STRING "" FORCE)
