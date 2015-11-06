@@ -1,6 +1,11 @@
 language: cpp
-script: mkdir build && cd build && cmake .. && cmake --build .
+install:
+    - git clone https://github.com/criptych/SFML.git SFML -b custom
+    - mkdir SFML/build && cd SFML/build && cmake ..
+    - cmake --build . --clean-first --target install
+script:
+    - mkdir build && cd build && cmake ..
+    - cmake --build .
 compiler:
     - gcc
     - clang
-
