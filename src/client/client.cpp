@@ -882,10 +882,6 @@ void GameWindow::render() {
     sf::Transform3D projectionTransform(mPlayer.getCamera().getTransform());
     sf::Transform3D modelViewTransform(mPlayer.getTransform());
 
-    mBlockShader->setParameter("uTime", mPlayTime.asSeconds());
-    mBlockShader->setParameter("uProjMatrix", projectionTransform);
-    mBlockShader->setParameter("uViewMatrix", modelViewTransform);
-
     sf::Transform3D spinLight;
     spinLight.rotate(mSpinAngle, sf::Vector3f(0,1,0));
     sf::Vector3f spinLightPos = spinLight.transformPoint(mLightPos);
@@ -894,18 +890,26 @@ void GameWindow::render() {
     static const sf::Color lightDiff(230,230,230);
     static const sf::Color lightSpec(255,255,255);
 
-    mBlockShader->setParameter("uLights[0].position", modelViewTransform * spinLightPos);
-    mBlockShader->setParameter("uLights[0].ambtColor", lightAmbt);
-    mBlockShader->setParameter("uLights[0].diffColor", lightDiff);
-    mBlockShader->setParameter("uLights[0].specColor", lightSpec);
-    mBlockShader->setParameter("uEyePos", mPlayer.getEyePosition());
+    if (mBlockShader) {
+        mBlockShader->setParameter("uTime", mPlayTime.asSeconds());
+        mBlockShader->setParameter("uProjMatrix", projectionTransform);
+        mBlockShader->setParameter("uViewMatrix", modelViewTransform);
+
+        mBlockShader->setParameter("uLights[0].position", modelViewTransform * spinLightPos);
+        mBlockShader->setParameter("uLights[0].ambtColor", lightAmbt);
+        mBlockShader->setParameter("uLights[0].diffColor", lightDiff);
+        mBlockShader->setParameter("uLights[0].specColor", lightSpec);
+        mBlockShader->setParameter("uEyePos", mPlayer.getEyePosition());
+    }
 
     mPlaneObj.render();
     mCubeObj.render();
 
-    sf::Transform3D lightBallTransform;
-    lightBallTransform.translate(spinLightPos);
-    mBlockShader->setParameter("uViewMatrix", modelViewTransform * lightBallTransform);
+    if (mBlockShader) {
+        sf::Transform3D lightBallTransform;
+        lightBallTransform.translate(spinLightPos);
+        mBlockShader->setParameter("uViewMatrix", modelViewTransform * lightBallTransform);
+    }
 
     mBallObj.render();
 
