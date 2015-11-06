@@ -444,7 +444,7 @@ bool GameWindow::init() {
     GLChecked(glEnable(GL_DEPTH_TEST));
     GLChecked(glDepthFunc(GL_LESS));
     GLChecked(glEnable(GL_CULL_FACE));
-    GLChecked(glClearColor(0.200,0.267,0.333,0.0));
+    GLChecked(glClearColor(1,0,1,0));
 
     mBallModel.makeBall(0.5f, 8, 16);
     mBall.setModel(mBallModel);
