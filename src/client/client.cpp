@@ -453,30 +453,9 @@ bool GameWindow::init() {
 
     sf::Vector3f size(2, 0, 2), pos(0, 0, 0);
 
-    sf::Vector3f field(50.0, 0, 50.0);
-    sf::Vector3f max(field.x - size.x, 0, field.z - size.z);
-    sf::Vector3f min(-max);
-
-    size_t n = (2 * field.x) / (max.x - min.x);
-    size_t m = (2 * field.z) / (max.z - min.z);
-    mPlaneModel.reserveVertices(24 * n * m);
-    mPlaneModel.reserveIndices(36 * n * m);
-
-    sf::FloatRect texRect(0, 0, 4, 4);
-
-    sf::err() << "min = <" << min.x << ',' << min.y << ',' << min.z << ">\n";
-    sf::err() << "max = <" << max.x << ',' << max.y << ',' << max.z << ">\n";
-
-    for (pos.z = min.z; pos.z <= max.z; pos.z += size.z * 2) {
-        mPlaneModel.addBox(sf::Vector3f(size.x, size.z, size.y), sf::Vector3f(pos.z, size.z, min.z-size.z), texRect);
-        mPlaneModel.addBox(sf::Vector3f(size.y, size.x, size.z), sf::Vector3f(min.x-size.x, size.x, pos.z), texRect);
-        mPlaneModel.addBox(sf::Vector3f(size.x, size.z, size.y), sf::Vector3f(pos.z, size.z, max.z+size.z), texRect);
-        mPlaneModel.addBox(sf::Vector3f(size.y, size.x, size.z), sf::Vector3f(max.x+size.x, size.x, pos.z), texRect);
-        for (pos.x = min.x; pos.x <= max.x; pos.x += size.x * 2) {
-            mPlaneModel.addBox(size, pos, texRect);
-            mPlaneModel.addBox(size, pos+sf::Vector3f(0,4,0), texRect);
-        }
-    }
+    sf::Vector3f field(50.0, 5.0, 50.0);
+    sf::FloatRect texRect(0, 0, 100, 100);
+    mPlaneModel.makeBox(sf::Vector3f(-field.x, -0.5f * field.y, -field.z), sf::Vector3f(0.0f, 0.5f * field.y, 0.0f), texRect);
 
     mPlane.setModel(mPlaneModel);
 
