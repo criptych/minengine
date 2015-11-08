@@ -266,6 +266,11 @@ protected:
     void update(const sf::Time &delta);
     void render();
 
+    void start3D();
+    void end3D();
+    void start2D();
+    void end2D();
+
     void setMousePosition(const sf::Vector2i &position);
     sf::Vector2i getMousePosition() const;
     void lockMouse();
@@ -824,25 +829,7 @@ void GameWindow::update(const sf::Time &delta) {
     }
 }
 
-void GameWindow::render() {
-    char temp[256];
-    sf::Vector3f p = mPlayer.getPosition();
-    sf::Vector3f e = mPlayer.getEyePosition();
-    sf::Vector2f o = mPlayer.getLook();
-    snprintf(temp, sizeof(temp),
-             "%.2ffps (%lldus/f, %lldus delay) / %.2ftps\n"
-             "%8.4f,%8.4f,%8.4f (%8.4f,%8.4f,%8.4f)\n"
-             "%8.4f,%8.4f",
-             mFramesPerSecond, mFrameLength.asMicroseconds(), mFrameDelay.asMicroseconds(), mTicksPerSecond,
-             p.x, p.y, p.z, e.x, e.y, e.z, o.x, o.y);
-    mDebugText.setString(temp);
-
-    GLChecked(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-
-    ////////////////////////////////////////////////////////////
-    //  3D setup
-    ////////////////////////////////////////////////////////////
-
+void GameWindow::start3D() {
     GLChecked(glEnable(GL_DEPTH_TEST));
 
     switch (mViewMode) {
@@ -864,6 +851,46 @@ void GameWindow::render() {
             break;
         }
     }
+}
+
+void GameWindow::end3D() {
+    // nothing to do here
+}
+
+void GameWindow::start2D() {
+    GLChecked(glDisable(GL_DEPTH_TEST));
+    GLChecked(glDisable(GL_CULL_FACE));
+    GLChecked(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+    GLChecked(glBindBuffer(GL_ARRAY_BUFFER, 0));
+
+    GLChecked(pushGLStates());
+}
+
+void GameWindow::end2D() {
+    GLChecked(popGLStates());
+}
+
+void GameWindow::render() {
+    char temp[256];
+    sf::Vector3f p = mPlayer.getPosition();
+    sf::Vector3f e = mPlayer.getEyePosition();
+    sf::Vector2f o = mPlayer.getLook();
+    snprintf(temp, sizeof(temp),
+             "%.2ffps (%lldus/f, %lldus delay) / %.2ftps\n"
+             "%8.4f,%8.4f,%8.4f (%8.4f,%8.4f,%8.4f)\n"
+             "%8.4f,%8.4f",
+             mFramesPerSecond, mFrameLength.asMicroseconds(), mFrameDelay.asMicroseconds(), mTicksPerSecond,
+             p.x, p.y, p.z, e.x, e.y, e.z, o.x, o.y);
+    mDebugText.setString(temp);
+
+    GLChecked(glClearColor(1,0,1,0));
+    GLChecked(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+    ////////////////////////////////////////////////////////////
+    //  3D setup
+    ////////////////////////////////////////////////////////////
+
+    start3D();
 
     // draw 3D scene
 
@@ -913,6 +940,8 @@ void GameWindow::render() {
 
     mBallObj.render();
 
+    end3D();
+
     ////////////////////////////////////////////////////////////
     //  end 3D
     ////////////////////////////////////////////////////////////
@@ -922,15 +951,9 @@ void GameWindow::render() {
     //  2D setup
     ////////////////////////////////////////////////////////////
 
-    GLChecked(glDisable(GL_DEPTH_TEST));
-    GLChecked(glDisable(GL_CULL_FACE));
-    GLChecked(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
-
-    GLChecked(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    start2D();
 
     // draw 2D overlay
-
-    GLChecked(pushGLStates());
 
     float frameLength = mFrameLength.asSeconds();
     float inputFrac = mInputLength.asSeconds() / frameLength;
@@ -960,7 +983,7 @@ void GameWindow::render() {
     mDebugText.setPosition(sf::Vector2f(32, 0));
     GLChecked(draw(mDebugText));
 
-    GLChecked(popGLStates());
+    end2D();
 
     ////////////////////////////////////////////////////////////
     //  end 2D
