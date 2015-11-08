@@ -795,44 +795,50 @@ void GameWindow::handleInput(const sf::Time &delta) {
             setMousePosition(mWindowCenter);
         }
 
+        float deltaSeconds = delta.asSeconds();
+
+        sf::Vector2f look;
+
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-            mPlayer.look(sf::Vector2f(-180*delta.asSeconds(),0));
+            look.x -= 180*deltaSeconds;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-            mPlayer.look(sf::Vector2f(180*delta.asSeconds(),0));
+            look.x += 180*deltaSeconds;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-            mPlayer.look(sf::Vector2f(0,-180*delta.asSeconds()));
+            look.y -= 180*deltaSeconds;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-            mPlayer.look(sf::Vector2f(0,180*delta.asSeconds()));
+            look.y += 180*deltaSeconds;
         }
 
         sf::Vector3f move;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-            move.z -= 2*delta.asSeconds();
+            move.z -= 2*deltaSeconds;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-            move.z += 2*delta.asSeconds();
+            move.z += 2*deltaSeconds;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-            move.x -= 2*delta.asSeconds();
+            move.x -= 2*deltaSeconds;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-            move.x += 2*delta.asSeconds();
+            move.x += 2*deltaSeconds;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z)) {
-            move.y -= 2*delta.asSeconds();
+            move.y -= 2*deltaSeconds;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) {
-            move.y += 2*delta.asSeconds();
+            move.y += 2*deltaSeconds;
         }
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+            look *= 0.25f;
             move *= 0.25f;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
+            look *= 4.0f;
             move *= 4.0f;
         }
 
@@ -850,6 +856,7 @@ void GameWindow::handleInput(const sf::Time &delta) {
 
         mPlayer.getCamera().setFOV(fov);
 
+        mPlayer.look(look);
         mPlayer.move(move);
     }
 }
