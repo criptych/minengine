@@ -192,7 +192,12 @@ class GameWindow : protected sf::RenderWindow {
     bool mQuitting;
     bool mPaused;
 
-    int mViewMode;
+    enum class ViewMode {
+        Normal,
+        InsideWireframe,
+        Wireframe,
+    };
+    ViewMode mViewMode;
 
     sf::VideoMode mDesktopMode;
     sf::VideoMode mWindowMode;
@@ -291,7 +296,7 @@ GameWindow::GameWindow(
 ), mPaused(
     false
 ), mViewMode(
-    0
+    ViewMode::Normal
 ), mWindowMode(
     1280, 720
 ), mWindowTitle(
@@ -586,7 +591,23 @@ void GameWindow::handleEvent(const sf::Event &event) {
                 }
 
                 case sf::Keyboard::F1: {
-                    ++mViewMode %= 3;
+                    switch (mViewMode) {
+                        case ViewMode::Normal: {
+                            mViewMode = ViewMode::InsideWireframe;
+                            break;
+                        }
+
+                        case ViewMode::InsideWireframe: {
+                            mViewMode = ViewMode::Wireframe;
+                            break;
+                        }
+
+                        default:
+                        case ViewMode::Wireframe: {
+                            mViewMode = ViewMode::Normal;
+                            break;
+                        }
+                    }
                     break;
                 }
 
@@ -833,20 +854,18 @@ void GameWindow::start3D() {
     GLChecked(glEnable(GL_DEPTH_TEST));
 
     switch (mViewMode) {
-        case 0: {
-            // normal
+        default:
+        case ViewMode::Normal: {
             GLChecked(glEnable(GL_CULL_FACE));
             break;
         }
 
-        case 1: {
-            // wireframe from back
+        case ViewMode::InsideWireframe: {
             GLChecked(glPolygonMode(GL_BACK, GL_LINE));
             break;
         }
 
-        case 2: {
-            // wireframe
+        case ViewMode::Wireframe: {
             GLChecked(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
             break;
         }
