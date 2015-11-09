@@ -163,6 +163,12 @@ public:
     void calcNormals(bool smooth = false);
     void calcNormals(size_t start, size_t end, bool smooth = false);
 
+    void addPlane(const sf::Vector3f &a, const sf::Vector3f &b, const sf::Vector3f &c, const sf::FloatRect &texRect);
+    void addPlane(const sf::Vector3f &a, const sf::Vector3f &b, const sf::Vector3f &c);
+
+    void makePlane(const sf::Vector3f &a, const sf::Vector3f &b, const sf::Vector3f &c, const sf::FloatRect &texRect);
+    void makePlane(const sf::Vector3f &a, const sf::Vector3f &b, const sf::Vector3f &c);
+
     void addBox(const sf::Vector3f &size, const sf::Vector3f &center, const sf::FloatRect &texRect);
     void addBox(const sf::Vector3f &size, const sf::Vector3f &center);
     void addBox(const sf::Vector3f &size, const sf::FloatRect &texRect);
