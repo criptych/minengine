@@ -1,0 +1,4 @@
+[submodule "lib/luajit"]
+    path = lib/luajit
+    url = https://github.com/LuaDist/luajit.git
+    branch = master

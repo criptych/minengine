@@ -17,7 +17,8 @@ ENDIF()
 ################################################################################
 
 FIND_PACKAGE(SFML 2.2 REQUIRED COMPONENTS system window graphics audio network)
-ADD_SUBDIRECTORY(lib/glew-1.13.0)
+ADD_SUBDIRECTORY(lib/glew-1.13.0 EXCLUDE_FROM_ALL)
+ADD_SUBDIRECTORY(lib/luajit EXCLUDE_FROM_ALL)
 
 ################################################################################
 
@@ -70,6 +71,8 @@ ADD_DEFINITIONS(-DGLEW_STATIC=1)
 INCLUDE_DIRECTORIES(src ${GLEW_INCLUDE_DIR} ${SFML_INCLUDE_DIR})
 
 ADD_LIBRARY(engine ${ENGINE_SRCS})
+SET_TARGET_PROPERTIES(engine PROPERTIES VERSION ${PROJECT_VERSION})
+TARGET_LINK_LIBRARIES(engine ${SFML_LIBRARIES} liblua)
 
 ADD_EXECUTABLE(client ${CLIENT_SRCS})
 SET_TARGET_PROPERTIES(client PROPERTIES VERSION ${PROJECT_VERSION})
