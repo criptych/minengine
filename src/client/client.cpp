@@ -454,7 +454,6 @@ bool GameWindow::init() {
     GLChecked(glEnable(GL_DEPTH_TEST));
     GLChecked(glDepthFunc(GL_LESS));
     GLChecked(glEnable(GL_CULL_FACE));
-    GLChecked(glClearColor(1,0,1,0));
 
     mBallModel.makeBall(0.5f, 8, 16);
     mBall.setModel(mBallModel);
@@ -623,8 +622,6 @@ void GameWindow::handleEvent(const sf::Event &event) {
                     } else {
                         create(mDesktopMode, mWindowTitle, mWindowStyle | sf::Style::Fullscreen, mContextSettings);
                     }
-
-                    GLChecked(glClearColor(0.200,0.267,0.333,0.0));
 
                     mFullscreen = !mFullscreen;
 
@@ -937,7 +934,6 @@ void GameWindow::render() {
     static const sf::Color lightSpec(255,255,255);
 
     if (mBlockShader) {
-        mBlockShader->setParameter("uTime", mPlayTime.asSeconds());
         mBlockShader->setParameter("uProjMatrix", projectionTransform);
         mBlockShader->setParameter("uViewMatrix", modelViewTransform);
 
@@ -945,7 +941,6 @@ void GameWindow::render() {
         mBlockShader->setParameter("uLights[0].ambtColor", lightAmbt);
         mBlockShader->setParameter("uLights[0].diffColor", lightDiff);
         mBlockShader->setParameter("uLights[0].specColor", lightSpec);
-        mBlockShader->setParameter("uEyePos", mPlayer.getEyePosition());
     }
 
     mPlaneObj.render();
