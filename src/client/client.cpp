@@ -13,6 +13,12 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Network.hpp>
 
+extern "C" {
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+}; // extern "C"
+
 #include <cstdio>
 #include <cmath>
 
@@ -514,6 +520,15 @@ bool GameWindow::init() {
 
     mCubeObj.setShader(mBlockShader);
     mCubeObj.setMaterial(mCubeMtl);
+
+    lua_State *L = luaL_newstate();
+
+    if (!L) {
+        lua_close(L);
+        return false;
+    }
+
+    lua_close(L);
 
     if (hasFocus()) {
         lockMouse();
