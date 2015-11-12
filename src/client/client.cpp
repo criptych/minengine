@@ -191,6 +191,10 @@ void ChunkRenderer::render(sf::RenderTarget &target, const Chunk &chunk) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+static ShaderCache sShaderCache;
+static TextureCache sTextureCache;
+static std::vector<ClientObject*> sObjects;
+
 class GameWindow : protected sf::RenderWindow {
     bool mFullscreen;
     bool mMouseLocked;
@@ -235,9 +239,6 @@ class GameWindow : protected sf::RenderWindow {
     sf::Vector3f mLightPos;
     float mSpinAngle;
     float mSpinSpeed; // degrees/second
-
-    ShaderCache mShaderCache;
-    TextureCache mTextureCache;
 
     Model mBallModel;
     Model mPlaneModel;
@@ -477,12 +478,12 @@ bool GameWindow::init() {
     mCubeModel.makeBox(sf::Vector3f(0.5f, 0.5f, 0.5f), sf::Vector3f(0, 0.5f, 0));
     mCube.setModel(mCubeModel);
 
-    mBlockShader = mShaderCache.acquire("shaders/default.330");
+    mBlockShader = sShaderCache.acquire("shaders/default.330");
 
-    mBallMtl.diffMap = mTextureCache.acquire("textures/white.png");
-    mBallMtl.specMap = mTextureCache.acquire("textures/white.png");
-    mBallMtl.glowMap = mTextureCache.acquire("textures/clear.png");
-    mBallMtl.bumpMap = mTextureCache.acquire("textures/clear.png");
+    mBallMtl.diffMap = sTextureCache.acquire("textures/white.png");
+    mBallMtl.specMap = sTextureCache.acquire("textures/white.png");
+    mBallMtl.glowMap = sTextureCache.acquire("textures/clear.png");
+    mBallMtl.bumpMap = sTextureCache.acquire("textures/clear.png");
     mBallMtl.specPower = 100.0f;
     mBallMtl.bumpScale = 0.00f;
     mBallMtl.bumpBias = 0.00f;
@@ -493,10 +494,10 @@ bool GameWindow::init() {
     mBallObj.setShader(mBlockShader);
     mBallObj.setMaterial(mBallMtl);
 
-    mPlaneMtl.diffMap = mTextureCache.acquire("textures/wall_albedo.png");
-    mPlaneMtl.specMap = mTextureCache.acquire("textures/wall_specular.png");
-    mPlaneMtl.glowMap = mTextureCache.acquire("textures/wall_glow.png");
-    mPlaneMtl.bumpMap = mTextureCache.acquire("textures/wall_normal.png");
+    mPlaneMtl.diffMap = sTextureCache.acquire("textures/wall_albedo.png");
+    mPlaneMtl.specMap = sTextureCache.acquire("textures/wall_specular.png");
+    mPlaneMtl.glowMap = sTextureCache.acquire("textures/wall_glow.png");
+    mPlaneMtl.bumpMap = sTextureCache.acquire("textures/wall_normal.png");
     mPlaneMtl.specPower = 100.0f;
     mPlaneMtl.bumpScale = 0.02f;
     mPlaneMtl.bumpBias = 0.00f;
@@ -507,10 +508,10 @@ bool GameWindow::init() {
     mPlaneObj.setShader(mBlockShader);
     mPlaneObj.setMaterial(mPlaneMtl);
 
-    mCubeMtl.diffMap = mTextureCache.acquire("textures/cube_albedo.png");
-    mCubeMtl.specMap = mTextureCache.acquire("textures/cube_specular.png");
-    mCubeMtl.glowMap = mTextureCache.acquire("textures/cube_glow.png");
-    mCubeMtl.bumpMap = mTextureCache.acquire("textures/cube_normal.png");
+    mCubeMtl.diffMap = sTextureCache.acquire("textures/cube_albedo.png");
+    mCubeMtl.specMap = sTextureCache.acquire("textures/cube_specular.png");
+    mCubeMtl.glowMap = sTextureCache.acquire("textures/cube_glow.png");
+    mCubeMtl.bumpMap = sTextureCache.acquire("textures/cube_normal.png");
     mCubeMtl.specPower = 1000.0f;
     mCubeMtl.bumpScale = 0.05f;
     mCubeMtl.bumpBias = -0.02f;
@@ -649,9 +650,9 @@ void GameWindow::handleEvent(const sf::Event &event) {
 
                 case sf::Keyboard::R: {
                     if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                        mTextureCache.reloadAll();
+                        sTextureCache.reloadAll();
                     } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
-                        mShaderCache.reloadAll();
+                        sShaderCache.reloadAll();
                     }
                     break;
                 }
