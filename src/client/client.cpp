@@ -271,6 +271,8 @@ protected:
     bool init();
     void quit(bool internal);
 
+    bool initScene();
+
     void handleEvents();
 
     void handleInput(const sf::Time &delta);
@@ -462,12 +464,22 @@ bool GameWindow::init() {
     GLChecked(glDepthFunc(GL_LESS));
     GLChecked(glEnable(GL_CULL_FACE));
 
+    if (!initScene()) {
+        return false;
+    }
+
+    if (hasFocus()) {
+        lockMouse();
+    }
+
+    return true;
+}
+
+bool GameWindow::initScene() {
     mBallModel.makeBall(0.5f, 8, 16);
     mBall.setModel(mBallModel);
 
     mPlaneModel.setPrimitive(GL_TRIANGLES);
-
-    sf::Vector3f size(2, 0, 2), pos(0, 0, 0);
 
     sf::Vector3f field(50.0, 5.0, 50.0);
     sf::FloatRect texRect(0, 0, 100, 100);
@@ -525,15 +537,10 @@ bool GameWindow::init() {
     lua_State *L = luaL_newstate();
 
     if (!L) {
-        lua_close(L);
         return false;
     }
 
     lua_close(L);
-
-    if (hasFocus()) {
-        lockMouse();
-    }
 
     return true;
 }
