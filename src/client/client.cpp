@@ -240,22 +240,6 @@ class GameWindow : protected sf::RenderWindow {
     float mSpinAngle;
     float mSpinSpeed; // degrees/second
 
-    Model mBallModel;
-    Model mPlaneModel;
-    Model mCubeModel;
-
-    ClientModel mBall;
-    ClientModel mPlane;
-    ClientModel mCube;
-
-    MaterialInfo mBallMtl;
-    MaterialInfo mPlaneMtl;
-    MaterialInfo mCubeMtl;
-
-    ClientObject mBallObj;
-    ClientObject mPlaneObj;
-    ClientObject mCubeObj;
-
     ChunkData mTestChunkData;
     Chunk mTestChunk;
 
@@ -329,12 +313,6 @@ GameWindow::GameWindow(
 ), mSpinAngle(
 ), mSpinSpeed(
     12
-), mBallObj(
-    mBall
-), mPlaneObj(
-    mPlane
-), mCubeObj(
-    mCube
 ), mTestChunk(
     Position(),
     &mTestChunkData
@@ -476,64 +454,6 @@ bool GameWindow::init() {
 }
 
 bool GameWindow::initScene() {
-    mBallModel.makeBall(0.5f, 8, 16);
-    mBall.setModel(mBallModel);
-
-    mPlaneModel.setPrimitive(GL_TRIANGLES);
-
-    sf::Vector3f field(50.0, 5.0, 50.0);
-    sf::FloatRect texRect(0, 0, 100, 100);
-    mPlaneModel.makeBox(sf::Vector3f(-field.x, -0.5f * field.y, -field.z), sf::Vector3f(0.0f, 0.5f * field.y, 0.0f), texRect);
-
-    mPlane.setModel(mPlaneModel);
-
-    mCubeModel.makeBox(sf::Vector3f(0.5f, 0.5f, 0.5f), sf::Vector3f(0, 0.5f, 0));
-    mCube.setModel(mCubeModel);
-
-    mBlockShader = sShaderCache.acquire("data/shaders/default.330");
-
-    mBallMtl.diffMap = sTextureCache.acquire("data/textures/white.png");
-    mBallMtl.specMap = sTextureCache.acquire("data/textures/white.png");
-    mBallMtl.glowMap = sTextureCache.acquire("data/textures/clear.png");
-    mBallMtl.bumpMap = sTextureCache.acquire("data/textures/clear.png");
-    mBallMtl.specPower = 100.0f;
-    mBallMtl.bumpScale = 0.00f;
-    mBallMtl.bumpBias = 0.00f;
-    mBallMtl.fresnelPower = 5.0f;
-    mBallMtl.fresnelScale = 1.0f;
-    mBallMtl.fresnelBias = 0.0f;
-
-    mBallObj.setShader(mBlockShader);
-    mBallObj.setMaterial(mBallMtl);
-
-    mPlaneMtl.diffMap = sTextureCache.acquire("data/textures/wall_albedo.png");
-    mPlaneMtl.specMap = sTextureCache.acquire("data/textures/wall_specular.png");
-    mPlaneMtl.glowMap = sTextureCache.acquire("data/textures/wall_glow.png");
-    mPlaneMtl.bumpMap = sTextureCache.acquire("data/textures/wall_normal.png");
-    mPlaneMtl.specPower = 100.0f;
-    mPlaneMtl.bumpScale = 0.02f;
-    mPlaneMtl.bumpBias = 0.00f;
-    mPlaneMtl.fresnelPower = 5.0f;
-    mPlaneMtl.fresnelScale = 1.0f;
-    mPlaneMtl.fresnelBias = 0.0f;
-
-    mPlaneObj.setShader(mBlockShader);
-    mPlaneObj.setMaterial(mPlaneMtl);
-
-    mCubeMtl.diffMap = sTextureCache.acquire("data/textures/cube_albedo.png");
-    mCubeMtl.specMap = sTextureCache.acquire("data/textures/cube_specular.png");
-    mCubeMtl.glowMap = sTextureCache.acquire("data/textures/cube_glow.png");
-    mCubeMtl.bumpMap = sTextureCache.acquire("data/textures/cube_normal.png");
-    mCubeMtl.specPower = 1000.0f;
-    mCubeMtl.bumpScale = 0.05f;
-    mCubeMtl.bumpBias = -0.02f;
-    mCubeMtl.fresnelPower = 5.0f;
-    mCubeMtl.fresnelScale = 1.0f;
-    mCubeMtl.fresnelBias = 0.0f;
-
-    mCubeObj.setShader(mBlockShader);
-    mCubeObj.setMaterial(mCubeMtl);
-
     lua_State *L = luaL_newstate();
 
     if (!L) {
@@ -973,16 +893,9 @@ void GameWindow::render() {
         mBlockShader->setParameter("uLights[0].specColor", lightSpec);
     }
 
-    mPlaneObj.render();
-    mCubeObj.render();
-
-    if (mBlockShader) {
-        sf::Transform3D lightBallTransform;
-        lightBallTransform.translate(spinLightPos);
-        mBlockShader->setParameter("uViewMatrix", modelViewTransform * lightBallTransform);
+    for (ClientObject *obj : sObjects) {
+        obj->render();
     }
-
-    mBallObj.render();
 
     end3D();
 
