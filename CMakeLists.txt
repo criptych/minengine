@@ -17,6 +17,8 @@ ENDIF()
 ################################################################################
 
 FIND_PACKAGE(SFML 2.2 REQUIRED COMPONENTS system window graphics audio network)
+SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 ADD_SUBDIRECTORY(lib/glew-1.13.0 EXCLUDE_FROM_ALL)
 ADD_SUBDIRECTORY(lib/luajit EXCLUDE_FROM_ALL)
 
