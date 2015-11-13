@@ -445,7 +445,7 @@ bool GameWindow::init() {
         ((usedSettings.attributeFlags & sf::ContextSettings::Debug) ? " (Debug)" : "") <<
         ".\n";
 
-    mFont.loadFromFile("fonts/VeraMono.ttf");
+    mFont.loadFromFile("data/fonts/VeraMono.ttf");
     mDebugText.setFont(mFont);
     mDebugText.setCharacterSize(16);
 
@@ -478,12 +478,12 @@ bool GameWindow::init() {
     mCubeModel.makeBox(sf::Vector3f(0.5f, 0.5f, 0.5f), sf::Vector3f(0, 0.5f, 0));
     mCube.setModel(mCubeModel);
 
-    mBlockShader = sShaderCache.acquire("shaders/default.330");
+    mBlockShader = sShaderCache.acquire("data/shaders/default.330");
 
-    mBallMtl.diffMap = sTextureCache.acquire("textures/white.png");
-    mBallMtl.specMap = sTextureCache.acquire("textures/white.png");
-    mBallMtl.glowMap = sTextureCache.acquire("textures/clear.png");
-    mBallMtl.bumpMap = sTextureCache.acquire("textures/clear.png");
+    mBallMtl.diffMap = sTextureCache.acquire("data/textures/white.png");
+    mBallMtl.specMap = sTextureCache.acquire("data/textures/white.png");
+    mBallMtl.glowMap = sTextureCache.acquire("data/textures/clear.png");
+    mBallMtl.bumpMap = sTextureCache.acquire("data/textures/clear.png");
     mBallMtl.specPower = 100.0f;
     mBallMtl.bumpScale = 0.00f;
     mBallMtl.bumpBias = 0.00f;
@@ -494,10 +494,10 @@ bool GameWindow::init() {
     mBallObj.setShader(mBlockShader);
     mBallObj.setMaterial(mBallMtl);
 
-    mPlaneMtl.diffMap = sTextureCache.acquire("textures/wall_albedo.png");
-    mPlaneMtl.specMap = sTextureCache.acquire("textures/wall_specular.png");
-    mPlaneMtl.glowMap = sTextureCache.acquire("textures/wall_glow.png");
-    mPlaneMtl.bumpMap = sTextureCache.acquire("textures/wall_normal.png");
+    mPlaneMtl.diffMap = sTextureCache.acquire("data/textures/wall_albedo.png");
+    mPlaneMtl.specMap = sTextureCache.acquire("data/textures/wall_specular.png");
+    mPlaneMtl.glowMap = sTextureCache.acquire("data/textures/wall_glow.png");
+    mPlaneMtl.bumpMap = sTextureCache.acquire("data/textures/wall_normal.png");
     mPlaneMtl.specPower = 100.0f;
     mPlaneMtl.bumpScale = 0.02f;
     mPlaneMtl.bumpBias = 0.00f;
@@ -508,10 +508,10 @@ bool GameWindow::init() {
     mPlaneObj.setShader(mBlockShader);
     mPlaneObj.setMaterial(mPlaneMtl);
 
-    mCubeMtl.diffMap = sTextureCache.acquire("textures/cube_albedo.png");
-    mCubeMtl.specMap = sTextureCache.acquire("textures/cube_specular.png");
-    mCubeMtl.glowMap = sTextureCache.acquire("textures/cube_glow.png");
-    mCubeMtl.bumpMap = sTextureCache.acquire("textures/cube_normal.png");
+    mCubeMtl.diffMap = sTextureCache.acquire("data/textures/cube_albedo.png");
+    mCubeMtl.specMap = sTextureCache.acquire("data/textures/cube_specular.png");
+    mCubeMtl.glowMap = sTextureCache.acquire("data/textures/cube_glow.png");
+    mCubeMtl.bumpMap = sTextureCache.acquire("data/textures/cube_normal.png");
     mCubeMtl.specPower = 1000.0f;
     mCubeMtl.bumpScale = 0.05f;
     mCubeMtl.bumpBias = -0.02f;
