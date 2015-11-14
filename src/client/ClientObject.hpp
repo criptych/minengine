@@ -48,7 +48,7 @@ public:
 
     void setShader(sf::Shader &shader);
     void setShader(sf::Shader *shader);
-    const sf::Shader *getShader() const;
+    sf::Shader *getShader() const;
 
     void setMaterial(const MaterialInfo &material);
     void setMaterial(const MaterialInfo *material);

@@ -54,7 +54,7 @@ void ClientObject::setShader(sf::Shader &shader) {
     setShader(&shader);
 }
 
-const sf::Shader *ClientObject::getShader() const {
+sf::Shader *ClientObject::getShader() const {
     return mShader;
 }
 
