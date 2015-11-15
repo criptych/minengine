@@ -460,6 +460,15 @@ bool GameWindow::initScene() {
         return false;
     }
 
+    if (luaL_loadfile(L, "data/scripts/main.lua") || lua_pcall(L, 0, 0, 0)) {
+        const char *msg = lua_tostring(L, -1);
+        if (msg) {
+            sf::err() << "Lua error: " << msg << std::endl;
+        }
+        lua_close(L);
+        return false;
+    }
+
     lua_close(L);
 
     return true;
