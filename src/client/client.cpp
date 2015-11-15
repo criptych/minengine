@@ -528,7 +528,6 @@ class GameWindow : protected sf::RenderWindow {
     sf::Time mFrameLength;
 
     Player mPlayer;
-    sf::Shader *mBlockShader;
 
     sf::Vector3f mLightPos;
     float mSpinAngle;
@@ -812,7 +811,6 @@ void GameWindow::handleEvent(const sf::Event &event) {
         case sf::Event::Resized: {
             sf::Vector2f size(getSize());
             sf::err() << "Window resized to " << size.x << 'x' << size.y << '\n';
-            mBlockShader->setParameter("uResolution", size);
             GLChecked(glViewport(0, 0, size.x, size.y));
             if (size.y > 0) {
                 mPlayer.getCamera().setAspect(size.x / size.y);
@@ -1206,17 +1204,16 @@ void GameWindow::render() {
     static const sf::Color lightDiff(230,230,230);
     static const sf::Color lightSpec(255,255,255);
 
-    if (mBlockShader) {
-        mBlockShader->setParameter("uProjMatrix", projectionTransform);
-        mBlockShader->setParameter("uViewMatrix", modelViewTransform);
-
-        mBlockShader->setParameter("uLights[0].position", modelViewTransform * spinLightPos);
-        mBlockShader->setParameter("uLights[0].ambtColor", lightAmbt);
-        mBlockShader->setParameter("uLights[0].diffColor", lightDiff);
-        mBlockShader->setParameter("uLights[0].specColor", lightSpec);
-    }
-
     for (ClientObject *obj : sObjects) {
+        sf::Shader *shader = obj->getShader();
+        if (shader) {
+            shader->setParameter("uProjMatrix", projectionTransform);
+            shader->setParameter("uViewMatrix", modelViewTransform);
+            shader->setParameter("uLights[0].position", modelViewTransform * spinLightPos);
+            shader->setParameter("uLights[0].ambtColor", lightAmbt);
+            shader->setParameter("uLights[0].diffColor", lightDiff);
+            shader->setParameter("uLights[0].specColor", lightSpec);
+        }
         obj->render();
     }
 
