@@ -195,6 +195,300 @@ static ShaderCache sShaderCache;
 static TextureCache sTextureCache;
 static std::vector<ClientObject*> sObjects;
 
+int ll_Object___new(lua_State *L) {
+    luaL_checktype(L, 2, LUA_TTABLE);
+    ClientObject **pobj = static_cast<ClientObject**>(
+        lua_newuserdata(L, sizeof(ClientObject*)));
+    ClientObject *obj = *pobj = new ClientObject();
+    sObjects.push_back(obj);
+
+    sf::err() << sObjects.size() << " objects to draw\n";
+
+    lua_getfield(L, 2, "shader");
+    if (!lua_isnoneornil(L, -1)) {
+        const char *name = luaL_checkstring(L, -1);
+        sf::Shader *shader = sShaderCache.acquire(name);
+        obj->setShader(shader);
+
+        sf::err() << "Shader: " << shader << "\n";
+    }
+    lua_pop(L, 1);
+
+    lua_getfield(L, 2, "material");
+    if (!lua_isnoneornil(L, -1)) {
+        luaL_checktype(L, -1, LUA_TTABLE);
+        MaterialInfo *material = new MaterialInfo();
+        obj->setMaterial(material);
+
+        lua_getfield(L, -1, "diffMap");
+        if (!lua_isnoneornil(L, -1)) {
+            const char *name = luaL_checkstring(L, -1);
+            material->diffMap = sTextureCache.acquire(name);
+        }
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "specMap");
+        if (!lua_isnoneornil(L, -1)) {
+            const char *name = luaL_checkstring(L, -1);
+            material->specMap = sTextureCache.acquire(name);
+        }
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "glowMap");
+        if (!lua_isnoneornil(L, -1)) {
+            const char *name = luaL_checkstring(L, -1);
+            material->glowMap = sTextureCache.acquire(name);
+        }
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "bumpMap");
+        if (!lua_isnoneornil(L, -1)) {
+            const char *name = luaL_checkstring(L, -1);
+            material->bumpMap = sTextureCache.acquire(name);
+        }
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "specPower");
+        if (!lua_isnoneornil(L, -1)) {
+            material->specPower = luaL_checknumber(L, -1);
+        }
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "bumpScale");
+        if (!lua_isnoneornil(L, -1)) {
+            material->bumpScale = luaL_checknumber(L, -1);
+        }
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "bumpBias");
+        if (!lua_isnoneornil(L, -1)) {
+            material->bumpBias = luaL_checknumber(L, -1);
+        }
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "fresnelPower");
+        if (!lua_isnoneornil(L, -1)) {
+            material->fresnelPower = luaL_checknumber(L, -1);
+        }
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "fresnelScale");
+        if (!lua_isnoneornil(L, -1)) {
+            material->fresnelScale = luaL_checknumber(L, -1);
+        }
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "fresnelBias");
+        if (!lua_isnoneornil(L, -1)) {
+            material->fresnelBias = luaL_checknumber(L, -1);
+        }
+        lua_pop(L, 1);
+
+        sf::err() << "Material:\n"
+            "\t diffMap == " << material->diffMap << "\n"
+            "\t specMap == " << material->specMap << "\n"
+            "\t glowMap == " << material->glowMap << "\n"
+            "\t bumpMap == " << material->bumpMap << "\n"
+            "\t specPower == " << material->specPower << "\n"
+            "\t bumpScale == " << material->bumpScale << "\n"
+            "\t bumpBias == " << material->bumpBias << "\n"
+            "\t fresnelPower == " << material->fresnelPower << "\n"
+            "\t fresnelScale == " << material->fresnelScale << "\n"
+            "\t fresnelBias == " << material->fresnelBias << "\n"
+            ;
+    }
+    lua_pop(L, 1);
+
+    lua_getfield(L, 2, "model");
+    if (!lua_isnoneornil(L, -1)) {
+
+        static const char *const primitive_names[] = {
+            "points",
+            "lines",
+            "lineloop",
+            "linestrip",
+            "triangles",
+            "trianglestrip",
+            "trianglefan",
+            //~ "quads",
+            //~ "quadstrip",
+            //~ "polygon",
+            nullptr
+        };
+
+        static const char *const shape_names[] = {
+            "box",
+            "plane",
+            "sphere",
+            nullptr
+        };
+
+        Model *model = new Model();
+        obj->setModel(new ClientModel(model));
+
+        lua_getfield(L, -1, "primitive");
+        int primitive = luaL_checkoption(L, -1, "triangles", primitive_names);
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "shape");
+        int shape = luaL_checkoption(L, -1, "box", shape_names);
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "radius");
+        float radius = 1.0f;
+        if (!lua_isnoneornil(L, -1)) {
+            radius = luaL_checknumber(L, -1);
+        }
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "steps");
+        int step = 5, rstep = 6;
+        if (!lua_isnoneornil(L, -1)) {
+            if (lua_type(L, -1) == LUA_TTABLE) {
+                lua_rawgeti(L, -1, 1);
+                lua_rawgeti(L, -2, 2);
+                step = luaL_checkinteger(L, -2);
+                rstep = luaL_checkinteger(L, -1);
+                lua_pop(L, 2);
+            } else {
+                step = rstep = luaL_checkinteger(L, -1);
+            }
+        }
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "size");
+        sf::Vector3f size(1.0f, 1.0f, 1.0f);
+        if (!lua_isnoneornil(L, -1)) {
+            lua_rawgeti(L, -1, 1);
+            lua_rawgeti(L, -2, 2);
+            lua_rawgeti(L, -3, 3);
+            size.x = luaL_checknumber(L, -3);
+            size.y = luaL_checknumber(L, -2);
+            size.z = luaL_checknumber(L, -1);
+            lua_pop(L, 3);
+        }
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "center");
+        sf::Vector3f center;
+        if (!lua_isnoneornil(L, -1)) {
+            lua_rawgeti(L, -1, 1);
+            lua_rawgeti(L, -2, 2);
+            lua_rawgeti(L, -3, 3);
+            center.x = luaL_checknumber(L, -3);
+            center.y = luaL_checknumber(L, -2);
+            center.z = luaL_checknumber(L, -1);
+            lua_pop(L, 3);
+        }
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "a");
+        sf::Vector3f a(1.0f, 1.0f, 1.0f);
+        if (!lua_isnoneornil(L, -1)) {
+            lua_rawgeti(L, -1, 1);
+            lua_rawgeti(L, -2, 2);
+            lua_rawgeti(L, -3, 3);
+            a.x = luaL_checknumber(L, -3);
+            a.y = luaL_checknumber(L, -2);
+            a.z = luaL_checknumber(L, -1);
+            lua_pop(L, 3);
+        }
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "b");
+        sf::Vector3f b(1.0f, 1.0f, 1.0f);
+        if (!lua_isnoneornil(L, -1)) {
+            lua_rawgeti(L, -1, 1);
+            lua_rawgeti(L, -2, 2);
+            lua_rawgeti(L, -3, 3);
+            b.x = luaL_checknumber(L, -3);
+            b.y = luaL_checknumber(L, -2);
+            b.z = luaL_checknumber(L, -1);
+            lua_pop(L, 3);
+        }
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "c");
+        sf::Vector3f c(1.0f, 1.0f, 1.0f);
+        if (!lua_isnoneornil(L, -1)) {
+            lua_rawgeti(L, -1, 1);
+            lua_rawgeti(L, -2, 2);
+            lua_rawgeti(L, -3, 3);
+            c.x = luaL_checknumber(L, -3);
+            c.y = luaL_checknumber(L, -2);
+            c.z = luaL_checknumber(L, -1);
+            lua_pop(L, 3);
+        }
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "texRect");
+        sf::FloatRect texRect(0, 0, 1, 1);
+        if (!lua_isnoneornil(L, -1)) {
+            lua_rawgeti(L, -1, 1);
+            lua_rawgeti(L, -2, 2);
+            lua_rawgeti(L, -3, 3);
+            lua_rawgeti(L, -4, 4);
+            texRect.left   = luaL_checknumber(L, -4);
+            texRect.top    = luaL_checknumber(L, -3);
+            texRect.width  = luaL_checknumber(L, -2);
+            texRect.height = luaL_checknumber(L, -1);
+            lua_pop(L, 4);
+        }
+        lua_pop(L, 1);
+
+        model->setPrimitive(primitive);
+
+        switch (shape) {
+            case 0: {
+                sf::err() << "box(<" <<
+                    size.x << ',' << size.y << ',' << size.z << ">, <" <<
+                    center.x << ',' << center.y << ',' << center.z << ">, [" <<
+                    texRect.left << ',' << texRect.top << ',' <<
+                    texRect.width << ',' << texRect.height << "])\n";
+                model->makeBox(size, center, texRect);
+                break;
+            }
+
+            case 1: {
+                sf::err() << "plane(<...>)\n";
+                model->makePlane(a, b, c, texRect);
+                break;
+            }
+
+            case 2: {
+                sf::err() << "sphere(<...>)\n";
+                model->makeBall(radius, step, rstep, center /*, texRect*/);
+                break;
+            }
+
+            default: {
+                sf::err() << "unknown shape " << shape << "???\n";
+                break;
+            }
+        }
+
+    }
+    lua_pop(L, 1);
+    return 1;
+}
+
+static luaL_Reg ll_Object_methods[] = {
+    { "__new", ll_Object___new },
+    { nullptr, nullptr }
+};
+
+int luaopen_Object(lua_State *L) {
+    luaL_newmetatable(L, "Object");
+    luaL_register(L, nullptr, ll_Object_methods);
+    lua_newtable(L);
+    lua_getfield(L, -2, "__new");
+    lua_setfield(L, -2, "__call");
+    lua_setmetatable(L, -2);
+    return 1;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 class GameWindow : protected sf::RenderWindow {
     bool mFullscreen;
     bool mMouseLocked;
@@ -458,6 +752,26 @@ bool GameWindow::initScene() {
 
     if (!L) {
         return false;
+    }
+
+    luaL_openlibs(L);
+
+    lua_pushcfunction(L, luaopen_Object);
+    lua_pushliteral(L, "Object");
+
+    if (lua_pcall(L, 1, 1, 0)) {
+        const char *msg = lua_tostring(L, -1);
+        if (msg) {
+            sf::err() << "Lua error: " << msg << std::endl;
+        }
+        lua_close(L);
+        return false;
+    } else {
+        if (lua_isnoneornil(L, -1)) {
+            lua_pop(L, 1);
+        } else {
+            lua_setglobal(L, "Object");
+        }
     }
 
     if (luaL_loadfile(L, "data/scripts/main.lua") || lua_pcall(L, 0, 0, 0)) {
