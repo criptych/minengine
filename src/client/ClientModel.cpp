@@ -26,9 +26,6 @@ ClientModel::~ClientModel() {
 void ClientModel::setModel(const Model *model) {
     destroyVertexArrays();
     mModel = model;
-    if (mModel) {
-        mPrimitive = mModel->getPrimitive();
-    }
 }
 
 void ClientModel::setModel(const Model &model) {
@@ -67,6 +64,7 @@ void ClientModel::createVertexArrays() const {
         size_t numVerts = mModel->getVertices().size();
         size_t numIndex = mModel->getIndices().size();
 
+        mPrimitive = mModel->getPrimitive();
         mCount = numVerts;
 
         if (mCount == 0) {
