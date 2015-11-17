@@ -31,6 +31,7 @@ extern "C" {
 #include "ClientModel.hpp"
 #include "ClientObject.hpp"
 #include "ResourceCache.hpp"
+#include "LightInfo.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -194,6 +195,9 @@ void ChunkRenderer::render(sf::RenderTarget &target, const Chunk &chunk) {
 static ShaderCache sShaderCache;
 static TextureCache sTextureCache;
 static std::vector<ClientObject*> sObjects;
+static std::vector<LightInfo*> sLights;
+
+////////////////////////////////////////////////////////////////////////////////
 
 int ll_Object___new(lua_State *L) {
     luaL_checktype(L, 2, LUA_TTABLE);
@@ -473,6 +477,146 @@ static luaL_Reg ll_Object_methods[] = {
 int luaopen_Object(lua_State *L) {
     luaL_newmetatable(L, "Object");
     luaL_register(L, nullptr, ll_Object_methods);
+    lua_newtable(L);
+    lua_getfield(L, -2, "__new");
+    lua_setfield(L, -2, "__call");
+    lua_setmetatable(L, -2);
+    return 1;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int ll_Light___new(lua_State *L) {
+    luaL_checktype(L, 2, LUA_TTABLE);
+    LightInfo **plight = static_cast<LightInfo**>(
+        lua_newuserdata(L, sizeof(LightInfo*)));
+    LightInfo *light = *plight = new LightInfo();
+    sLights.push_back(light);
+
+    static const char *const type_names[] = {
+        "point",
+        "spot",
+        "directional",
+        nullptr
+    };
+
+    lua_getfield(L, 2, "type");
+    light->type = static_cast<LightInfo::LightType>(
+        luaL_checkoption(L, -1, "point", type_names));
+    lua_pop(L, 1);
+
+    lua_getfield(L, 2, "ambientColor");
+    if (!lua_isnoneornil(L, -1)) {
+        lua_rawgeti(L, -1, 1);
+        lua_rawgeti(L, -2, 2);
+        lua_rawgeti(L, -3, 3);
+        light->ambtColor.r = 255 * luaL_checknumber(L, -3);
+        light->ambtColor.g = 255 * luaL_checknumber(L, -2);
+        light->ambtColor.b = 255 * luaL_checknumber(L, -1);
+        light->ambtColor.a = 255;
+        lua_pop(L, 3);
+    } else {
+        light->ambtColor = sf::Color::Black;
+    }
+    lua_pop(L, 1);
+
+    lua_getfield(L, 2, "diffuseColor");
+    if (!lua_isnoneornil(L, -1)) {
+        lua_rawgeti(L, -1, 1);
+        lua_rawgeti(L, -2, 2);
+        lua_rawgeti(L, -3, 3);
+        light->diffColor.r = 255 * luaL_checknumber(L, -3);
+        light->diffColor.g = 255 * luaL_checknumber(L, -2);
+        light->diffColor.b = 255 * luaL_checknumber(L, -1);
+        light->diffColor.a = 255;
+        lua_pop(L, 3);
+    } else {
+        light->diffColor = sf::Color::Black;
+    }
+    lua_pop(L, 1);
+
+    lua_getfield(L, 2, "specularColor");
+    if (!lua_isnoneornil(L, -1)) {
+        lua_rawgeti(L, -1, 1);
+        lua_rawgeti(L, -2, 2);
+        lua_rawgeti(L, -3, 3);
+        light->specColor.r = 255 * luaL_checknumber(L, -3);
+        light->specColor.g = 255 * luaL_checknumber(L, -2);
+        light->specColor.b = 255 * luaL_checknumber(L, -1);
+        light->specColor.a = 255;
+        lua_pop(L, 3);
+    } else {
+        light->specColor = sf::Color::Black;
+    }
+    lua_pop(L, 1);
+
+    lua_getfield(L, 2, "position");
+    if (!lua_isnoneornil(L, -1)) {
+        lua_rawgeti(L, -1, 1);
+        lua_rawgeti(L, -2, 2);
+        lua_rawgeti(L, -3, 3);
+        light->position.x = luaL_checknumber(L, -3);
+        light->position.y = luaL_checknumber(L, -2);
+        light->position.z = luaL_checknumber(L, -1);
+        lua_pop(L, 3);
+    } else {
+        light->position = sf::Vector3f();
+    }
+    lua_pop(L, 1);
+
+    lua_getfield(L, 2, "spotDirection");
+    if (!lua_isnoneornil(L, -1)) {
+        lua_rawgeti(L, -1, 1);
+        lua_rawgeti(L, -2, 2);
+        lua_rawgeti(L, -3, 3);
+        light->spotDirection.x = luaL_checknumber(L, -3);
+        light->spotDirection.y = luaL_checknumber(L, -2);
+        light->spotDirection.z = luaL_checknumber(L, -1);
+        lua_pop(L, 3);
+    } else {
+        light->spotDirection = sf::Vector3f(0, 0, -1);
+    }
+    lua_pop(L, 1);
+
+    lua_getfield(L, 2, "spotExponent");
+    light->spotExponent = luaL_optnumber(L, -1, 0.0f);
+    lua_pop(L, 1);
+
+    lua_getfield(L, 2, "spotConeInner");
+    light->spotConeInner = luaL_optnumber(L, -1, 180.0f);
+    lua_pop(L, 1);
+
+    lua_getfield(L, 2, "spotConeOuter");
+    light->spotConeOuter = luaL_optnumber(L, -1, 180.0f);
+    lua_pop(L, 1);
+
+    lua_getfield(L, 2, "attenuation");
+    if (!lua_isnoneornil(L, -1)) {
+        lua_rawgeti(L, -1, 1);
+        lua_rawgeti(L, -2, 2);
+        lua_rawgeti(L, -3, 3);
+        light->attenuation[0] = luaL_optnumber(L, -3, 1.0f);
+        light->attenuation[1] = luaL_optnumber(L, -2, 0.0f);
+        light->attenuation[2] = luaL_optnumber(L, -1, 0.0f);
+        lua_pop(L, 3);
+    } else {
+        light->attenuation[0] = 1.0f;
+        light->attenuation[1] = 0.0f;
+        light->attenuation[2] = 0.0f;
+    }
+    lua_pop(L, 1);
+
+    return 1;
+}
+
+static luaL_Reg ll_Light_methods[] = {
+    { "__new", ll_Light___new },
+    { nullptr, nullptr }
+};
+
+int luaopen_Light(lua_State *L) {
+    luaL_newmetatable(L, "Light");
+    luaL_register(L, nullptr, ll_Light_methods);
     lua_newtable(L);
     lua_getfield(L, -2, "__new");
     lua_setfield(L, -2, "__call");
@@ -763,6 +907,24 @@ bool GameWindow::initScene() {
             lua_pop(L, 1);
         } else {
             lua_setglobal(L, "Object");
+        }
+    }
+
+    lua_pushcfunction(L, luaopen_Light);
+    lua_pushliteral(L, "Light");
+
+    if (lua_pcall(L, 1, 1, 0)) {
+        const char *msg = lua_tostring(L, -1);
+        if (msg) {
+            sf::err() << "Lua error: " << msg << std::endl;
+        }
+        lua_close(L);
+        return false;
+    } else {
+        if (lua_isnoneornil(L, -1)) {
+            lua_pop(L, 1);
+        } else {
+            lua_setglobal(L, "Light");
         }
     }
 
@@ -1193,19 +1355,46 @@ void GameWindow::render() {
     spinLight.rotate(mSpinAngle, sf::Vector3f(0,1,0));
     sf::Vector3f spinLightPos = spinLight.transformPoint(mLightPos);
 
-    static const sf::Color lightAmbt(25,25,25);
-    static const sf::Color lightDiff(230,230,230);
-    static const sf::Color lightSpec(255,255,255);
+    static LightInfo defaultLight;
+
+    for (LightInfo *light : sLights) {
+        light->spotConeInnerCos = std::cos(light->spotConeInner * Pi / 180.0f);
+        light->spotConeOuterCos = std::cos(light->spotConeOuter * Pi / 180.0f);
+    }
+
+    char paramName[32];
 
     for (ClientObject *obj : sObjects) {
         sf::Shader *shader = obj->getShader();
         if (shader) {
             shader->setParameter("uProjMatrix", projectionTransform);
             shader->setParameter("uViewMatrix", modelViewTransform);
-            shader->setParameter("uLights[0].position", modelViewTransform * spinLightPos);
-            shader->setParameter("uLights[0].ambtColor", lightAmbt);
-            shader->setParameter("uLights[0].diffColor", lightDiff);
-            shader->setParameter("uLights[0].specColor", lightSpec);
+
+            for (size_t i = 0; i < 4; i++) {
+                LightInfo *light = (i < sLights.size() && sLights[i]) ? sLights[i] : &defaultLight;
+                snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "ambtColor");
+                shader->setParameter(paramName, light->ambtColor);
+                snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "diffColor");
+                shader->setParameter(paramName, light->diffColor);
+                snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "specColor");
+                shader->setParameter(paramName, light->specColor);
+                snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "position");
+                shader->setParameter(paramName, modelViewTransform * light->position);
+                snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "spotDirection");
+                shader->setParameter(paramName, light->spotDirection);
+                snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "spotExponent");
+                shader->setParameter(paramName, light->spotExponent);
+                snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "spotConeInner");
+                shader->setParameter(paramName, light->spotConeInner);
+                snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "spotConeInnerCos");
+                shader->setParameter(paramName, light->spotConeInnerCos);
+                snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "spotConeOuter");
+                shader->setParameter(paramName, light->spotConeOuter);
+                snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "spotConeOuterCos");
+                shader->setParameter(paramName, light->spotConeOuterCos);
+                snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "attenuation");
+                shader->setParameter(paramName, light->attenuation[0], light->attenuation[1], light->attenuation[2]);
+            }
         }
         obj->render();
     }
