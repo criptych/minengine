@@ -12,10 +12,25 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 struct LightInfo {
-    sf::Vector3f position;
+    enum LightType {
+        Point,
+        Spot,
+        Directional,
+    };
+
+    LightType type;
     sf::Color ambtColor;
     sf::Color diffColor;
     sf::Color specColor;
+    sf::Vector3f position;
+    sf::Vector3f halfVector;
+    sf::Vector3f spotDirection;
+    float spotExponent;
+    float spotConeInner;
+    float spotConeOuter;
+    float spotConeInnerCos;
+    float spotConeOuterCos;
+    float attenuation[3];
 };
 
 ////////////////////////////////////////////////////////////////////////////////
