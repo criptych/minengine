@@ -201,10 +201,10 @@ static std::vector<LightInfo*> sLights;
 
 int ll_Object___new(lua_State *L) {
     luaL_checktype(L, 2, LUA_TTABLE);
-    ClientObject **pobj = static_cast<ClientObject**>(
+    ClientObject **pobject = static_cast<ClientObject**>(
         lua_newuserdata(L, sizeof(ClientObject*)));
-    ClientObject *obj = *pobj = new ClientObject();
-    sObjects.push_back(obj);
+    ClientObject *object = *pobject = new ClientObject();
+    sObjects.push_back(object);
 
     sf::err() << sObjects.size() << " objects to draw\n";
 
@@ -212,7 +212,7 @@ int ll_Object___new(lua_State *L) {
     if (!lua_isnoneornil(L, -1)) {
         const char *name = luaL_checkstring(L, -1);
         sf::Shader *shader = sShaderCache.acquire(name);
-        obj->setShader(shader);
+        object->setShader(shader);
 
         sf::err() << "Shader: " << shader << "\n";
     }
@@ -222,7 +222,7 @@ int ll_Object___new(lua_State *L) {
     if (!lua_isnoneornil(L, -1)) {
         luaL_checktype(L, -1, LUA_TTABLE);
         MaterialInfo *material = new MaterialInfo();
-        obj->setMaterial(material);
+        object->setMaterial(material);
 
         lua_getfield(L, -1, "diffMap");
         if (!lua_isnoneornil(L, -1)) {
@@ -328,7 +328,7 @@ int ll_Object___new(lua_State *L) {
         };
 
         Model *model = new Model();
-        obj->setModel(new ClientModel(model));
+        object->setModel(new ClientModel(model));
 
         lua_getfield(L, -1, "primitive");
         int primitive = luaL_checkoption(L, -1, "triangles", primitive_names);
@@ -1364,8 +1364,8 @@ void GameWindow::render() {
 
     char paramName[32];
 
-    for (ClientObject *obj : sObjects) {
-        sf::Shader *shader = obj->getShader();
+    for (ClientObject *object : sObjects) {
+        sf::Shader *shader = object->getShader();
         if (shader) {
             shader->setParameter("uProjMatrix", projectionTransform);
             shader->setParameter("uViewMatrix", modelViewTransform);
@@ -1396,7 +1396,7 @@ void GameWindow::render() {
                 shader->setParameter(paramName, light->attenuation[0], light->attenuation[1], light->attenuation[2]);
             }
         }
-        obj->render();
+        object->render();
     }
 
     end3D();
