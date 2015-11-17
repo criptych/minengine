@@ -7,6 +7,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <list>
 #include <map>
 #include <string>
 
@@ -71,11 +72,15 @@ void ResourceCache<Resource>::releaseAll() {
 
 template <typename Resource>
 void ResourceCache<Resource>::flush() {
+    std::list<CacheEntry*> dead;
     for (auto &item : mResources) {
         CacheEntry *entry = item.second;
         if (entry->references == 0) {
-            remove(entry);
+            dead.push_back(entry);
         }
+    }
+    for (CacheEntry *entry : dead) {
+        remove(entry);
     }
 }
 
