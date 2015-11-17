@@ -440,23 +440,16 @@ int ll_Object___new(lua_State *L) {
 
         switch (shape) {
             case 0: {
-                sf::err() << "box(<" <<
-                    size.x << ',' << size.y << ',' << size.z << ">, <" <<
-                    center.x << ',' << center.y << ',' << center.z << ">, [" <<
-                    texRect.left << ',' << texRect.top << ',' <<
-                    texRect.width << ',' << texRect.height << "])\n";
                 model->makeBox(size, center, texRect);
                 break;
             }
 
             case 1: {
-                sf::err() << "plane(<...>)\n";
                 model->makePlane(a, b, c, texRect);
                 break;
             }
 
             case 2: {
-                sf::err() << "sphere(<...>)\n";
                 model->makeBall(radius, step, rstep, center /*, texRect*/);
                 break;
             }
