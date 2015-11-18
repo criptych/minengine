@@ -339,10 +339,7 @@ int ll_Object___new(lua_State *L) {
         lua_pop(L, 1);
 
         lua_getfield(L, -1, "radius");
-        float radius = 1.0f;
-        if (!lua_isnoneornil(L, -1)) {
-            radius = luaL_checknumber(L, -1);
-        }
+        float radius = luaL_optnumber(L, -1, 1.0f);
         lua_pop(L, 1);
 
         lua_getfield(L, -1, "steps");
