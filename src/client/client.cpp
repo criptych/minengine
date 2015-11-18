@@ -59,6 +59,15 @@ class TextureCache : public ResourceCache<sf::Texture> {
     }
 };
 
+class MusicCache : public ResourceCache<sf::Music> {
+    sf::Music *load(sf::Music *music, const std::string &name) {
+        if (!music->openFromFile(name)) {
+            return nullptr;
+        }
+        return music;
+    }
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 
 class Player {
