@@ -667,6 +667,7 @@ class GameWindow : protected sf::RenderWindow {
     sf::Vector3f mLightPos;
     float mSpinAngle;
     float mSpinSpeed; // degrees/second
+    bool mZoom;
 
     ChunkData mTestChunkData;
     Chunk mTestChunk;
@@ -741,6 +742,8 @@ GameWindow::GameWindow(
 ), mSpinAngle(
 ), mSpinSpeed(
     12
+), mZoom(
+    false
 ), mTestChunk(
     Position(),
     &mTestChunkData
@@ -1074,6 +1077,11 @@ void GameWindow::handleEvent(const sf::Event &event) {
         }
 
         case sf::Event::MouseWheelScrolled: {
+            if (event.mouseWheelScroll.delta > 0) {
+                mZoom = true;
+            } else if (event.mouseWheelScroll.delta < 0) {
+                mZoom = false;
+            }
             break;
         }
 
@@ -1246,13 +1254,13 @@ void GameWindow::handleInput(const sf::Time &delta) {
 
         float fov = mPlayer.getCamera().getFOV();
 
-        if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
+        if (mZoom) {
             if (fov > 30.0f) {
-                fov -= 100.0f * delta.asSeconds();
+                fov -= 180.0f * delta.asSeconds();
             }
         } else {
             if (fov < 75.0f) {
-                fov += 100.0f * delta.asSeconds();
+                fov += 180.0f * delta.asSeconds();
             }
         }
 
