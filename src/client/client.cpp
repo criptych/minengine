@@ -1215,16 +1215,15 @@ void GameWindow::handleEvent(const sf::Event &event) {
 
 void GameWindow::handleInput(const sf::Time &delta) {
     if (hasFocus()) {
+        sf::Vector2f look;
+
         if (mMouseLocked) {
             sf::Vector2i mousePos = getMousePosition();
-            sf::Vector2i mouseDelta = mousePos - mWindowCenter;
-            mPlayer.look(sf::Vector2f(mouseDelta));
+            look = sf::Vector2f(mousePos - mWindowCenter);
             setMousePosition(mWindowCenter);
         }
 
         float deltaSeconds = delta.asSeconds();
-
-        sf::Vector2f look;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
             look.x -= 180*deltaSeconds;
@@ -1272,6 +1271,7 @@ void GameWindow::handleInput(const sf::Time &delta) {
         float fov = mPlayer.getCamera().getFOV();
 
         if (mZoom) {
+            look *= 0.5f;
             if (fov > 30.0f) {
                 fov -= 180.0f * delta.asSeconds();
             }
