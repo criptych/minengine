@@ -1019,24 +1019,18 @@ void GameWindow::handleEvent(const sf::Event &event) {
                     break;
                 }
 
-                case sf::Keyboard::F1: {
-                    switch (mViewMode) {
-                        case ViewMode::Normal: {
-                            mViewMode = ViewMode::InsideWireframe;
-                            break;
-                        }
+                case sf::Keyboard::Num1: {
+                    mViewMode = ViewMode::Normal;
+                    break;
+                }
 
-                        case ViewMode::InsideWireframe: {
-                            mViewMode = ViewMode::Wireframe;
-                            break;
-                        }
+                case sf::Keyboard::Num2: {
+                    mViewMode = ViewMode::InsideWireframe;
+                    break;
+                }
 
-                        default:
-                        case ViewMode::Wireframe: {
-                            mViewMode = ViewMode::Normal;
-                            break;
-                        }
-                    }
+                case sf::Keyboard::Num3: {
+                    mViewMode = ViewMode::Wireframe;
                     break;
                 }
 
