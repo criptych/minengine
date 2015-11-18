@@ -1453,6 +1453,10 @@ void GameWindow::render() {
     rect.setFillColor(sf::Color::Blue);
     GLChecked(draw(rect));
 
+    mDebugText.setColor(sf::Color::Black);
+    mDebugText.setPosition(sf::Vector2f(33, 1));
+    GLChecked(draw(mDebugText));
+    mDebugText.setColor(sf::Color::White);
     mDebugText.setPosition(sf::Vector2f(32, 0));
     GLChecked(draw(mDebugText));
 
