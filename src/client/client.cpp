@@ -355,7 +355,8 @@ int ll_Object___new(lua_State *L) {
                 rstep = luaL_checkinteger(L, -1);
                 lua_pop(L, 2);
             } else {
-                step = rstep = luaL_checkinteger(L, -1);
+                step = luaL_checkinteger(L, -1);
+                rstep = 2 * step;
             }
         }
         lua_pop(L, 1);
