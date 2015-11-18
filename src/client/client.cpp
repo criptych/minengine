@@ -885,6 +885,16 @@ bool GameWindow::init() {
 }
 
 bool GameWindow::initScene() {
+    for (LightInfo *light : sLights) {
+        delete light;
+    }
+    sLights.clear();
+
+    for (ClientObject *object : sObjects) {
+        delete object;
+    }
+    sObjects.clear();
+
     lua_State *L = luaL_newstate();
 
     if (!L) {
@@ -1055,8 +1065,12 @@ void GameWindow::handleEvent(const sf::Event &event) {
                 case sf::Keyboard::R: {
                     if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
                         sTextureCache.reloadAll();
-                    } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
+                    }
+                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
                         sShaderCache.reloadAll();
+                    }
+                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt)) {
+                        initScene();
                     }
                     break;
                 }
