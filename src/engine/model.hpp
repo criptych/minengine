@@ -8,41 +8,42 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
+#include <glm/glm.hpp>
 
 #include "types.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
 struct Vertex {
-    sf::Vector2f texCoord;
-    sf::Vector3f normal;
-    sf::Vector3f position;
+    glm::vec2 texCoord;
+    glm::vec3 normal;
+    glm::vec3 position;
 
     Vertex(
     ) {
     }
 
     explicit Vertex(
-        const sf::Vector3f &position
+        const glm::vec3 &position
     ): position(position) {
     }
 
     Vertex(
-        const sf::Vector3f &normal,
-        const sf::Vector3f &position
+        const glm::vec3 &normal,
+        const glm::vec3 &position
     ): normal(normal), position(position) {
     }
 
     Vertex(
-        const sf::Vector2f &texCoord,
-        const sf::Vector3f &position
+        const glm::vec2 &texCoord,
+        const glm::vec3 &position
     ): texCoord(texCoord), position(position) {
     }
 
     Vertex(
-        const sf::Vector2f &texCoord,
-        const sf::Vector3f &normal,
-        const sf::Vector3f &position
+        const glm::vec2 &texCoord,
+        const glm::vec3 &normal,
+        const glm::vec3 &position
     ): texCoord(texCoord), normal(normal), position(position) {
     }
 
@@ -163,30 +164,30 @@ public:
     void calcNormals(bool smooth = false);
     void calcNormals(size_t start, size_t end, bool smooth = false);
 
-    void addPlane(const sf::Vector3f &a, const sf::Vector3f &b, const sf::Vector3f &c, const sf::FloatRect &texRect);
-    void addPlane(const sf::Vector3f &a, const sf::Vector3f &b, const sf::Vector3f &c);
+    void addPlane(const glm::vec3 &a, const glm::vec3 &b, const glm::vec3 &c, const glm::vec4 &texRect);
+    void addPlane(const glm::vec3 &a, const glm::vec3 &b, const glm::vec3 &c);
 
-    void makePlane(const sf::Vector3f &a, const sf::Vector3f &b, const sf::Vector3f &c, const sf::FloatRect &texRect);
-    void makePlane(const sf::Vector3f &a, const sf::Vector3f &b, const sf::Vector3f &c);
+    void makePlane(const glm::vec3 &a, const glm::vec3 &b, const glm::vec3 &c, const glm::vec4 &texRect);
+    void makePlane(const glm::vec3 &a, const glm::vec3 &b, const glm::vec3 &c);
 
-    void addBox(const sf::Vector3f &size, const sf::Vector3f &center, const sf::FloatRect &texRect);
-    void addBox(const sf::Vector3f &size, const sf::Vector3f &center);
-    void addBox(const sf::Vector3f &size, const sf::FloatRect &texRect);
-    void addBox(const sf::Vector3f &size);
+    void addBox(const glm::vec3 &size, const glm::vec3 &center, const glm::vec4 &texRect);
+    void addBox(const glm::vec3 &size, const glm::vec3 &center);
+    void addBox(const glm::vec3 &size, const glm::vec4 &texRect);
+    void addBox(const glm::vec3 &size);
 
-    void makeBox(const sf::Vector3f &size, const sf::Vector3f &center, const sf::FloatRect &texRect);
-    void makeBox(const sf::Vector3f &size, const sf::Vector3f &center);
-    void makeBox(const sf::Vector3f &size, const sf::FloatRect &texRect);
-    void makeBox(const sf::Vector3f &size);
+    void makeBox(const glm::vec3 &size, const glm::vec3 &center, const glm::vec4 &texRect);
+    void makeBox(const glm::vec3 &size, const glm::vec3 &center);
+    void makeBox(const glm::vec3 &size, const glm::vec4 &texRect);
+    void makeBox(const glm::vec3 &size);
 
-    void addBall(float radius, size_t step, size_t rstep, const sf::Vector3f &center);
+    void addBall(float radius, size_t step, size_t rstep, const glm::vec3 &center);
     void addBall(float radius, size_t step, size_t rstep);
-    void addBall(float radius, size_t step, const sf::Vector3f &center);
+    void addBall(float radius, size_t step, const glm::vec3 &center);
     void addBall(float radius, size_t step);
 
-    void makeBall(float radius, size_t step, size_t rstep, const sf::Vector3f &center);
+    void makeBall(float radius, size_t step, size_t rstep, const glm::vec3 &center);
     void makeBall(float radius, size_t step, size_t rstep);
-    void makeBall(float radius, size_t step, const sf::Vector3f &center);
+    void makeBall(float radius, size_t step, const glm::vec3 &center);
     void makeBall(float radius, size_t step);
 };
 

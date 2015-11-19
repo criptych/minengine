@@ -7,10 +7,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-//~ #include "Transform3D.hpp"
-
-#include <SFML/System.hpp>
-#include <SFML/Graphics.hpp>
+#include <glm/glm.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -20,7 +17,7 @@ class Camera {
     float mZNear;
     float mZFar;
 
-    mutable sf::Transform3D mTransform;
+    mutable glm::mat4 mTransform;
     mutable bool mNeedsUpdate;
 
 public:
@@ -40,7 +37,7 @@ public:
     float getZFar() const;
     void setZRange(float zNear, float zFar);
 
-    const sf::Transform3D &getTransform() const;
+    const glm::mat4 &getTransform() const;
 
     void render() const;
 };

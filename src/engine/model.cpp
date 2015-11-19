@@ -123,7 +123,7 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
     switch (mPrimitive) {
         case GLTriangles: {
             for (size_t i = start; i < end; i += 3) {
-                sf::Vector3f p[3], n[3];
+                glm::vec3 p[3], n[3];
 
                 for (size_t j = 0; j < 3; j++) {
                     p[j] = mVertices[i+j].position;
@@ -143,7 +143,7 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
 
         case GLTriangleFan: {
             for (size_t i = start; i < end; i += 1) {
-                sf::Vector3f p[3], n[3];
+                glm::vec3 p[3], n[3];
 
                 for (size_t j = 1; j < 3; j++) {
                     p[j] = mVertices[i+j].position;
@@ -165,7 +165,7 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
         case GLTriangleStrip: {
             end -= 2;
             for (size_t i = start; i < end; i += 1) {
-                sf::Vector3f p[3], n[3];
+                glm::vec3 p[3], n[3];
 
                 for (size_t j = 0; j < 3; j++) {
                     p[j] = mVertices[i+j].position;
@@ -192,12 +192,12 @@ void Model::calcNormals(size_t start, size_t end, bool smooth) {
     }
 }
 
-void Model::addPlane(const sf::Vector3f &a, const sf::Vector3f &b, const sf::Vector3f &c, const sf::FloatRect &texRect) {
-    sf::Vector3f normal = normalize(cross(c - b, a - b));
-    sf::Vector3f d = a + c - b;
+void Model::addPlane(const glm::vec3 &a, const glm::vec3 &b, const glm::vec3 &c, const glm::vec4 &texRect) {
+    glm::vec3 normal = normalize(cross(c - b, a - b));
+    glm::vec3 d = a + c - b;
 
-    sf::Vector2f t0(texRect.left, texRect.top);
-    sf::Vector2f t1(texRect.left + texRect.width, texRect.top + texRect.height);
+    glm::vec2 t0(texRect.x, texRect.y);
+    glm::vec2 t1(texRect.x + texRect.z, texRect.y + texRect.w);
 
     switch (mPrimitive) {
         case GLTriangles: {
@@ -206,45 +206,45 @@ void Model::addPlane(const sf::Vector3f &a, const sf::Vector3f &b, const sf::Vec
             addQuad(n+0, n+1, n+2, n+3);
 
             reserveVertices(4);
-            addVertex(Vertex(sf::Vector2f(t1.x,t0.y), normal, c));
-            addVertex(Vertex(sf::Vector2f(t1.x,t1.y), normal, d));
-            addVertex(Vertex(sf::Vector2f(t0.x,t1.y), normal, a));
-            addVertex(Vertex(sf::Vector2f(t0.x,t0.y), normal, b));
+            addVertex(Vertex(glm::vec2(t1.x,t0.y), normal, c));
+            addVertex(Vertex(glm::vec2(t1.x,t1.y), normal, d));
+            addVertex(Vertex(glm::vec2(t0.x,t1.y), normal, a));
+            addVertex(Vertex(glm::vec2(t0.x,t0.y), normal, b));
             break;
         }
     }
 }
 
-void Model::addPlane(const sf::Vector3f &a, const sf::Vector3f &b, const sf::Vector3f &c) {
-    addPlane(a, b, c, sf::FloatRect(0, 0, 1, 1));
+void Model::addPlane(const glm::vec3 &a, const glm::vec3 &b, const glm::vec3 &c) {
+    addPlane(a, b, c, glm::vec4(0, 0, 1, 1));
 }
 
-void Model::makePlane(const sf::Vector3f &a, const sf::Vector3f &b, const sf::Vector3f &c, const sf::FloatRect &texRect) {
+void Model::makePlane(const glm::vec3 &a, const glm::vec3 &b, const glm::vec3 &c, const glm::vec4 &texRect) {
     clearVertices();
     clearIndices();
     setPrimitive(GLTriangles);
     addPlane(a, b, c, texRect);
 }
 
-void Model::makePlane(const sf::Vector3f &a, const sf::Vector3f &b, const sf::Vector3f &c) {
-    makePlane(a, b, c, sf::FloatRect(0, 0, 1, 1));
+void Model::makePlane(const glm::vec3 &a, const glm::vec3 &b, const glm::vec3 &c) {
+    makePlane(a, b, c, glm::vec4(0, 0, 1, 1));
 }
 
-void Model::addBox(const sf::Vector3f &size, const sf::Vector3f &center, const sf::FloatRect &texRect) {
-    sf::Vector3f mx = center + size;
-    sf::Vector3f mn = center - size;
+void Model::addBox(const glm::vec3 &size, const glm::vec3 &center, const glm::vec4 &texRect) {
+    glm::vec3 mx = center + size;
+    glm::vec3 mn = center - size;
 
-    sf::Vector2f t0(texRect.left, texRect.top);
-    sf::Vector2f t1(texRect.left + texRect.width, texRect.top + texRect.height);
+    glm::vec2 t0(texRect.x, texRect.y);
+    glm::vec2 t1(texRect.x + texRect.z, texRect.y + texRect.w);
 
-    sf::Vector3f a(mn.x, mn.y, mn.z);
-    sf::Vector3f b(mx.x, mn.y, mn.z);
-    sf::Vector3f c(mn.x, mx.y, mn.z);
-    sf::Vector3f d(mx.x, mx.y, mn.z);
-    sf::Vector3f e(mn.x, mn.y, mx.z);
-    sf::Vector3f f(mx.x, mn.y, mx.z);
-    sf::Vector3f g(mn.x, mx.y, mx.z);
-    sf::Vector3f h(mx.x, mx.y, mx.z);
+    glm::vec3 a(mn.x, mn.y, mn.z);
+    glm::vec3 b(mx.x, mn.y, mn.z);
+    glm::vec3 c(mn.x, mx.y, mn.z);
+    glm::vec3 d(mx.x, mx.y, mn.z);
+    glm::vec3 e(mn.x, mn.y, mx.z);
+    glm::vec3 f(mx.x, mn.y, mx.z);
+    glm::vec3 g(mn.x, mx.y, mx.z);
+    glm::vec3 h(mx.x, mx.y, mx.z);
 
     addPlane(h, f, b, texRect);
     addPlane(c, a, e, texRect);
@@ -254,38 +254,38 @@ void Model::addBox(const sf::Vector3f &size, const sf::Vector3f &center, const s
     addPlane(d, b, a, texRect);
 }
 
-void Model::addBox(const sf::Vector3f &size, const sf::Vector3f &center) {
-    addBox(size, sf::Vector3f(), sf::FloatRect(0, 0, 1, 1));
+void Model::addBox(const glm::vec3 &size, const glm::vec3 &center) {
+    addBox(size, glm::vec3(), glm::vec4(0, 0, 1, 1));
 }
 
-void Model::addBox(const sf::Vector3f &size, const sf::FloatRect &texRect) {
-    addBox(size, sf::Vector3f(), texRect);
+void Model::addBox(const glm::vec3 &size, const glm::vec4 &texRect) {
+    addBox(size, glm::vec3(), texRect);
 }
 
-void Model::addBox(const sf::Vector3f &size) {
-    addBox(size, sf::Vector3f());
+void Model::addBox(const glm::vec3 &size) {
+    addBox(size, glm::vec3());
 }
 
-void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center, const sf::FloatRect &texRect) {
+void Model::makeBox(const glm::vec3 &size, const glm::vec3 &center, const glm::vec4 &texRect) {
     clearVertices();
     clearIndices();
     setPrimitive(GLTriangles);
     addBox(size, center, texRect);
 }
 
-void Model::makeBox(const sf::Vector3f &size, const sf::Vector3f &center) {
-    makeBox(size, center, sf::FloatRect(0, 0, 1, 1));
+void Model::makeBox(const glm::vec3 &size, const glm::vec3 &center) {
+    makeBox(size, center, glm::vec4(0, 0, 1, 1));
 }
 
-void Model::makeBox(const sf::Vector3f &size, const sf::FloatRect &texRect) {
-    makeBox(size, sf::Vector3f(), texRect);
+void Model::makeBox(const glm::vec3 &size, const glm::vec4 &texRect) {
+    makeBox(size, glm::vec3(), texRect);
 }
 
-void Model::makeBox(const sf::Vector3f &size) {
-    makeBox(size, sf::Vector3f());
+void Model::makeBox(const glm::vec3 &size) {
+    makeBox(size, glm::vec3());
 }
 
-void Model::addBall(float radius, size_t step, size_t rstep, const sf::Vector3f &center) {
+void Model::addBall(float radius, size_t step, size_t rstep, const glm::vec3 &center) {
     if (step < 2) {
         step = 2; // step < 2 => straight line
     }
@@ -301,7 +301,7 @@ void Model::addBall(float radius, size_t step, size_t rstep, const sf::Vector3f 
     reserveVertices((step) * (rstep));
     reserveIndices((step) * (rstep) * 2);
 
-    sf::Vector3f n;
+    glm::vec3 n;
     size_t i, j, k = mVertices.size();
 
     for (i = 0; i < rstep; i++, theta += dTheta) {
@@ -310,7 +310,7 @@ void Model::addBall(float radius, size_t step, size_t rstep, const sf::Vector3f 
             n.x = std::sin(phi)*std::cos(theta);
             n.y = std::cos(phi);
             n.z = std::sin(phi)*std::sin(theta);
-            addVertex(Vertex(n, n*radius));
+            addVertex(Vertex(n, center+n*radius));
 
             size_t p = (i + 1) % rstep;
             size_t q = (j + 1) % step;
@@ -320,18 +320,18 @@ void Model::addBall(float radius, size_t step, size_t rstep, const sf::Vector3f 
 }
 
 void Model::addBall(float radius, size_t step, size_t rstep) {
-    addBall(radius, step, rstep, sf::Vector3f());
+    addBall(radius, step, rstep, glm::vec3());
 }
 
-void Model::addBall(float radius, size_t step, const sf::Vector3f &center) {
+void Model::addBall(float radius, size_t step, const glm::vec3 &center) {
     addBall(radius, step, 2 * step, center);
 }
 
 void Model::addBall(float radius, size_t step) {
-    addBall(radius, step, sf::Vector3f());
+    addBall(radius, step, glm::vec3());
 }
 
-void Model::makeBall(float radius, size_t step, size_t rstep, const sf::Vector3f &center) {
+void Model::makeBall(float radius, size_t step, size_t rstep, const glm::vec3 &center) {
     clearVertices();
     clearIndices();
     setPrimitive(GLTriangles);
@@ -339,15 +339,15 @@ void Model::makeBall(float radius, size_t step, size_t rstep, const sf::Vector3f
 }
 
 void Model::makeBall(float radius, size_t step, size_t rstep) {
-    makeBall(radius, step, rstep, sf::Vector3f());
+    makeBall(radius, step, rstep, glm::vec3());
 }
 
-void Model::makeBall(float radius, size_t step, const sf::Vector3f &center) {
+void Model::makeBall(float radius, size_t step, const glm::vec3 &center) {
     makeBall(radius, step, 2 * step, center);
 }
 
 void Model::makeBall(float radius, size_t step) {
-    makeBall(radius, step, sf::Vector3f());
+    makeBall(radius, step, glm::vec3());
 }
 
 ////////////////////////////////////////////////////////////////////////////////

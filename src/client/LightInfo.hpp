@@ -7,7 +7,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <SFML/Graphics/Texture.hpp>
+#include <glm/fwd.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -19,12 +19,12 @@ struct LightInfo {
     };
 
     LightType type;
-    sf::Color ambtColor;
-    sf::Color diffColor;
-    sf::Color specColor;
-    sf::Vector3f position;
-    sf::Vector3f halfVector;
-    sf::Vector3f spotDirection;
+    glm::vec4 ambtColor;
+    glm::vec4 diffColor;
+    glm::vec4 specColor;
+    glm::vec4 position;
+    glm::vec3 halfVector;
+    glm::vec3 spotDirection;
     float spotExponent;
     float spotConeInner;
     float spotConeOuter;

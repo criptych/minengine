@@ -24,6 +24,9 @@ extern "C" {
 
 #include "GLCheck.hpp"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "Transformable3D.hpp"
@@ -73,11 +76,12 @@ class MusicCache : public ResourceCache<sf::Music> {
 class Player {
     Camera mCamera;
     float mEyeHeight;
-    sf::Vector2f mLookDir;
+    glm::vec2 mLookDir;
 
     Physics::Body mBody;
+    glm::vec3 mPosition;
 
-    mutable sf::Transform3D mTransform;
+    mutable glm::mat4 mTransform;
     mutable bool mNeedsUpdate;
 
 public:
@@ -89,19 +93,19 @@ public:
     Physics::Body &getBody();
     const Physics::Body &getBody() const;
 
-    const sf::Transform3D &getTransform() const;
+    const glm::mat4 &getTransform() const;
 
-    sf::Vector3f getEyePosition() const;
+    glm::vec3 getEyePosition() const;
 
-    void setPosition(const sf::Vector3f &position);
-    sf::Vector3f getPosition() const;
+    void setPosition(const glm::vec3 &position);
+    glm::vec3 getPosition() const;
 
-    void move(const sf::Vector3f &offset);
+    void move(const glm::vec3 &offset);
 
-    void setLook(const sf::Vector2f &look);
-    const sf::Vector2f &getLook() const;
+    void setLook(const glm::vec2 &look);
+    const glm::vec2 &getLook() const;
 
-    void look(const sf::Vector2f &look);
+    void look(const glm::vec2 &look);
 
     void render() const;
 };
@@ -136,41 +140,49 @@ const Physics::Body &Player::getBody() const {
     return mBody;
 }
 
-const sf::Transform3D &Player::getTransform() const {
+const glm::mat4 &Player::getTransform() const {
     if (mNeedsUpdate) {
-        mTransform = sf::Transform3D();
-        mTransform.rotate(mLookDir.y, sf::Vector3f(1.0f, 0.0f, 0.0f));
-        mTransform.rotate(mLookDir.x, sf::Vector3f(0.0f, 1.0f, 0.0f));
-        mTransform.translate(-getEyePosition());
+        mTransform = glm::translate(
+            glm::rotate(
+                glm::rotate(
+                    glm::mat4(),
+                    glm::radians(mLookDir.y),
+                    glm::vec3(1.0f, 0.0f, 0.0f)
+                ),
+                glm::radians(mLookDir.x),
+                glm::vec3(0.0f, 1.0f, 0.0f)
+            ),
+            -getEyePosition()
+        );
         mNeedsUpdate = false;
     }
     return mTransform;
 }
 
-sf::Vector3f Player::getPosition() const {
-    return sf::Vector3f(mBody.getPosition()) / 256.0f;
+glm::vec3 Player::getPosition() const {
+    return mPosition;
 }
 
-void Player::setPosition(const sf::Vector3f &position) {
-    mBody.setPosition(Position(position * 256.0f));
+void Player::setPosition(const glm::vec3 &position) {
+    mPosition = position;
     mNeedsUpdate = true;
 }
 
-sf::Vector3f Player::getEyePosition() const {
-    sf::Vector3f position(getPosition());
-    return sf::Vector3f(position.x, position.y + mEyeHeight, position.z);
+glm::vec3 Player::getEyePosition() const {
+    glm::vec3 position(getPosition());
+    return glm::vec3(position.x, position.y + mEyeHeight, position.z);
 }
 
-void Player::setLook(const sf::Vector2f &look) {
+void Player::setLook(const glm::vec2 &look) {
     mLookDir = look;
     mNeedsUpdate = true;
 }
 
-const sf::Vector2f &Player::getLook() const {
+const glm::vec2 &Player::getLook() const {
     return mLookDir;
 }
 
-void Player::look(const sf::Vector2f &look) {
+void Player::look(const glm::vec2 &look) {
     mLookDir += look;
 
     if (mLookDir.y > 90.0f) {
@@ -180,8 +192,13 @@ void Player::look(const sf::Vector2f &look) {
     }
 }
 
-void Player::move(const sf::Vector3f &move) {
-    setPosition(getPosition() + sf::Transform3D().rotate(-getLook().x, sf::Vector3f(0,1,0)) * move);
+void Player::move(const glm::vec3 &move) {
+    setPosition(getPosition() + glm::vec3(
+        glm::rotate(glm::mat4(),
+            -glm::radians(getLook().x),
+            glm::vec3(0,1,0)
+        ) * glm::vec4(move, 1)
+    ));
 }
 
 void Player::render() const {
@@ -368,7 +385,7 @@ int ll_Object___new(lua_State *L) {
         lua_pop(L, 1);
 
         lua_getfield(L, -1, "size");
-        sf::Vector3f size(1.0f, 1.0f, 1.0f);
+        glm::vec3 size(1.0f, 1.0f, 1.0f);
         if (!lua_isnoneornil(L, -1)) {
             lua_rawgeti(L, -1, 1);
             lua_rawgeti(L, -2, 2);
@@ -381,7 +398,7 @@ int ll_Object___new(lua_State *L) {
         lua_pop(L, 1);
 
         lua_getfield(L, -1, "center");
-        sf::Vector3f center;
+        glm::vec3 center;
         if (!lua_isnoneornil(L, -1)) {
             lua_rawgeti(L, -1, 1);
             lua_rawgeti(L, -2, 2);
@@ -394,7 +411,7 @@ int ll_Object___new(lua_State *L) {
         lua_pop(L, 1);
 
         lua_getfield(L, -1, "a");
-        sf::Vector3f a(1.0f, 1.0f, 1.0f);
+        glm::vec3 a(1.0f, 1.0f, 1.0f);
         if (!lua_isnoneornil(L, -1)) {
             lua_rawgeti(L, -1, 1);
             lua_rawgeti(L, -2, 2);
@@ -407,7 +424,7 @@ int ll_Object___new(lua_State *L) {
         lua_pop(L, 1);
 
         lua_getfield(L, -1, "b");
-        sf::Vector3f b(1.0f, 1.0f, 1.0f);
+        glm::vec3 b(1.0f, 1.0f, 1.0f);
         if (!lua_isnoneornil(L, -1)) {
             lua_rawgeti(L, -1, 1);
             lua_rawgeti(L, -2, 2);
@@ -420,7 +437,7 @@ int ll_Object___new(lua_State *L) {
         lua_pop(L, 1);
 
         lua_getfield(L, -1, "c");
-        sf::Vector3f c(1.0f, 1.0f, 1.0f);
+        glm::vec3 c(1.0f, 1.0f, 1.0f);
         if (!lua_isnoneornil(L, -1)) {
             lua_rawgeti(L, -1, 1);
             lua_rawgeti(L, -2, 2);
@@ -433,16 +450,16 @@ int ll_Object___new(lua_State *L) {
         lua_pop(L, 1);
 
         lua_getfield(L, -1, "texRect");
-        sf::FloatRect texRect(0, 0, 1, 1);
+        glm::vec4 texRect(0, 0, 1, 1);
         if (!lua_isnoneornil(L, -1)) {
             lua_rawgeti(L, -1, 1);
             lua_rawgeti(L, -2, 2);
             lua_rawgeti(L, -3, 3);
             lua_rawgeti(L, -4, 4);
-            texRect.left   = luaL_checknumber(L, -4);
-            texRect.top    = luaL_checknumber(L, -3);
-            texRect.width  = luaL_checknumber(L, -2);
-            texRect.height = luaL_checknumber(L, -1);
+            texRect.x  = luaL_checknumber(L, -4);
+            texRect.y = luaL_checknumber(L, -3);
+            texRect.z = luaL_checknumber(L, -2);
+            texRect.w = luaL_checknumber(L, -1);
             lua_pop(L, 4);
         }
         lua_pop(L, 1);
@@ -517,13 +534,11 @@ int ll_Light___new(lua_State *L) {
         lua_rawgeti(L, -1, 1);
         lua_rawgeti(L, -2, 2);
         lua_rawgeti(L, -3, 3);
-        light->ambtColor.r = 255 * luaL_checknumber(L, -3);
-        light->ambtColor.g = 255 * luaL_checknumber(L, -2);
-        light->ambtColor.b = 255 * luaL_checknumber(L, -1);
-        light->ambtColor.a = 255;
+        light->ambtColor.r = luaL_checknumber(L, -3);
+        light->ambtColor.g = luaL_checknumber(L, -2);
+        light->ambtColor.b = luaL_checknumber(L, -1);
+        light->ambtColor.a = 1.0f;
         lua_pop(L, 3);
-    } else {
-        light->ambtColor = sf::Color::Black;
     }
     lua_pop(L, 1);
 
@@ -532,13 +547,11 @@ int ll_Light___new(lua_State *L) {
         lua_rawgeti(L, -1, 1);
         lua_rawgeti(L, -2, 2);
         lua_rawgeti(L, -3, 3);
-        light->diffColor.r = 255 * luaL_checknumber(L, -3);
-        light->diffColor.g = 255 * luaL_checknumber(L, -2);
-        light->diffColor.b = 255 * luaL_checknumber(L, -1);
-        light->diffColor.a = 255;
+        light->diffColor.r = luaL_checknumber(L, -3);
+        light->diffColor.g = luaL_checknumber(L, -2);
+        light->diffColor.b = luaL_checknumber(L, -1);
+        light->diffColor.a = 1.0f;
         lua_pop(L, 3);
-    } else {
-        light->diffColor = sf::Color::Black;
     }
     lua_pop(L, 1);
 
@@ -547,13 +560,11 @@ int ll_Light___new(lua_State *L) {
         lua_rawgeti(L, -1, 1);
         lua_rawgeti(L, -2, 2);
         lua_rawgeti(L, -3, 3);
-        light->specColor.r = 255 * luaL_checknumber(L, -3);
-        light->specColor.g = 255 * luaL_checknumber(L, -2);
-        light->specColor.b = 255 * luaL_checknumber(L, -1);
-        light->specColor.a = 255;
+        light->specColor.r = luaL_checknumber(L, -3);
+        light->specColor.g = luaL_checknumber(L, -2);
+        light->specColor.b = luaL_checknumber(L, -1);
+        light->specColor.a = 1.0f;
         lua_pop(L, 3);
-    } else {
-        light->specColor = sf::Color::Black;
     }
     lua_pop(L, 1);
 
@@ -566,12 +577,11 @@ int ll_Light___new(lua_State *L) {
         light->position.y = luaL_checknumber(L, -2);
         light->position.z = luaL_checknumber(L, -1);
         lua_pop(L, 3);
-    } else {
-        light->position = sf::Vector3f();
     }
     lua_pop(L, 1);
 
     lua_getfield(L, 2, "spotDirection");
+    light->spotDirection = glm::vec3(0, 0, -1);
     if (!lua_isnoneornil(L, -1)) {
         lua_rawgeti(L, -1, 1);
         lua_rawgeti(L, -2, 2);
@@ -580,8 +590,6 @@ int ll_Light___new(lua_State *L) {
         light->spotDirection.y = luaL_checknumber(L, -2);
         light->spotDirection.z = luaL_checknumber(L, -1);
         lua_pop(L, 3);
-    } else {
-        light->spotDirection = sf::Vector3f(0, 0, -1);
     }
     lua_pop(L, 1);
 
@@ -870,9 +878,9 @@ bool GameWindow::init() {
     mDebugText.setCharacterSize(16);
 
     mPlayer.getCamera().setFOV(75.0f);
-    mPlayer.setPosition(sf::Vector3f(0,0,0));
+    mPlayer.setPosition(glm::vec3(0,0,0));
 
-    sf::Vector3f eye = mPlayer.getEyePosition();
+    glm::vec3 eye = mPlayer.getEyePosition();
     sf::err() << "mPlayer.getEyePosition() == " << eye.x << ',' << eye.y << ',' << eye.z << '\n';
 
     glewExperimental = true;
@@ -1215,11 +1223,12 @@ void GameWindow::handleEvent(const sf::Event &event) {
 
 void GameWindow::handleInput(const sf::Time &delta) {
     if (hasFocus()) {
-        sf::Vector2f look;
+        glm::vec2 look;
 
         if (mMouseLocked) {
             sf::Vector2i mousePos = getMousePosition();
-            look = sf::Vector2f(mousePos - mWindowCenter);
+            sf::Vector2f mouseDelta(mousePos - mWindowCenter);
+            look = glm::vec2(mouseDelta.x, mouseDelta.y);
             setMousePosition(mWindowCenter);
         }
 
@@ -1238,7 +1247,7 @@ void GameWindow::handleInput(const sf::Time &delta) {
             look.y += 180*deltaSeconds;
         }
 
-        sf::Vector3f move;
+        glm::vec3 move;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
             move.z -= 2*deltaSeconds;
@@ -1337,9 +1346,9 @@ void GameWindow::end2D() {
 
 void GameWindow::render() {
     char temp[256];
-    sf::Vector3f p = mPlayer.getPosition();
-    sf::Vector3f e = mPlayer.getEyePosition();
-    sf::Vector2f o = mPlayer.getLook();
+    glm::vec3 p = mPlayer.getPosition();
+    glm::vec3 e = mPlayer.getEyePosition();
+    glm::vec2 o = mPlayer.getLook();
     snprintf(temp, sizeof(temp),
              "%.2ffps (%lldus/f, %lldus delay) / %.2ftps\n"
              "%8.4f,%8.4f,%8.4f (%8.4f,%8.4f,%8.4f)\n"
@@ -1371,8 +1380,8 @@ void GameWindow::render() {
 
     mPlayer.render();
 
-    sf::Transform3D projectionTransform(mPlayer.getCamera().getTransform());
-    sf::Transform3D modelViewTransform(mPlayer.getTransform());
+    glm::mat4 projectionTransform(mPlayer.getCamera().getTransform());
+    glm::mat4 modelViewTransform(mPlayer.getTransform());
 
     sf::Transform3D spinLight;
     spinLight.rotate(mSpinAngle, sf::Vector3f(0,1,0));
@@ -1381,8 +1390,8 @@ void GameWindow::render() {
     static LightInfo defaultLight;
 
     for (LightInfo *light : sLights) {
-        light->spotConeInnerCos = std::cos(light->spotConeInner * Pi / 180.0f);
-        light->spotConeOuterCos = std::cos(light->spotConeOuter * Pi / 180.0f);
+        light->spotConeInnerCos = glm::cos(glm::radians(light->spotConeInner));
+        light->spotConeOuterCos = glm::cos(glm::radians(light->spotConeOuter));
     }
 
     char paramName[32];
@@ -1390,21 +1399,24 @@ void GameWindow::render() {
     for (ClientObject *object : sObjects) {
         sf::Shader *shader = object->getShader();
         if (shader) {
-            shader->setParameter("uProjMatrix", projectionTransform);
-            shader->setParameter("uViewMatrix", modelViewTransform);
+            sf::Shader::bind(shader);
+            unsigned int shaderProgram = shader->getNativeHandle();
+            glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "uProjMatrix"), 1, 0, &projectionTransform[0][0]);
+            glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "uViewMatrix"), 1, 0, &modelViewTransform[0][0]);
 
             for (size_t i = 0; i < 4; i++) {
                 LightInfo *light = (i < sLights.size() && sLights[i]) ? sLights[i] : &defaultLight;
                 snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "ambtColor");
-                shader->setParameter(paramName, light->ambtColor);
+                glUniform4fv(glGetUniformLocation(shaderProgram, paramName), 1, &light->ambtColor[0]);
                 snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "diffColor");
-                shader->setParameter(paramName, light->diffColor);
+                glUniform4fv(glGetUniformLocation(shaderProgram, paramName), 1, &light->diffColor[0]);
                 snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "specColor");
-                shader->setParameter(paramName, light->specColor);
+                glUniform4fv(glGetUniformLocation(shaderProgram, paramName), 1, &light->specColor[0]);
                 snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "position");
-                shader->setParameter(paramName, modelViewTransform * light->position);
+                glm::vec4 position = modelViewTransform * light->position;
+                glUniform4fv(glGetUniformLocation(shaderProgram, paramName), 1, &position[0]);
                 snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "spotDirection");
-                shader->setParameter(paramName, light->spotDirection);
+                glUniform4fv(glGetUniformLocation(shaderProgram, paramName), 1, &light->spotDirection[0]);
                 snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "spotExponent");
                 shader->setParameter(paramName, light->spotExponent);
                 snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "spotConeInner");
