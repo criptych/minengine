@@ -6,6 +6,7 @@
 #include "engine/engine.hpp"
 
 #include <GL/glew.h>
+#include <glm/gtc/matrix_transform.hpp>
 #include "GLCheck.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,18 +68,9 @@ void Camera::setZRange(float zNear, float zFar) {
     mNeedsUpdate = true;
 }
 
-const sf::Transform3D &Camera::getTransform() const {
+const glm::mat4 &Camera::getTransform() const {
     if (mNeedsUpdate) {
-        float zn = mZNear;
-        float zf = mZFar;
-        float fh = std::tan(mFOV*Pi/360.0)*zn;
-        float fw = fh * mAspect;
-
-        mTransform = sf::Transform3D(
-            (2 * zn) / (2 * fw), 0.0f, 0.0f, 0.0f,
-            0.0f, (2 * zn) / (2 * fh), 0.0f, 0.0f,
-            0.0f, 0.0f, (zn + zf) / (zn - zf), (2 * zn * zf) / (zn - zf),
-            0.0f, 0.0f, -1.0f, 0.0f);
+        mTransform = glm::perspective(glm::radians(mFOV), mAspect, mZNear, mZFar);
         mNeedsUpdate = false;
     }
     return mTransform;
@@ -86,7 +78,7 @@ const sf::Transform3D &Camera::getTransform() const {
 
 void Camera::render() const {
     GLChecked(glMatrixMode(GL_PROJECTION));
-    GLChecked(glLoadMatrixf(getTransform().getMatrix()));
+    GLChecked(glLoadMatrixf(&getTransform()[0][0]));
     GLChecked(glMatrixMode(GL_MODELVIEW));
 }
 
