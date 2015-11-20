@@ -576,6 +576,7 @@ int ll_Light___new(lua_State *L) {
         light->position.x = luaL_checknumber(L, -3);
         light->position.y = luaL_checknumber(L, -2);
         light->position.z = luaL_checknumber(L, -1);
+        light->position.w = 1.0;
         lua_pop(L, 3);
     }
     lua_pop(L, 1);
@@ -1382,6 +1383,7 @@ void GameWindow::render() {
 
     glm::mat4 projectionTransform(mPlayer.getCamera().getTransform());
     glm::mat4 modelViewTransform(mPlayer.getTransform());
+    glm::mat4 normalTransform(glm::transpose(glm::inverse(modelViewTransform)));
 
     sf::Transform3D spinLight;
     spinLight.rotate(mSpinAngle, sf::Vector3f(0,1,0));
@@ -1403,6 +1405,7 @@ void GameWindow::render() {
             unsigned int shaderProgram = shader->getNativeHandle();
             glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "uProjMatrix"), 1, 0, &projectionTransform[0][0]);
             glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "uViewMatrix"), 1, 0, &modelViewTransform[0][0]);
+            glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "uNormMatrix"), 1, 0, &normalTransform[0][0]);
 
             for (size_t i = 0; i < 4; i++) {
                 LightInfo *light = (i < sLights.size() && sLights[i]) ? sLights[i] : &defaultLight;
