@@ -682,9 +682,6 @@ class GameWindow : protected sf::RenderWindow {
 
     Player mPlayer;
 
-    sf::Vector3f mLightPos;
-    float mSpinAngle;
-    float mSpinSpeed; // degrees/second
     bool mZoom;
 
     ChunkData mTestChunkData;
@@ -755,11 +752,6 @@ GameWindow::GameWindow(
     sf::microseconds(20000) // 50000
 ), mMaxTicksPerFrame(
     5
-), mLightPos(
-    0, 2, 10
-), mSpinAngle(
-), mSpinSpeed(
-    12
 ), mZoom(
     false
 ), mTestChunk(
@@ -1033,7 +1025,7 @@ void GameWindow::handleEvent(const sf::Event &event) {
                 }
 
                 case sf::Keyboard::Space: {
-                    mPaused = not mPaused;
+                    mPaused = !mPaused;
                     break;
                 }
 
@@ -1299,10 +1291,8 @@ void GameWindow::handleInput(const sf::Time &delta) {
 }
 
 void GameWindow::update(const sf::Time &delta) {
-    mPlayTime += delta;
-
-    if (not mPaused) {
-        mSpinAngle += delta.asSeconds() * mSpinSpeed;
+    if (!mPaused) {
+        mPlayTime += delta;
     }
 }
 
@@ -1384,10 +1374,6 @@ void GameWindow::render() {
     glm::mat4 projectionTransform(mPlayer.getCamera().getTransform());
     glm::mat4 modelViewTransform(mPlayer.getTransform());
     glm::mat4 normalTransform(glm::transpose(glm::inverse(modelViewTransform)));
-
-    sf::Transform3D spinLight;
-    spinLight.rotate(mSpinAngle, sf::Vector3f(0,1,0));
-    sf::Vector3f spinLightPos = spinLight.transformPoint(mLightPos);
 
     static LightInfo defaultLight;
 
