@@ -98,6 +98,9 @@ typedef sf::Vector3<Delta> Velocity;
 typedef sf::Vector3<LargeDelta> Acceleration;
 typedef sf::Vector3<LargeDelta> Force;
 
+static const unsigned int FixedPointBits = 8;
+static const float FixedPointScale = static_cast<float>(1 << FixedPointBits);
+
 ////////////////////////////////////////////////////////////////////////////////
 
 #endif // __TYPES_HPP__
