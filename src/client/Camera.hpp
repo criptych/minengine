@@ -38,8 +38,6 @@ public:
     void setZRange(float zNear, float zFar);
 
     const glm::mat4 &getTransform() const;
-
-    void render() const;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

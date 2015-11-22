@@ -76,12 +76,6 @@ const glm::mat4 &Camera::getTransform() const {
     return mTransform;
 }
 
-void Camera::render() const {
-    GLChecked(glMatrixMode(GL_PROJECTION));
-    GLChecked(glLoadMatrixf(&getTransform()[0][0]));
-    GLChecked(glMatrixMode(GL_MODELVIEW));
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 //  EOF
 ////////////////////////////////////////////////////////////////////////////////
