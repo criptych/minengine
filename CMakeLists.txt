@@ -45,7 +45,6 @@ SET(ENGINE_SRCS
 )
 
 SET(CLIENT_SRCS
-    src/client/client.cpp
     src/client/Camera.cpp
     src/client/Camera.hpp
     src/client/ClientModel.cpp
@@ -64,6 +63,7 @@ SET(CLIENT_SRCS
     src/client/MusicCache.hpp
     src/client/Transformable3D.cpp
     src/client/Transformable3D.hpp
+    src/client/client.cpp
 )
 
 SET(SERVER_SRCS
@@ -72,8 +72,8 @@ SET(SERVER_SRCS
 
 SET(TEST_SRCS
     test/catch.hpp
-    test/testmain.cpp
     test/test_physics.cpp
+    test/testmain.cpp
 )
 
 ################################################################################
