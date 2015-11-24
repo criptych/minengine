@@ -541,10 +541,11 @@ int ll_Light___new(lua_State *L) {
         lua_rawgeti(L, -1, 1);
         lua_rawgeti(L, -2, 2);
         lua_rawgeti(L, -3, 3);
-        light->position.x = luaL_checknumber(L, -3);
-        light->position.y = luaL_checknumber(L, -2);
-        light->position.z = luaL_checknumber(L, -1);
-        light->position.w = 1.0;
+        lua_rawgeti(L, -4, 4);
+        light->position.x = luaL_checknumber(L, -4);
+        light->position.y = luaL_checknumber(L, -3);
+        light->position.z = luaL_checknumber(L, -2);
+        light->position.w = luaL_optnumber(L, -1, 1.0);
         lua_pop(L, 3);
     }
     lua_pop(L, 1);
