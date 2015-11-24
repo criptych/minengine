@@ -54,6 +54,12 @@ SET(CLIENT_SRCS
     src/client/ClientObject.hpp
     src/client/ResourceCache.cpp
     src/client/ResourceCache.hpp
+    src/client/ShaderCache.cpp
+    src/client/ShaderCache.hpp
+    src/client/TextureCache.cpp
+    src/client/TextureCache.hpp
+    src/client/MusicCache.cpp
+    src/client/MusicCache.hpp
     src/client/Transformable3D.cpp
     src/client/Transformable3D.hpp
 )

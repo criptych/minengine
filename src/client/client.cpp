@@ -34,42 +34,10 @@ extern "C" {
 #include "ClientModel.hpp"
 #include "ClientObject.hpp"
 #include "ResourceCache.hpp"
+#include "ShaderCache.hpp"
+#include "TextureCache.hpp"
+#include "MusicCache.hpp"
 #include "LightInfo.hpp"
-
-////////////////////////////////////////////////////////////////////////////////
-
-class ShaderCache : public ResourceCache<sf::Shader> {
-    sf::Shader *load(sf::Shader *shader, const std::string &name) {
-        shader->setAttribLocation("aVertex",   0);
-        shader->setAttribLocation("aNormal",   1);
-        shader->setAttribLocation("aTexCoord", 2);
-        if (!shader->loadFromFile(name+".vert", name+".frag")) {
-            return nullptr;
-        }
-        return shader;
-    }
-};
-
-class TextureCache : public ResourceCache<sf::Texture> {
-    sf::Texture *load(sf::Texture *texture, const std::string &name) {
-        if (!texture->loadFromFile(name)) {
-            return nullptr;
-        }
-        texture->setSmooth(true);
-        texture->setRepeated(true);
-        texture->generateMipmap();
-        return texture;
-    }
-};
-
-class MusicCache : public ResourceCache<sf::Music> {
-    sf::Music *load(sf::Music *music, const std::string &name) {
-        if (!music->openFromFile(name)) {
-            return nullptr;
-        }
-        return music;
-    }
-};
 
 ////////////////////////////////////////////////////////////////////////////////
 
