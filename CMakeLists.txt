@@ -66,6 +66,10 @@ SET(CLIENT_SRCS
     src/client/client.cpp
 )
 
+SET(SHADERS
+    data/shaders/default.330
+)
+
 SET(SERVER_SRCS
     src/server/server.cpp
 )
@@ -102,6 +106,41 @@ ADD_EXECUTABLE(testmain ${TEST_SRCS})
 TARGET_LINK_LIBRARIES(testmain engine ${SFML_LIBRARIES})
 SET_TARGET_PROPERTIES(testmain PROPERTIES OUTPUT_NAME test)
 ADD_TEST(testmain testmain)
+
+################################################################################
+
+IF(WIN32)
+    SET(GLSLANG_URL "https://cvs.khronos.org/svn/repos/ogl/trunk/ecosystem/public/sdk/tools/glslang/Install/Windows")
+    SET(GLSLANG_FILE "glslangValidator.exe")
+ELSE()
+    SET(GLSLANG_URL "https://cvs.khronos.org/svn/repos/ogl/trunk/ecosystem/public/sdk/tools/glslang/Install/Linux")
+    SET(GLSLANG_FILE "glslangValidator")
+ENDIF()
+
+SET(GLSLANG_TOOL "${CMAKE_CURRENT_BINARY_DIR}/tools/${GLSLANG_FILE}")
+
+IF(NOT EXISTS "${GLSLANG_TOOL}")
+    FILE(DOWNLOAD "${GLSLANG_URL}/${GLSLANG_FILE}" "${GLSLANG_TOOL}" SHOW_PROGRESS)
+ENDIF()
+
+ADD_CUSTOM_TARGET(check-shaders)
+
+ADD_DEPENDENCIES(run-client check-shaders)
+
+FOREACH(SHADER ${SHADERS})
+    SET(VERT "${SHADER}.vert")
+    SET(FRAG "${SHADER}.frag")
+
+    IF(EXISTS ${VERT} AND EXISTS ${FRAG})
+        ADD_CUSTOM_COMMAND(
+            TARGET check-shaders
+            COMMAND "${GLSLANG_TOOL}" ${VERT} ${FRAG}
+            DEPENDS ${VERT} ${FRAG}
+        )
+    ELSE()
+        MESSAGE(WARNING "Shader component(s) missing for: ${SHADER}")
+    ENDIF()
+ENDFOREACH()
 
 ################################################################################
 ##  EOF
