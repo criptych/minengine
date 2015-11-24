@@ -186,428 +186,13 @@ void ChunkRenderer::render(sf::RenderTarget &target, const Chunk &chunk) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static ShaderCache sShaderCache;
-static TextureCache sTextureCache;
-static std::vector<ClientObject*> sObjects;
-static std::vector<LightInfo*> sLights;
+ShaderCache gShaderCache;
+TextureCache gTextureCache;
+std::vector<ClientObject*> gObjects;
+std::vector<LightInfo*> gLights;
 
-////////////////////////////////////////////////////////////////////////////////
-
-int ll_Object___new(lua_State *L) {
-    luaL_checktype(L, 2, LUA_TTABLE);
-    ClientObject **pobject = static_cast<ClientObject**>(
-        lua_newuserdata(L, sizeof(ClientObject*)));
-    ClientObject *object = *pobject = new ClientObject();
-    sObjects.push_back(object);
-
-    sf::err() << sObjects.size() << " objects to draw\n";
-
-    lua_getfield(L, 2, "shader");
-    if (!lua_isnoneornil(L, -1)) {
-        const char *name = luaL_checkstring(L, -1);
-        sf::Shader *shader = sShaderCache.acquire(name);
-        object->setShader(shader);
-
-        sf::err() << "Shader: " << shader << "\n";
-    }
-    lua_pop(L, 1);
-
-    lua_getfield(L, 2, "material");
-    if (!lua_isnoneornil(L, -1)) {
-        luaL_checktype(L, -1, LUA_TTABLE);
-        MaterialInfo *material = new MaterialInfo();
-        object->setMaterial(material);
-
-        lua_getfield(L, -1, "diffMap");
-        if (!lua_isnoneornil(L, -1)) {
-            const char *name = luaL_checkstring(L, -1);
-            material->diffMap = sTextureCache.acquire(name);
-        }
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "specMap");
-        if (!lua_isnoneornil(L, -1)) {
-            const char *name = luaL_checkstring(L, -1);
-            material->specMap = sTextureCache.acquire(name);
-        }
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "glowMap");
-        if (!lua_isnoneornil(L, -1)) {
-            const char *name = luaL_checkstring(L, -1);
-            material->glowMap = sTextureCache.acquire(name);
-        }
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "bumpMap");
-        if (!lua_isnoneornil(L, -1)) {
-            const char *name = luaL_checkstring(L, -1);
-            material->bumpMap = sTextureCache.acquire(name);
-        }
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "roughness");
-        if (!lua_isnoneornil(L, -1)) {
-            material->roughness = luaL_checknumber(L, -1);
-        }
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "bumpScale");
-        if (!lua_isnoneornil(L, -1)) {
-            material->bumpScale = luaL_checknumber(L, -1);
-        }
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "bumpBias");
-        if (!lua_isnoneornil(L, -1)) {
-            material->bumpBias = luaL_checknumber(L, -1);
-        }
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "fresnelPower");
-        if (!lua_isnoneornil(L, -1)) {
-            material->fresnelPower = luaL_checknumber(L, -1);
-        }
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "fresnelScale");
-        if (!lua_isnoneornil(L, -1)) {
-            material->fresnelScale = luaL_checknumber(L, -1);
-        }
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "fresnelBias");
-        if (!lua_isnoneornil(L, -1)) {
-            material->fresnelBias = luaL_checknumber(L, -1);
-        }
-        lua_pop(L, 1);
-
-        sf::err() << "Material:\n"
-            "\t diffMap == " << material->diffMap << "\n"
-            "\t specMap == " << material->specMap << "\n"
-            "\t glowMap == " << material->glowMap << "\n"
-            "\t bumpMap == " << material->bumpMap << "\n"
-            "\t specPower == " << material->specPower << "\n"
-            "\t bumpScale == " << material->bumpScale << "\n"
-            "\t bumpBias == " << material->bumpBias << "\n"
-            "\t fresnelPower == " << material->fresnelPower << "\n"
-            "\t fresnelScale == " << material->fresnelScale << "\n"
-            "\t fresnelBias == " << material->fresnelBias << "\n"
-            ;
-    }
-    lua_pop(L, 1);
-
-    lua_getfield(L, 2, "model");
-    if (!lua_isnoneornil(L, -1)) {
-
-        static const char *const primitive_names[] = {
-            "points",
-            "lines",
-            "lineloop",
-            "linestrip",
-            "triangles",
-            "trianglestrip",
-            "trianglefan",
-            //~ "quads",
-            //~ "quadstrip",
-            //~ "polygon",
-            nullptr
-        };
-
-        static const char *const shape_names[] = {
-            "box",
-            "plane",
-            "sphere",
-            nullptr
-        };
-
-        Model *model = new Model();
-        object->setModel(new ClientModel(model));
-
-        lua_getfield(L, -1, "primitive");
-        int primitive = luaL_checkoption(L, -1, "triangles", primitive_names);
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "shape");
-        int shape = luaL_checkoption(L, -1, "box", shape_names);
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "radius");
-        float radius = luaL_optnumber(L, -1, 1.0f);
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "steps");
-        int step = 5, rstep = 6;
-        if (!lua_isnoneornil(L, -1)) {
-            if (lua_type(L, -1) == LUA_TTABLE) {
-                lua_rawgeti(L, -1, 1);
-                lua_rawgeti(L, -2, 2);
-                step = luaL_checkinteger(L, -2);
-                rstep = luaL_checkinteger(L, -1);
-                lua_pop(L, 2);
-            } else {
-                step = luaL_checkinteger(L, -1);
-                rstep = 2 * step;
-            }
-        }
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "size");
-        glm::vec3 size(1.0f, 1.0f, 1.0f);
-        if (!lua_isnoneornil(L, -1)) {
-            lua_rawgeti(L, -1, 1);
-            lua_rawgeti(L, -2, 2);
-            lua_rawgeti(L, -3, 3);
-            size.x = luaL_checknumber(L, -3);
-            size.y = luaL_checknumber(L, -2);
-            size.z = luaL_checknumber(L, -1);
-            lua_pop(L, 3);
-        }
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "center");
-        glm::vec3 center;
-        if (!lua_isnoneornil(L, -1)) {
-            lua_rawgeti(L, -1, 1);
-            lua_rawgeti(L, -2, 2);
-            lua_rawgeti(L, -3, 3);
-            center.x = luaL_checknumber(L, -3);
-            center.y = luaL_checknumber(L, -2);
-            center.z = luaL_checknumber(L, -1);
-            lua_pop(L, 3);
-        }
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "a");
-        glm::vec3 a(1.0f, 1.0f, 1.0f);
-        if (!lua_isnoneornil(L, -1)) {
-            lua_rawgeti(L, -1, 1);
-            lua_rawgeti(L, -2, 2);
-            lua_rawgeti(L, -3, 3);
-            a.x = luaL_checknumber(L, -3);
-            a.y = luaL_checknumber(L, -2);
-            a.z = luaL_checknumber(L, -1);
-            lua_pop(L, 3);
-        }
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "b");
-        glm::vec3 b(1.0f, 1.0f, 1.0f);
-        if (!lua_isnoneornil(L, -1)) {
-            lua_rawgeti(L, -1, 1);
-            lua_rawgeti(L, -2, 2);
-            lua_rawgeti(L, -3, 3);
-            b.x = luaL_checknumber(L, -3);
-            b.y = luaL_checknumber(L, -2);
-            b.z = luaL_checknumber(L, -1);
-            lua_pop(L, 3);
-        }
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "c");
-        glm::vec3 c(1.0f, 1.0f, 1.0f);
-        if (!lua_isnoneornil(L, -1)) {
-            lua_rawgeti(L, -1, 1);
-            lua_rawgeti(L, -2, 2);
-            lua_rawgeti(L, -3, 3);
-            c.x = luaL_checknumber(L, -3);
-            c.y = luaL_checknumber(L, -2);
-            c.z = luaL_checknumber(L, -1);
-            lua_pop(L, 3);
-        }
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "texRect");
-        glm::vec4 texRect(0, 0, 1, 1);
-        if (!lua_isnoneornil(L, -1)) {
-            lua_rawgeti(L, -1, 1);
-            lua_rawgeti(L, -2, 2);
-            lua_rawgeti(L, -3, 3);
-            lua_rawgeti(L, -4, 4);
-            texRect.x  = luaL_checknumber(L, -4);
-            texRect.y = luaL_checknumber(L, -3);
-            texRect.z = luaL_checknumber(L, -2);
-            texRect.w = luaL_checknumber(L, -1);
-            lua_pop(L, 4);
-        }
-        lua_pop(L, 1);
-
-        model->setPrimitive(primitive);
-
-        switch (shape) {
-            case 0: {
-                model->makeBox(size, center, texRect);
-                break;
-            }
-
-            case 1: {
-                model->makePlane(a, b, c, texRect);
-                break;
-            }
-
-            case 2: {
-                model->makeBall(radius, step, rstep, center /*, texRect*/);
-                break;
-            }
-
-            default: {
-                sf::err() << "unknown shape " << shape << "???\n";
-                break;
-            }
-        }
-
-    }
-    lua_pop(L, 1);
-    return 1;
-}
-
-static luaL_Reg ll_Object_methods[] = {
-    { "__new", ll_Object___new },
-    { nullptr, nullptr }
-};
-
-int luaopen_Object(lua_State *L) {
-    luaL_newmetatable(L, "Object");
-    luaL_register(L, nullptr, ll_Object_methods);
-    lua_newtable(L);
-    lua_getfield(L, -2, "__new");
-    lua_setfield(L, -2, "__call");
-    lua_setmetatable(L, -2);
-    return 1;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-int ll_Light___new(lua_State *L) {
-    luaL_checktype(L, 2, LUA_TTABLE);
-    LightInfo **plight = static_cast<LightInfo**>(
-        lua_newuserdata(L, sizeof(LightInfo*)));
-    LightInfo *light = *plight = new LightInfo();
-    sLights.push_back(light);
-
-    static const char *const type_names[] = {
-        "point",
-        "spot",
-        "directional",
-        nullptr
-    };
-
-    lua_getfield(L, 2, "type");
-    light->type = static_cast<LightInfo::LightType>(
-        luaL_checkoption(L, -1, "point", type_names));
-    lua_pop(L, 1);
-
-    lua_getfield(L, 2, "ambientColor");
-    if (!lua_isnoneornil(L, -1)) {
-        lua_rawgeti(L, -1, 1);
-        lua_rawgeti(L, -2, 2);
-        lua_rawgeti(L, -3, 3);
-        light->ambtColor.r = luaL_checknumber(L, -3);
-        light->ambtColor.g = luaL_checknumber(L, -2);
-        light->ambtColor.b = luaL_checknumber(L, -1);
-        light->ambtColor.a = 1.0f;
-        lua_pop(L, 3);
-    }
-    lua_pop(L, 1);
-
-    lua_getfield(L, 2, "diffuseColor");
-    if (!lua_isnoneornil(L, -1)) {
-        lua_rawgeti(L, -1, 1);
-        lua_rawgeti(L, -2, 2);
-        lua_rawgeti(L, -3, 3);
-        light->diffColor.r = luaL_checknumber(L, -3);
-        light->diffColor.g = luaL_checknumber(L, -2);
-        light->diffColor.b = luaL_checknumber(L, -1);
-        light->diffColor.a = 1.0f;
-        lua_pop(L, 3);
-    }
-    lua_pop(L, 1);
-
-    lua_getfield(L, 2, "specularColor");
-    if (!lua_isnoneornil(L, -1)) {
-        lua_rawgeti(L, -1, 1);
-        lua_rawgeti(L, -2, 2);
-        lua_rawgeti(L, -3, 3);
-        light->specColor.r = luaL_checknumber(L, -3);
-        light->specColor.g = luaL_checknumber(L, -2);
-        light->specColor.b = luaL_checknumber(L, -1);
-        light->specColor.a = 1.0f;
-        lua_pop(L, 3);
-    }
-    lua_pop(L, 1);
-
-    lua_getfield(L, 2, "position");
-    if (!lua_isnoneornil(L, -1)) {
-        lua_rawgeti(L, -1, 1);
-        lua_rawgeti(L, -2, 2);
-        lua_rawgeti(L, -3, 3);
-        lua_rawgeti(L, -4, 4);
-        light->position.x = luaL_checknumber(L, -4);
-        light->position.y = luaL_checknumber(L, -3);
-        light->position.z = luaL_checknumber(L, -2);
-        light->position.w = luaL_optnumber(L, -1, 1.0);
-        lua_pop(L, 3);
-    }
-    lua_pop(L, 1);
-
-    lua_getfield(L, 2, "spotDirection");
-    light->spotDirection = glm::vec3(0, 0, -1);
-    if (!lua_isnoneornil(L, -1)) {
-        lua_rawgeti(L, -1, 1);
-        lua_rawgeti(L, -2, 2);
-        lua_rawgeti(L, -3, 3);
-        light->spotDirection.x = luaL_checknumber(L, -3);
-        light->spotDirection.y = luaL_checknumber(L, -2);
-        light->spotDirection.z = luaL_checknumber(L, -1);
-        lua_pop(L, 3);
-    }
-    lua_pop(L, 1);
-
-    lua_getfield(L, 2, "spotExponent");
-    light->spotExponent = luaL_optnumber(L, -1, 0.0f);
-    lua_pop(L, 1);
-
-    lua_getfield(L, 2, "spotConeInner");
-    light->spotConeInner = luaL_optnumber(L, -1, 180.0f);
-    lua_pop(L, 1);
-
-    lua_getfield(L, 2, "spotConeOuter");
-    light->spotConeOuter = luaL_optnumber(L, -1, 180.0f);
-    lua_pop(L, 1);
-
-    lua_getfield(L, 2, "attenuation");
-    if (!lua_isnoneornil(L, -1)) {
-        lua_rawgeti(L, -1, 1);
-        lua_rawgeti(L, -2, 2);
-        lua_rawgeti(L, -3, 3);
-        light->attenuation[0] = luaL_optnumber(L, -3, 1.0f);
-        light->attenuation[1] = luaL_optnumber(L, -2, 0.0f);
-        light->attenuation[2] = luaL_optnumber(L, -1, 0.0f);
-        lua_pop(L, 3);
-    } else {
-        light->attenuation[0] = 1.0f;
-        light->attenuation[1] = 0.0f;
-        light->attenuation[2] = 0.0f;
-    }
-    lua_pop(L, 1);
-
-    return 1;
-}
-
-static luaL_Reg ll_Light_methods[] = {
-    { "__new", ll_Light___new },
-    { nullptr, nullptr }
-};
-
-int luaopen_Light(lua_State *L) {
-    luaL_newmetatable(L, "Light");
-    luaL_register(L, nullptr, ll_Light_methods);
-    lua_newtable(L);
-    lua_getfield(L, -2, "__new");
-    lua_setfield(L, -2, "__call");
-    lua_setmetatable(L, -2);
-    return 1;
-}
+extern int luaopen_Light(lua_State *L);
+extern int luaopen_Object(lua_State *L);
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -864,17 +449,17 @@ bool GameWindow::init() {
 }
 
 bool GameWindow::initScene() {
-    for (LightInfo *light : sLights) {
+    for (LightInfo *light : gLights) {
         delete light;
     }
-    sLights.clear();
+    gLights.clear();
 
-    for (ClientObject *object : sObjects) {
+    for (ClientObject *object : gObjects) {
         delete object->getModel()->getModel();
         delete object->getModel();
         delete object;
     }
-    sObjects.clear();
+    gObjects.clear();
 
     lua_State *L = luaL_newstate();
 
@@ -1039,10 +624,10 @@ void GameWindow::handleEvent(const sf::Event &event) {
 
                 case sf::Keyboard::R: {
                     if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                        sTextureCache.reloadAll();
+                        gTextureCache.reloadAll();
                     }
                     if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
-                        sShaderCache.reloadAll();
+                        gShaderCache.reloadAll();
                     }
                     if (sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt)) {
                         initScene();
@@ -1348,14 +933,14 @@ void GameWindow::render() {
 
     static LightInfo defaultLight;
 
-    for (LightInfo *light : sLights) {
+    for (LightInfo *light : gLights) {
         light->spotConeInnerCos = glm::cos(glm::radians(light->spotConeInner));
         light->spotConeOuterCos = glm::cos(glm::radians(light->spotConeOuter));
     }
 
     char paramName[32];
 
-    for (ClientObject *object : sObjects) {
+    for (ClientObject *object : gObjects) {
         sf::Shader *shader = object->getShader();
         if (shader) {
             sf::Shader::bind(shader);
@@ -1365,7 +950,7 @@ void GameWindow::render() {
             glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "uNormMatrix"), 1, 0, &normalTransform[0][0]);
 
             for (size_t i = 0; i < 4; i++) {
-                LightInfo *light = (i < sLights.size() && sLights[i]) ? sLights[i] : &defaultLight;
+                LightInfo *light = (i < gLights.size() && gLights[i]) ? gLights[i] : &defaultLight;
                 snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "ambtColor");
                 glUniform4fv(glGetUniformLocation(shaderProgram, paramName), 1, &light->ambtColor[0]);
                 snprintf(paramName, sizeof(paramName), "uLights[%d].%s", i, "diffColor");

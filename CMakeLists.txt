@@ -52,6 +52,8 @@ SET(CLIENT_SRCS
     src/client/ClientModel.hpp
     src/client/ClientObject.cpp
     src/client/ClientObject.hpp
+    src/client/LuaLight.cpp
+    src/client/LuaObject.cpp
     src/client/ResourceCache.cpp
     src/client/ResourceCache.hpp
     src/client/ShaderCache.cpp
