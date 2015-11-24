@@ -295,8 +295,9 @@ GameWindow::GameWindow(
 ), mWindowStyle(
     sf::Style::Default
 ), mMinFrameLength(
+    sf::microseconds(0) // disabled
     //~ sf::microseconds(2083) // ~480fps
-    sf::microseconds(4167) // ~240fps
+    //~ sf::microseconds(4167) // ~240fps
     //~ sf::microseconds(8333) // ~120fps
     //~ sf::microseconds(16667) // ~60fps
     //~ sf::microseconds(33333) // ~30fps
@@ -411,8 +412,6 @@ bool GameWindow::init() {
                  mDesktopMode.bitsPerPixel);
 
     create(mWindowMode, mWindowTitle, mWindowStyle, mContextSettings);
-
-    setVerticalSyncEnabled(true);
 
     const sf::ContextSettings &usedSettings = getSettings();
     sf::err() << "Using OpenGL " << usedSettings.majorVersion << '.' << usedSettings.minorVersion << ' ' <<
