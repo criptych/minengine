@@ -870,6 +870,8 @@ bool GameWindow::initScene() {
     sLights.clear();
 
     for (ClientObject *object : sObjects) {
+        delete object->getModel()->getModel();
+        delete object->getModel();
         delete object;
     }
     sObjects.clear();
