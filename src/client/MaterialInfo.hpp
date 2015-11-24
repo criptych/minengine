@@ -16,7 +16,7 @@ struct MaterialInfo {
     const sf::Texture *specMap;
     const sf::Texture *glowMap;
     const sf::Texture *bumpMap;
-    float specPower;
+    float roughness;
     float bumpScale;
     float bumpBias;
     float fresnelPower;

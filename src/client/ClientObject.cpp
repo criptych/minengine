@@ -86,7 +86,7 @@ void ClientObject::render() const {
                 if (mMaterial->bumpMap) {
                     mShader->setParameter("uMaterial.bumpMap", *mMaterial->bumpMap);
                 }
-                mShader->setParameter("uMaterial.specPower",    mMaterial->specPower);
+                mShader->setParameter("uMaterial.roughness",    mMaterial->roughness);
                 mShader->setParameter("uMaterial.bumpScale",    mMaterial->bumpScale);
                 mShader->setParameter("uMaterial.bumpBias",     mMaterial->bumpBias);
                 mShader->setParameter("uMaterial.fresnelPower", mMaterial->fresnelPower);

@@ -278,9 +278,9 @@ int ll_Object___new(lua_State *L) {
         }
         lua_pop(L, 1);
 
-        lua_getfield(L, -1, "specPower");
+        lua_getfield(L, -1, "roughness");
         if (!lua_isnoneornil(L, -1)) {
-            material->specPower = luaL_checknumber(L, -1);
+            material->roughness = luaL_checknumber(L, -1);
         }
         lua_pop(L, 1);
 
