@@ -14,14 +14,13 @@ env:
     - CMAKE_BUILD_TYPE=Debug
     - CMAKE_BUILD_TYPE=Release
 
-before_script: |
-    if [ "$CC" = "gcc" ]; then
-        export CC=gcc-4.8;
-        export CXX=g++-4.8;
-    fi
+before_script:
+    - if [ "$CC" = "gcc" ]; then export CC=gcc-4.8; export CXX=g++-4.8; fi
+    - git clone --branch 2.3.2 https://github.com/SFML/SFML.git SFML
+    - cd SFML && cmake -G "Ninja" .. && ninja && cd ..
 
 script:
-    - mkdir build && cd build && cmake -G "Ninja" .. && ninja
+    - mkdir build && cd build && SFML_ROOT=../SFML cmake -G "Ninja" .. && ninja
 
 after_success:
     - ctest
