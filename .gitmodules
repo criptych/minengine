@@ -2,3 +2,8 @@
     path = lib/luajit
     url = https://github.com/LuaDist/luajit.git
     branch = master
+
+[submodule "lib/glm"]
+    path = lib/glm
+    url = https://github.com/g-truc/glm.git
+    branch = master
